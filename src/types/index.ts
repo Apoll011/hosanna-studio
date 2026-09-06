@@ -45,7 +45,7 @@ export interface ParsedSong extends Song {
   };
 }
 
-export interface SerchableSong {
+export interface SearchableSong {
   id: string;
   title: string;
   subtitle?: string;
@@ -54,7 +54,7 @@ export interface SerchableSong {
   composer?: string;
   year?: number;
   lyricist?: string;
-  song_number?: number;
+  number?: number;
   path: string; // e.g., "Hymns/Amazing Grace.pro" or "Amazing Grace.pro"
   tags: string[];
   folder: string; // e.g. "Worship" or "" (root)
@@ -68,8 +68,6 @@ export interface SerchableSong {
   duration?: number;
   youtube?: string;
 }
-
-export type SearchableSong = SerchableSong;
 
 export interface SongsResponse {
   songs: Song[];
