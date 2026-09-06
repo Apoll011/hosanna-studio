@@ -96,6 +96,7 @@ export const pt = {
     density: "Densidade de visualização",
     comfortable: "Confortável",
     compact: "Compacto",
+    number: "Número",
   },
 
   commandPalette: {

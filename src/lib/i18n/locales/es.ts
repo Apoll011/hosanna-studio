@@ -98,6 +98,7 @@ export const es: typeof pt = {
     density: "Densidad de visualización",
     comfortable: "Cómodo",
     compact: "Compacto",
+    number: "Números",
   },
 
   commandPalette: {

@@ -15,10 +15,10 @@ interface ExplorerToolbarProps {
   showArchived: boolean;
   setShowArchived: React.Dispatch<React.SetStateAction<boolean>>;
   archivedServices: Service[];
-  sortBy: "title" | "artist" | "updatedAt";
+  sortBy: "title" | "artist" | "updatedAt" | "number";
   sortOrder: "asc" | "desc";
   onSortChange: (
-    sb: "title" | "artist" | "updatedAt",
+    sb: "title" | "artist" | "updatedAt" | "number",
     so: "asc" | "desc",
   ) => void;
   viewMode: "grid" | "list";
@@ -105,7 +105,7 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
             value={`${sortBy}-${sortOrder}`}
             onChange={(e) => {
               const [sb, so] = e.target.value.split("-") as [
-                "title" | "artist" | "updatedAt",
+                "title" | "artist" | "updatedAt" | "number",
                 "asc" | "desc",
               ];
               onSortChange(sb, so);
@@ -126,6 +126,7 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
               </>
             ) : (
               <>
+                <option value="number-asc">{t("toolbar.number")}</option>
                 <option value="title-asc">{t("toolbar.nameAsc")}</option>
                 <option value="title-desc">{t("toolbar.nameDesc")}</option>
                 <option value="artist-asc">{t("toolbar.artistAsc")}</option>

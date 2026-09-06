@@ -105,7 +105,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   // Search & Filter props resolution
   const contextSearchQuery = context.searchQuery as string | undefined;
   const contextSortBy = context.sortBy as
-    "title" | "artist" | "updatedAt" | undefined;
+    "title" | "artist" | "updatedAt" | "number" | undefined;
   const contextSortOrder = context.sortOrder as "asc" | "desc" | undefined;
   const actualSelectedKey =
     selectedKey ?? (context.selectedKey as string | null) ?? "";
@@ -116,7 +116,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   const [internalSearchQuery, setInternalSearchQuery] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string>("");
   const [internalSortBy, setInternalSortBy] = useState<
-    "title" | "artist" | "updatedAt"
+    "title" | "artist" | "updatedAt" | "number"
   >("title");
   const [internalSortOrder, setInternalSortOrder] = useState<"asc" | "desc">(
     "asc",
@@ -248,6 +248,9 @@ export const SongsPage: React.FC<SongsPageProps> = ({
         } else if (finalSortBy === "artist") {
           valA = a.artist?.toLowerCase() ?? "";
           valB = b.artist?.toLowerCase() ?? "";
+        } else if (finalSortBy === "number") {
+          valA = a.song_number ?? Infinity;
+          valB = b.song_number ?? Infinity;
         } else if (finalSortBy === "updatedAt") {
           valA = new Date(a.updatedAt).getTime();
           valB = new Date(b.updatedAt).getTime();
