@@ -1,6 +1,6 @@
 {
   "name": "@hosanna/studio",
-  "version": "2.16.8",
+  "version": "2.16.9",
   "type": "module",
   "license": "Apache-2.0",
   "scripts": {
