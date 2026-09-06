@@ -1,6 +1,6 @@
 import { useI18n } from "@/src/lib/i18n";
 import { Folder, Song } from "@/src/types";
-import { FileText, MoreVertical } from "lucide-react";
+import { FileMusicIcon, MoreVertical } from "lucide-react";
 import React from "react";
 import {
   getFolderColorStyle,
@@ -202,7 +202,7 @@ export const SongGridCard: React.FC<SongGridCardProps> = React.memo(
         <div
           className={`${isCompact ? "w-10 h-10 rounded-xl mb-2" : "w-14 h-14 rounded-2xl mb-3"} bg-m3-primary-light/20 border border-m3-primary/20 flex items-center justify-center text-m3-primary group-hover:scale-110 transition-transform`}
         >
-          <FileText
+          <FileMusicIcon
             className={`${isCompact ? "w-5 h-5" : "w-8 h-8"} opacity-80`}
           />
         </div>
