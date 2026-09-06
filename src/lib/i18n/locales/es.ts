@@ -1632,7 +1632,7 @@ export const es: typeof pt = {
     chords: "Acordes",
     twoColumns: "2 Columnas",
     churchHeader: "Encabezado Iglesia",
-    includeChords: "Incluir Acordes",
+    includeChords: "Incluir Canciones",
     fontSize: "Tamaño:",
     decreaseFont: "Disminuir texto",
     increaseFont: "Aumentar texto",

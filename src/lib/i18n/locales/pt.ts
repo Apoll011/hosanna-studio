@@ -1626,7 +1626,7 @@ export const pt = {
     chords: "Cifras",
     twoColumns: "2 Colunas",
     churchHeader: "Cabeçalho Igreja",
-    includeChords: "Incluir Cifras",
+    includeChords: "Incluir Músicas",
     fontSize: "Tamanho:",
     decreaseFont: "Diminuir texto",
     increaseFont: "Aumentar texto",
