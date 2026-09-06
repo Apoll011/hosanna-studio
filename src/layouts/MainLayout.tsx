@@ -1569,7 +1569,17 @@ export const MainLayout: React.FC = () => {
             .filter((f) => selectedFolderIds.has(f.id))
             .map((f) => ({
               folder: f,
-              songs: allSongs.filter((s) => s.folderId === f.id),
+              songs: allSongs
+                .filter((s) => s.folderId === f.id)
+                .sort((a, b) => {
+                  if ((a.song_number || Infinity) < (b.song_number || Infinity))
+                    return -1;
+                  else if (
+                    (a.song_number || Infinity) > (b.song_number || Infinity)
+                  )
+                    return 1;
+                  return -1;
+                }),
             }));
 
           if (sList.length > 0 && fList.length === 0) {
@@ -1639,7 +1649,17 @@ export const MainLayout: React.FC = () => {
         onPrintFolder={(folderId) => {
           const f = allFolders.find((x) => x.id === folderId);
           if (f) {
-            const fSongs = allSongs.filter((s) => s.folderId === folderId);
+            const fSongs = allSongs
+              .filter((s) => s.folderId === folderId)
+              .sort((a, b) => {
+                if ((a.song_number || Infinity) < (b.song_number || Infinity))
+                  return -1;
+                else if (
+                  (a.song_number || Infinity) > (b.song_number || Infinity)
+                )
+                  return 1;
+                return -1;
+              });
             printFolder(f, fSongs);
           }
         }}
