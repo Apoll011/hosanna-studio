@@ -204,9 +204,9 @@ export const MainLayout: React.FC = () => {
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [selectedTag, setSelectedTag] = useState<string>("");
 
-  const [sortBy, setSortBy] = useState<"title" | "artist" | "updatedAt">(
-    "title",
-  );
+  const [sortBy, setSortBy] = useState<
+    "title" | "artist" | "updatedAt" | "number"
+  >("number");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
@@ -221,7 +221,7 @@ export const MainLayout: React.FC = () => {
   );
 
   const handleSortChange = useCallback(
-    (sb: "title" | "artist" | "updatedAt", so: "asc" | "desc") => {
+    (sb: "title" | "artist" | "updatedAt" | "number", so: "asc" | "desc") => {
       setSortBy(sb);
       setSortOrder(so);
       if (view === "settings") {
@@ -451,8 +451,8 @@ export const MainLayout: React.FC = () => {
     }
 
     return [...list].sort((a, b) => {
-      let valA = (a.title || "").toLowerCase();
-      let valB = (b.title || "").toLowerCase();
+      let valA: string | number = (a.title || "").toLowerCase();
+      let valB: string | number = (b.title || "").toLowerCase();
 
       if (sortBy === "artist") {
         valA = (a.artist || "").toLowerCase();
@@ -460,6 +460,9 @@ export const MainLayout: React.FC = () => {
       } else if (sortBy === "updatedAt") {
         valA = a.updatedAt || "";
         valB = b.updatedAt || "";
+      } else if (sortBy === "number") {
+        valA = a.song_number || Infinity;
+        valB = b.song_number || Infinity;
       }
 
       if (valA < valB) return sortOrder === "asc" ? -1 : 1;
@@ -1566,7 +1569,17 @@ export const MainLayout: React.FC = () => {
             .filter((f) => selectedFolderIds.has(f.id))
             .map((f) => ({
               folder: f,
-              songs: allSongs.filter((s) => s.folderId === f.id),
+              songs: allSongs
+                .filter((s) => s.folderId === f.id)
+                .sort((a, b) => {
+                  if ((a.song_number || Infinity) < (b.song_number || Infinity))
+                    return -1;
+                  else if (
+                    (a.song_number || Infinity) > (b.song_number || Infinity)
+                  )
+                    return 1;
+                  return -1;
+                }),
             }));
 
           if (sList.length > 0 && fList.length === 0) {
@@ -1636,7 +1649,17 @@ export const MainLayout: React.FC = () => {
         onPrintFolder={(folderId) => {
           const f = allFolders.find((x) => x.id === folderId);
           if (f) {
-            const fSongs = allSongs.filter((s) => s.folderId === folderId);
+            const fSongs = allSongs
+              .filter((s) => s.folderId === folderId)
+              .sort((a, b) => {
+                if ((a.song_number || Infinity) < (b.song_number || Infinity))
+                  return -1;
+                else if (
+                  (a.song_number || Infinity) > (b.song_number || Infinity)
+                )
+                  return 1;
+                return -1;
+              });
             printFolder(f, fSongs);
           }
         }}

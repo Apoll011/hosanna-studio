@@ -328,12 +328,14 @@ export const PrintModal: React.FC<PrintModalProps> = ({
             </label>
 
             {/* Include Songs toggle (when printing folder or service) */}
-            {hasFolderOrService && (
+            {hasFolderOrService && hasSongs && (
               <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-700 dark:text-slate-300 font-medium">
                 <input
                   type="checkbox"
                   checked={
-                    options.includeServiceSongs && options.includeFolderSongs
+                    options.includeServiceSongs &&
+                    options.includeFolderSongs &&
+                    hasSongs
                   }
                   onChange={(e) =>
                     setOptions((prev) => ({

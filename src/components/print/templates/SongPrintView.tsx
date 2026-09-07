@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useI18n } from "@/src/lib/i18n";
 import { Song } from "@/src/types";
 import { ChordProRenderer, parseChordPro } from "@hosanna/chordpro";
-import { useI18n } from "@/src/lib/i18n";
 import React, { useMemo } from "react";
 import { PrintOptions } from "../types";
 import { TemplateFooter } from "./TemplateFooter";
@@ -146,7 +146,6 @@ export const SongPrintView: React.FC<SongPrintViewProps> = ({
           twoColumnLayout={options.twoColumnLayout}
           fontSize={options.fontSize}
           showDiagrams={false}
-          showYoutubePlayer={false}
         />
       </div>
 

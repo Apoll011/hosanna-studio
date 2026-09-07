@@ -285,7 +285,7 @@ export function parsedSongToSearchableSong(
     composer: meta.composer || undefined,
     year: yearNum,
     lyricist: meta.lyricist || undefined,
-    song_number: songNum,
+    number: songNum,
     path: parsedSong.path || "",
     tags: Array.isArray(parsedSong.tags) ? parsedSong.tags : [],
     folder: parsedSong.folder || "",

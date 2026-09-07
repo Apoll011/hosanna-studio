@@ -188,10 +188,6 @@ const SongPreview: React.FC<{ element: ServiceElement }> = ({ element }) => {
           fontSize={settings.fontSize}
           instrument={settings.instrument}
           showDiagrams={settings.showDiagrams}
-          showYoutubePlayer={settings.showYoutubePlayer}
-          onShowYoutubePlayerChange={(show) =>
-            updateSetting("showYoutubePlayer", show)
-          }
         />
       </div>
     </div>

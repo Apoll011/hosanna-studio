@@ -98,6 +98,7 @@ export const en: typeof pt = {
     density: "View density",
     comfortable: "Comfortable",
     compact: "Compact",
+    number: "Number",
   },
 
   commandPalette: {
@@ -1609,7 +1610,7 @@ export const en: typeof pt = {
     chords: "Chords",
     twoColumns: "2 Columns",
     churchHeader: "Church Header",
-    includeChords: "Include Chords",
+    includeChords: "Include Songs",
     fontSize: "Size:",
     decreaseFont: "Decrease text",
     increaseFont: "Increase text",

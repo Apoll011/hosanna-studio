@@ -82,14 +82,8 @@ export const SongEditorPage: React.FC = () => {
   } = useEditorSettings();
 
   const { settings, updateSetting, resetSettings } = usePreviewSettings();
-  const {
-    showChords,
-    transposeVal,
-    fontSize,
-    instrument,
-    showDiagrams,
-    showYoutubePlayer,
-  } = settings;
+  const { showChords, transposeVal, fontSize, instrument, showDiagrams } =
+    settings;
 
   const isSavingRef = useRef(false);
 
@@ -395,10 +389,6 @@ export const SongEditorPage: React.FC = () => {
               fontSize={fontSize}
               instrument={instrument}
               showDiagrams={showDiagrams}
-              showYoutubePlayer={showYoutubePlayer}
-              onShowYoutubePlayerChange={(show) =>
-                updateSetting("showYoutubePlayer", show)
-              }
             />
           </div>
         </div>

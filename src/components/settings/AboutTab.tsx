@@ -51,13 +51,6 @@ export const AboutTab: React.FC<{ active: boolean }> = ({ active }) => {
       license: "Apache-2.0",
       type: "Editor, Renderizador e Parser ChordPro",
     },
-    { name: "@vercel/analytics", license: "MIT", type: "Analítica" },
-    { name: "@vercel/node", license: "MIT", type: "Serverless Functions" },
-    {
-      name: "@vercel/speed-insights",
-      license: "MIT",
-      type: "Métricas de Performance",
-    },
     { name: "ace-builds", license: "BSD-3-Clause", type: "Editor de Código" },
     { name: "autoprefixer", license: "MIT", type: "Processador CSS" },
     {
@@ -70,11 +63,6 @@ export const AboutTab: React.FC<{ active: boolean }> = ({ active }) => {
       name: "dotenv",
       license: "BSD-2-Clause",
       type: "Gestão de Variáveis de Ambiente",
-    },
-    {
-      name: "Hosanna Command Palette",
-      license: "MIT",
-      type: "Menu de Comandos (Personalizado)",
     },
     { name: "preact", license: "MIT", type: "Framework UI" },
     { name: "qrcode.react", license: "ISC", type: "Geração de QR Code" },

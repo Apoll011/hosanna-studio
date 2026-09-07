@@ -66,7 +66,7 @@ export const PrintingSettingsCard: React.FC<PrintingSettingsCardProps> = ({
       <div className="p-6 space-y-6">
         {/* 1. SELEÇÃO DA FAMÍLIA DE MODELOS */}
         <div>
-          <label className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider block mb-3 flex items-center gap-1.5">
+          <label className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider block mb-3 items-center gap-1.5">
             <span>{t("print.settingsCard.visualFamily")}</span>
           </label>
 
