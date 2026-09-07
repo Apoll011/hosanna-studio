@@ -395,10 +395,6 @@ export const SongEditorPage: React.FC = () => {
               fontSize={fontSize}
               instrument={instrument}
               showDiagrams={showDiagrams}
-              showYoutubePlayer={showYoutubePlayer}
-              onShowYoutubePlayerChange={(show) =>
-                updateSetting("showYoutubePlayer", show)
-              }
             />
           </div>
         </div>
