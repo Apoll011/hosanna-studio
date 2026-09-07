@@ -1056,6 +1056,15 @@ export const es: typeof pt = {
     importing: "Importando...",
     importCifra: "Importar Acordes",
     confirmKeyword: "ELIMINAR",
+    showChordProOnlyLabel: "Solo mostrar ChordPro",
+    showChordProOnlyHint:
+      "Omite guardar la canción y solo genera el texto ChordPro para copiar",
+    chordProPreviewHint:
+      "Aquí está el ChordPro generado. Cópialo donde lo necesites.",
+    generateChordPro: "Generar ChordPro",
+    copyChordPro: "Copiar ChordPro",
+    copied: "¡Copiado!",
+    copyFailed: "No se pudo copiar al portapapeles",
   },
 
   explorer: {

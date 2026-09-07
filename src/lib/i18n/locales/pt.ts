@@ -1052,6 +1052,15 @@ export const pt = {
     importing: "A Importar...",
     importCifra: "Importar Cifra",
     confirmKeyword: "APAGAR",
+    showChordProOnlyLabel: "Mostrar apenas o ChordPro",
+    showChordProOnlyHint:
+      "Não guarda a música, apenas gera o texto ChordPro para copiar",
+    chordProPreviewHint:
+      "Aqui está o ChordPro gerado. Copia-o para onde precisares.",
+    generateChordPro: "Gerar ChordPro",
+    copyChordPro: "Copiar ChordPro",
+    copied: "Copiado!",
+    copyFailed: "Não foi possível copiar para a área de transferência",
   },
 
   explorer: {
