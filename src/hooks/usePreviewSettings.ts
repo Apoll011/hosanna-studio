@@ -9,7 +9,7 @@ export interface PreviewSettings {
   showChords: boolean;
   transposeVal: number;
   fontSize: number;
-  instrument: "guitar" | "piano";
+  instrument: "guitar" | "piano" | "ukulele";
   showDiagrams: boolean;
   showYoutubePlayer: boolean;
 }

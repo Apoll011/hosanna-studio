@@ -120,6 +120,12 @@ export const ChordProPreviewSettings: React.FC<{
                 >
                   {t("misc.chordproSettings.piano")}
                 </button>
+                <button
+                  onClick={() => updateSetting("instrument", "ukulele")}
+                  className={`flex-1 py-1 text-[9px] font-bold rounded-md cursor-pointer ${instrument === "ukulele" ? "bg-m3-primary text-white" : "text-m3-secondary"}`}
+                >
+                  Ukulele
+                </button>
               </div>
             </div>
           </div>
