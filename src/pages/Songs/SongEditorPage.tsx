@@ -32,6 +32,7 @@ import React, {
   useCallback,
   useDeferredValue,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -82,10 +83,22 @@ export const SongEditorPage: React.FC = () => {
   } = useEditorSettings();
 
   const { settings, updateSetting, resetSettings } = usePreviewSettings();
-  const { showChords, transposeVal, fontSize, instrument, showDiagrams } =
-    settings;
+  const { fontSize, showDiagrams } = settings;
 
   const isSavingRef = useRef(false);
+
+  const transformedSong = useMemo(() => {
+    let transformed = parseChordPro(deferredContent)
+      .transpose(settings.transposeVal)
+      .instrument(settings.instrument);
+    if (!settings.showChords) transformed = transformed.removeChords(true);
+    return transformed;
+  }, [
+    deferredContent,
+    settings.instrument,
+    settings.showChords,
+    settings.transposeVal,
+  ]);
 
   useEffect(() => {
     if (song) {
@@ -382,12 +395,8 @@ export const SongEditorPage: React.FC = () => {
             onClick={() => showPreviewSettings && setShowPreviewSettings(false)}
           >
             <ChordProRenderer
-              content={deferredContent} // PERFORMANCE: Re-renders softly while user types
-              showChords={showChords}
-              transposeVal={transposeVal}
-              onTransposeChange={(val) => updateSetting("transposeVal", val)}
+              song={transformedSong}
               fontSize={fontSize}
-              instrument={instrument}
               showDiagrams={showDiagrams}
             />
           </div>
