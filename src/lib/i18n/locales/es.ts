@@ -712,6 +712,8 @@ export const es: typeof pt = {
     loadingEditor: "Cargando el editor...",
     preview: "Vista Previa",
     readingSettings: "Ajustes de Lectura",
+    variant: "Variante de la canción",
+    defaultVariant: "Predeterminada",
   },
 
   servicesPage: {
@@ -1168,6 +1170,7 @@ export const es: typeof pt = {
       off: "Off",
       on: "On",
       instrument: "Instr.",
+      capo: "Capo",
       guitar: "Guitarra",
       piano: "Piano",
       size: "Tamaño",

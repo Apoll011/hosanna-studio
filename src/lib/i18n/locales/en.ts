@@ -704,6 +704,8 @@ export const en: typeof pt = {
     loadingEditor: "Loading editor...",
     preview: "Visual Preview",
     readingSettings: "Reading Settings",
+    variant: "Song variant",
+    defaultVariant: "Default",
   },
 
   servicesPage: {
@@ -1152,6 +1154,7 @@ export const en: typeof pt = {
       off: "Off",
       on: "On",
       instrument: "Instr.",
+      capo: "Capo",
       guitar: "Guitar",
       piano: "Piano",
       size: "Size",

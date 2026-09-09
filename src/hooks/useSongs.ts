@@ -6,6 +6,7 @@
 import { parseSong } from "@/src/api/songs";
 import { useI18n } from "@/src/lib/i18n";
 import { Folder, GetSongsParams, SearchableSong, Song } from "@/src/types";
+import { parseChordPro } from "@hosanna/chordpro";
 import { parsedSongToSearchableSong } from "@/src/utils";
 import { useCallback, useEffect, useState } from "react";
 import { useSync } from "../contexts/SyncContext";
@@ -645,7 +646,20 @@ export function useSearchableSongs(folders: Folder[] = []) {
 
           const converted = rawItems.map((song) => {
             const parsed = parseSong(song, folders);
-            return parsedSongToSearchableSong(parsed);
+            const lyricsOnly = parseChordPro(parsed.content || "")
+              .removeChords(true);
+            return parsedSongToSearchableSong({
+              ...parsed,
+              content: lyricsOnly.sections
+                .flatMap((section) =>
+                  section.lines.map((line) =>
+                    line.segments?.map((segment) => segment.text).join("") ??
+                    line.text ??
+                    "",
+                  ),
+                )
+                .join("\n"),
+            });
           });
 
           cachedSearchableSongs = converted;

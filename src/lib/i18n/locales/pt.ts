@@ -709,6 +709,8 @@ export const pt = {
     loadingEditor: "A carregar o editor...",
     preview: "Prévia Visual",
     readingSettings: "Ajustes de Leitura",
+    variant: "Variante da música",
+    defaultVariant: "Padrão",
   },
 
   servicesPage: {
@@ -1165,6 +1167,7 @@ export const pt = {
       off: "Off",
       on: "On",
       instrument: "Instr.",
+      capo: "Capotraste",
       guitar: "Guitarra",
       piano: "Piano",
       size: "Tamanho",

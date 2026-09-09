@@ -186,6 +186,7 @@ const SongPreview: React.FC<{ element: ServiceElement }> = ({ element }) => {
           settings={settings}
           updateSetting={updateSetting}
           resetSettings={resetSettings}
+          capo={transformedSong.metadata.capo}
         />
       )}
 
