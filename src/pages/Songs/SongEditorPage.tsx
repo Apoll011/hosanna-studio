@@ -88,7 +88,10 @@ export const SongEditorPage: React.FC = () => {
 
   const isSavingRef = useRef(false);
 
-  const parsedSong = useMemo(() => parseChordPro(deferredContent), [deferredContent]);
+  const parsedSong = useMemo(
+    () => parseChordPro(deferredContent),
+    [deferredContent],
+  );
 
   const transformedSong = useMemo(() => {
     let transformed = parsedSong

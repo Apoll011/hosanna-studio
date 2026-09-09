@@ -646,16 +646,18 @@ export function useSearchableSongs(folders: Folder[] = []) {
 
           const converted = rawItems.map((song) => {
             const parsed = parseSong(song, folders);
-            const lyricsOnly = parseChordPro(parsed.content || "")
-              .removeChords(true);
+            const lyricsOnly = parseChordPro(parsed.content || "").removeChords(
+              true,
+            );
             return parsedSongToSearchableSong({
               ...parsed,
               content: lyricsOnly.sections
                 .flatMap((section) =>
-                  section.lines.map((line) =>
-                    line.segments?.map((segment) => segment.text).join("") ??
-                    line.text ??
-                    "",
+                  section.lines.map(
+                    (line) =>
+                      line.segments?.map((segment) => segment.text).join("") ??
+                      line.text ??
+                      "",
                   ),
                 )
                 .join("\n"),
