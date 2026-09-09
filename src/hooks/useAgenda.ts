@@ -62,6 +62,12 @@ export function useAgenda() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   // Live subscription: non-trashed events, ordered by date then time.
   useEffect(() => {
@@ -115,6 +121,15 @@ export function useAgenda() {
     (eventId: string) =>
       events.find((ev) => ev.id === eventId)?.responsibilities ?? [],
     [events],
+  );
+
+  const upcomingEventCount = useMemo(
+    () =>
+      events.filter((event) => {
+        const eventDate = new Date(`${event.date}T${event.time}`);
+        return eventDate >= now;
+      }).length,
+    [events, now],
   );
 
   /**
@@ -453,6 +468,7 @@ export function useAgenda() {
 
   return {
     events,
+    upcomingEventCount,
     isLoading,
     categories,
     manualAssignees,
