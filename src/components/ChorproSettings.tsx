@@ -1,4 +1,5 @@
 import { useI18n } from "@/src/lib/i18n";
+import { instrumentRegistry } from "@hosanna/chordpro";
 import { Eye, EyeOff, Minus, Plus, RotateCcw } from "lucide-react";
 import { usePreviewSettings } from "../hooks/usePreviewSettings";
 
@@ -6,10 +7,12 @@ export const ChordProPreviewSettings: React.FC<{
   settings: ReturnType<typeof usePreviewSettings>["settings"];
   updateSetting: ReturnType<typeof usePreviewSettings>["updateSetting"];
   resetSettings: ReturnType<typeof usePreviewSettings>["resetSettings"];
-}> = ({ settings, updateSetting, resetSettings }) => {
+  capo?: string;
+}> = ({ settings, updateSetting, resetSettings, capo }) => {
   const { t } = useI18n();
   const { showChords, transposeVal, fontSize, instrument, showDiagrams } =
     settings;
+  const availableInstruments = instrumentRegistry.list();
 
   const handleTranspose = (delta: number) => {
     updateSetting("transposeVal", transposeVal + delta);
@@ -52,6 +55,16 @@ export const ChordProPreviewSettings: React.FC<{
 
       {showChords && (
         <>
+          {capo && (
+            <div className="flex items-center justify-between border-t border-m3-border/30 pt-3">
+              <span className="text-[10px] font-bold text-m3-secondary uppercase">
+                {t("misc.chordproSettings.capo")}
+              </span>
+              <span className="text-xs font-bold px-2 py-1 bg-m3-primary/10 text-m3-primary rounded font-mono">
+                {capo}
+              </span>
+            </div>
+          )}
           <div className="space-y-2 border-t border-m3-border/30 pt-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-m3-secondary uppercase">
@@ -107,20 +120,20 @@ export const ChordProPreviewSettings: React.FC<{
               <span className="text-[10px] font-bold text-m3-secondary uppercase">
                 {t("misc.chordproSettings.instrument")}
               </span>
-              <div className="flex bg-m3-sidebar p-0.5 rounded-lg w-32 border border-m3-border/30">
-                <button
-                  onClick={() => updateSetting("instrument", "guitar")}
-                  className={`flex-1 py-1 text-[9px] font-bold rounded-md cursor-pointer ${instrument === "guitar" ? "bg-m3-primary text-white" : "text-m3-secondary"}`}
-                >
-                  {t("misc.chordproSettings.guitar")}
-                </button>
-                <button
-                  onClick={() => updateSetting("instrument", "piano")}
-                  className={`flex-1 py-1 text-[9px] font-bold rounded-md cursor-pointer ${instrument === "piano" ? "bg-m3-primary text-white" : "text-m3-secondary"}`}
-                >
-                  {t("misc.chordproSettings.piano")}
-                </button>
-              </div>
+              <select
+                value={instrument}
+                onChange={(event) =>
+                  updateSetting("instrument", event.target.value)
+                }
+                className="max-w-36 rounded-md border border-m3-border bg-m3-sidebar px-2 py-1 text-[10px] font-bold text-m3-text"
+                aria-label={t("misc.chordproSettings.instrument")}
+              >
+                {availableInstruments.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.displayName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </>

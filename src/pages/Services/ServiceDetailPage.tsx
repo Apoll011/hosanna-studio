@@ -138,6 +138,19 @@ const SongPreview: React.FC<{ element: ServiceElement }> = ({ element }) => {
   const { settings, updateSetting, resetSettings } = usePreviewSettings();
   const [showSettings, setShowSettings] = useState(false);
   const deferredContent = useDeferredValue(song?.content || "");
+  const transformedSong = useMemo(() => {
+    let transformed = parseChordPro(deferredContent || song?.content || "")
+      .transpose(settings.transposeVal)
+      .instrument(settings.instrument);
+    if (!settings.showChords) transformed = transformed.removeChords(true);
+    return transformed;
+  }, [
+    deferredContent,
+    song?.content,
+    settings.instrument,
+    settings.showChords,
+    settings.transposeVal,
+  ]);
 
   if (isLoading)
     return (
@@ -173,6 +186,7 @@ const SongPreview: React.FC<{ element: ServiceElement }> = ({ element }) => {
           settings={settings}
           updateSetting={updateSetting}
           resetSettings={resetSettings}
+          capo={transformedSong.metadata.capo}
         />
       )}
 
@@ -181,12 +195,8 @@ const SongPreview: React.FC<{ element: ServiceElement }> = ({ element }) => {
         onClick={() => showSettings && setShowSettings(false)}
       >
         <ChordProRenderer
-          content={deferredContent}
-          showChords={settings.showChords}
-          transposeVal={settings.transposeVal}
-          onTransposeChange={(val) => updateSetting("transposeVal", val)}
+          song={transformedSong}
           fontSize={settings.fontSize}
-          instrument={settings.instrument}
           showDiagrams={settings.showDiagrams}
         />
       </div>

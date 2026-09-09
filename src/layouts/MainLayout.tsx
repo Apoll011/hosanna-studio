@@ -70,7 +70,7 @@ export const MainLayout: React.FC = () => {
     [updateSetting],
   );
 
-  const { events } = useAgenda();
+  const { upcomingEventCount } = useAgenda();
   const { printSong, printSongs, printFolder, printFolders, printBatch } =
     usePrint();
 
@@ -1397,7 +1397,7 @@ export const MainLayout: React.FC = () => {
           totalSongs={totalSongs}
           totalServices={totalServices}
           trashCount={trashItems.length}
-          eventCount={events.length}
+          eventCount={upcomingEventCount}
           allFolders={allFolders}
           folderTree={folderTree}
           expandedFolderIds={expandedFolderIds}

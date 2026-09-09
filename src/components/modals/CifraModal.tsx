@@ -63,6 +63,24 @@ function parseUrlFallback(rawUrl: string): { artist: string; title: string } {
   return { artist: "", title: "" };
 }
 
+/**
+ * Best-effort extraction of the raw ChordPro text out of a ConversionResult.
+ * Adjust the property names here to match the actual shape of
+ * `ConversionResult` from `@hosanna/chordpro` if it differs.
+ */
+function extractChordProText(conversion: ConversionResult): string {
+  const anyConversion = conversion as unknown as Record<string, unknown>;
+  const candidate =
+    anyConversion.chordpro ??
+    anyConversion.chordPro ??
+    anyConversion.text ??
+    anyConversion.output ??
+    anyConversion.content;
+
+  if (typeof candidate === "string") return candidate;
+  return JSON.stringify(conversion, null, 2);
+}
+
 export const CifraClubImportModal: React.FC<{
   isOpen: boolean;
   handleClose: () => void;
@@ -72,17 +90,33 @@ export const CifraClubImportModal: React.FC<{
   const [urlInput, setUrlInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewOnly, setPreviewOnly] = useState(false);
+  const [previewText, setPreviewText] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const resetAndClose = () => {
     setUrlInput("");
     setError(null);
     setIsLoading(false);
+    setPreviewText(null);
+    setCopied(false);
     handleClose();
   };
 
   const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUrlInput(e.target.value);
     if (error) setError(null);
+  };
+
+  const handleCopy = async () => {
+    if (!previewText) return;
+    try {
+      await navigator.clipboard.writeText(previewText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError(t("modals.copyFailed"));
+    }
   };
 
   const handleImport = async (e: React.FormEvent) => {
@@ -125,8 +159,12 @@ export const CifraClubImportModal: React.FC<{
         strictChordDetection: false,
       });
 
-      handleSave(conversion, artist, title);
-      resetAndClose();
+      if (previewOnly) {
+        setPreviewText(extractChordProText(conversion));
+      } else {
+        handleSave(conversion, artist, title);
+        resetAndClose();
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -144,54 +182,119 @@ export const CifraClubImportModal: React.FC<{
       onClose={resetAndClose}
       title={t("modals.importCifraTitle")}
     >
-      <form onSubmit={handleImport} className="space-y-5 py-2">
-        <p className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-          {t("modals.pasteLink")}
-        </p>
+      {previewText !== null ? (
+        <div className="space-y-4 py-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+            {t("modals.chordProPreviewHint")}
+          </p>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="p-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-800/80">
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-            {t("modals.songLink")}
-          </label>
-          <input
-            type="url"
-            value={urlInput}
-            onChange={handleUrlInputChange}
-            placeholder="https://www.cifraclub.com.br/... ou https://tabs.ultimate-guitar.com/..."
-            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0284c7]"
-            autoFocus
+          <textarea
+            readOnly
+            value={previewText}
+            rows={12}
+            className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0284c7]"
           />
-        </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={resetAndClose}
-            disabled={isLoading}
-          >
-            {t("common.cancel")}
-          </Button>
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="sm"
-            disabled={isLoading || !urlInput.trim()}
-          >
-            {isLoading ? t("modals.importing") : t("modals.importCifra")}
-          </Button>
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={resetAndClose}
+            >
+              {t("common.close")}
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={handleCopy}
+            >
+              {copied ? t("modals.copied") : t("modals.copyChordPro")}
+            </Button>
+          </div>
         </div>
-      </form>
+      ) : (
+        <form onSubmit={handleImport} className="space-y-5 py-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+            {t("modals.pasteLink")}
+          </p>
+
+          {/* Error Alert */}
+          {error && (
+            <div className="p-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-800/80">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              {t("modals.songLink")}
+            </label>
+            <input
+              type="url"
+              value={urlInput}
+              onChange={handleUrlInputChange}
+              placeholder="https://www.cifraclub.com.br/... ou https://tabs.ultimate-guitar.com/..."
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0284c7]"
+              autoFocus
+            />
+          </div>
+
+          {/* Preview-only toggle */}
+          <div className="flex items-start justify-between gap-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
+            <div className="space-y-0.5">
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                {t("modals.showChordProOnlyLabel")}
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                {t("modals.showChordProOnlyHint")}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={previewOnly}
+              onClick={() => setPreviewOnly((v) => !v)}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                previewOnly ? "bg-[#0284c7]" : "bg-slate-300 dark:bg-slate-700"
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                  previewOnly ? "translate-x-4.5" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={resetAndClose}
+              disabled={isLoading}
+            >
+              {t("common.cancel")}
+            </Button>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={isLoading || !urlInput.trim()}
+            >
+              {isLoading
+                ? t("modals.importing")
+                : previewOnly
+                  ? t("modals.generateChordPro")
+                  : t("modals.importCifra")}
+            </Button>
+          </div>
+        </form>
+      )}
     </Modal>
   );
 };

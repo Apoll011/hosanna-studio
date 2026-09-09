@@ -92,13 +92,15 @@ export const en: typeof pt = {
     nameAsc: "Name (A-Z)",
     nameDesc: "Name (Z-A)",
     artistAsc: "Artist (A-Z)",
+    artistDesc: "Artist (Z-A)",
     viewMode: "View mode",
     gridView: "Grid view",
     listView: "List view",
     density: "View density",
     comfortable: "Comfortable",
     compact: "Compact",
-    number: "Number",
+    numberAsc: "Number (Lowest-Biggest)",
+    numberDesc: "Number (Biggest-Lowest)",
   },
 
   commandPalette: {
@@ -702,6 +704,8 @@ export const en: typeof pt = {
     loadingEditor: "Loading editor...",
     preview: "Visual Preview",
     readingSettings: "Reading Settings",
+    variant: "Song variant",
+    defaultVariant: "Default",
   },
 
   servicesPage: {
@@ -1040,6 +1044,15 @@ export const en: typeof pt = {
     importing: "Importing...",
     importCifra: "Import Chords",
     confirmKeyword: "DELETE",
+    showChordProOnlyLabel: "Only show ChordPro",
+    showChordProOnlyHint:
+      "Skip saving the song and just generate the ChordPro text to copy",
+    chordProPreviewHint:
+      "Here's the generated ChordPro. Copy it wherever you need.",
+    generateChordPro: "Generate ChordPro",
+    copyChordPro: "Copy ChordPro",
+    copied: "Copied!",
+    copyFailed: "Couldn't copy to clipboard",
   },
 
   explorer: {
@@ -1141,6 +1154,7 @@ export const en: typeof pt = {
       off: "Off",
       on: "On",
       instrument: "Instr.",
+      capo: "Capo",
       guitar: "Guitar",
       piano: "Piano",
       size: "Size",

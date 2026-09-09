@@ -32,6 +32,7 @@ import React, {
   useCallback,
   useDeferredValue,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -71,6 +72,7 @@ export const SongEditorPage: React.FC = () => {
 
   const [showEditorSettings, setShowEditorSettings] = useState(false);
   const [showPreviewSettings, setShowPreviewSettings] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -82,10 +84,29 @@ export const SongEditorPage: React.FC = () => {
   } = useEditorSettings();
 
   const { settings, updateSetting, resetSettings } = usePreviewSettings();
-  const { showChords, transposeVal, fontSize, instrument, showDiagrams } =
-    settings;
+  const { fontSize, showDiagrams } = settings;
 
   const isSavingRef = useRef(false);
+
+  const parsedSong = useMemo(
+    () => parseChordPro(deferredContent),
+    [deferredContent],
+  );
+
+  const transformedSong = useMemo(() => {
+    let transformed = parsedSong
+      .selectVariant(selectedVariant)
+      .transpose(settings.transposeVal)
+      .instrument(settings.instrument);
+    if (!settings.showChords) transformed = transformed.removeChords(true);
+    return transformed;
+  }, [
+    parsedSong,
+    selectedVariant,
+    settings.instrument,
+    settings.showChords,
+    settings.transposeVal,
+  ]);
 
   useEffect(() => {
     if (song) {
@@ -93,6 +114,10 @@ export const SongEditorPage: React.FC = () => {
       setHasUnsavedChanges(false);
     }
   }, [song?.id]);
+
+  useEffect(() => {
+    setSelectedVariant(null);
+  }, [song?.id, deferredContent]);
 
   const handleSave = useCallback(
     async (updatedContent: string) => {
@@ -361,13 +386,32 @@ export const SongEditorPage: React.FC = () => {
               <LayoutTemplate className="w-3 h-3" />
               {t("songEditor.preview")}
             </span>
-            <button
-              onClick={() => setShowPreviewSettings(!showPreviewSettings)}
-              className={`p-1 rounded transition-colors ${showPreviewSettings ? "bg-m3-primary/10 text-m3-primary" : "text-m3-secondary hover:bg-m3-hover hover:text-m3-text"}`}
-              title={t("songEditor.readingSettings")}
-            >
-              <Settings2 className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {parsedSong.variants && parsedSong.variants.length > 0 && (
+                <select
+                  value={selectedVariant ?? ""}
+                  onChange={(event) =>
+                    setSelectedVariant(event.target.value || null)
+                  }
+                  className="max-w-32 rounded-md border border-m3-border bg-m3-card px-1.5 py-1 text-[10px] text-m3-text"
+                  aria-label={t("songEditor.variant")}
+                >
+                  <option value="">{t("songEditor.defaultVariant")}</option>
+                  {parsedSong.variants.map((variant) => (
+                    <option key={variant.id} value={variant.id}>
+                      {variant.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <button
+                onClick={() => setShowPreviewSettings(!showPreviewSettings)}
+                className={`p-1 rounded transition-colors ${showPreviewSettings ? "bg-m3-primary/10 text-m3-primary" : "text-m3-secondary hover:bg-m3-hover hover:text-m3-text"}`}
+                title={t("songEditor.readingSettings")}
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {showPreviewSettings && (
@@ -375,6 +419,7 @@ export const SongEditorPage: React.FC = () => {
               settings={settings}
               updateSetting={updateSetting}
               resetSettings={resetSettings}
+              capo={transformedSong.metadata.capo}
             />
           )}
           <div
@@ -382,12 +427,8 @@ export const SongEditorPage: React.FC = () => {
             onClick={() => showPreviewSettings && setShowPreviewSettings(false)}
           >
             <ChordProRenderer
-              content={deferredContent} // PERFORMANCE: Re-renders softly while user types
-              showChords={showChords}
-              transposeVal={transposeVal}
-              onTransposeChange={(val) => updateSetting("transposeVal", val)}
+              song={transformedSong}
               fontSize={fontSize}
-              instrument={instrument}
               showDiagrams={showDiagrams}
             />
           </div>

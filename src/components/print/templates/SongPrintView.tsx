@@ -38,6 +38,12 @@ export const SongPrintView: React.FC<SongPrintViewProps> = ({
     }
   }, [song.content]);
 
+  const transformedSong = useMemo(() => {
+    let transformed = parseChordPro(song.content || "");
+    if (!options.showChords) transformed = transformed.removeChords(true);
+    return transformed;
+  }, [song.content, options.showChords]);
+
   const { t } = useI18n();
 
   const title = parsedMeta.title || song.title;
@@ -141,8 +147,7 @@ export const SongPrintView: React.FC<SongPrintViewProps> = ({
       {/* CHORDPRO RENDERER CONTAINER */}
       <div className="print-chordpro-content my-4 [&_.print-song-card>div.border-b:first-child]:hidden [&_.print-song-card_button]:hidden [&_.print-song-card_select]:hidden">
         <ChordProRenderer
-          content={song.content || ""}
-          showChords={options.showChords}
+          song={transformedSong}
           twoColumnLayout={options.twoColumnLayout}
           fontSize={options.fontSize}
           showDiagrams={false}

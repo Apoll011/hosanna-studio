@@ -1,6 +1,6 @@
 {
   "name": "@hosanna/studio",
-  "version": "2.16.9",
+  "version": "2.16.11",
   "type": "module",
   "license": "Apache-2.0",
   "scripts": {
@@ -18,7 +18,7 @@
     "@better-auth/i18n": "^1.7.2",
     "@better-auth/infra": "^0.4.5",
     "@better-auth/stripe": "^1.7.2",
-    "@hosanna/chordpro": "^1.4.1",
+    "@hosanna/chordpro": "^1.6.1",
     "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.1.14",
     "@tanstack/markdown": "^0.0.13",
