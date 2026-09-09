@@ -92,13 +92,15 @@ export const es: typeof pt = {
     nameAsc: "Nombre (A-Z)",
     nameDesc: "Nombre (Z-A)",
     artistAsc: "Artista (A-Z)",
+    artistDesc: "Artista (Z-A)",
     viewMode: "Modo de visualización",
     gridView: "Vista en Cuadrícula",
     listView: "Vista en Lista",
     density: "Densidad de visualización",
     comfortable: "Cómodo",
     compact: "Compacto",
-    number: "Números",
+    numberAsc: "Números (Menor-Mayor)",
+    numberDesc: "Números (Mayor-Menor)",
   },
 
   commandPalette: {

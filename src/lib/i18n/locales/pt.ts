@@ -90,13 +90,15 @@ export const pt = {
     nameAsc: "Nome (A-Z)",
     nameDesc: "Nome (Z-A)",
     artistAsc: "Artista (A-Z)",
+    artistDesc: "Artista (Z-A)",
     viewMode: "Modo de visualização",
     gridView: "Vista em Grelha",
     listView: "Vista em Lista",
     density: "Densidade de visualização",
     comfortable: "Confortável",
     compact: "Compacto",
-    number: "Número",
+    numberAsc: "Número (Menor-Maior)",
+    numberDesc: "Número (Maior-Menor)",
   },
 
   commandPalette: {

@@ -119,17 +119,28 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
           >
             {view === "services" ? (
               <>
-                <option value="updatedAt-desc">{t("toolbar.dateDesc")}</option>
-                <option value="updatedAt-asc">{t("toolbar.dateAsc")}</option>
+                <option
+                  value={`${sortBy !== "title" ? sortBy : "updatedAt"}-desc`}
+                >
+                  {t("toolbar.dateDesc")}
+                </option>
+                <option
+                  value={`${sortBy !== "title" ? sortBy : "updatedAt"}-asc`}
+                >
+                  {t("toolbar.dateAsc")}
+                </option>
                 <option value="title-asc">{t("toolbar.nameAsc")}</option>
                 <option value="title-desc">{t("toolbar.nameDesc")}</option>
               </>
             ) : (
               <>
-                <option value="number-asc">{t("toolbar.number")}</option>
+                <option value="number-asc">{t("toolbar.numberAsc")}</option>
+                <option value="number-desc">{t("toolbar.numberDesc")}</option>
                 <option value="title-asc">{t("toolbar.nameAsc")}</option>
                 <option value="title-desc">{t("toolbar.nameDesc")}</option>
                 <option value="artist-asc">{t("toolbar.artistAsc")}</option>
+                <option value="artist-desc">{t("toolbar.artistDesc")}</option>
+                <option value="updatedAt-asc">{t("toolbar.dateAsc")}</option>
                 <option value="updatedAt-desc">{t("toolbar.dateDesc")}</option>
               </>
             )}
