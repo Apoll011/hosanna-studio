@@ -33,10 +33,7 @@ export function idbGet<T>(
   });
 }
 
-export function idbGetAll<T>(
-  db: IDBDatabase,
-  store: string,
-): Promise<T[]> {
+export function idbGetAll<T>(db: IDBDatabase, store: string): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(store, "readonly");
     const req = tx.objectStore(store).getAll();

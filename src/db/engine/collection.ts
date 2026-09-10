@@ -87,8 +87,16 @@ function makeDoc<T extends AnyDoc>(
 
   // Store references to the mutable collection so patch/remove can call back.
   // Use non-enumerable properties so toJSON() spread doesn't pick them up.
-  Object.defineProperty(doc, "_collection", { value: collection, enumerable: false, writable: true });
-  Object.defineProperty(doc, "_raw", { value: raw, enumerable: false, writable: true });
+  Object.defineProperty(doc, "_collection", {
+    value: collection,
+    enumerable: false,
+    writable: true,
+  });
+  Object.defineProperty(doc, "_raw", {
+    value: raw,
+    enumerable: false,
+    writable: true,
+  });
 
   doc.toJSON = function (this: HosanaDoc<T>): T {
     const out = { ...this._raw };
@@ -96,7 +104,10 @@ function makeDoc<T extends AnyDoc>(
     return out;
   };
 
-  doc.patch = async function (this: HosanaDoc<T>, fields: Partial<T>): Promise<void> {
+  doc.patch = async function (
+    this: HosanaDoc<T>,
+    fields: Partial<T>,
+  ): Promise<void> {
     const next = { ...this._raw, ...fields } as T;
     await this._collection._put(next);
     // Update own properties to reflect new state
@@ -118,7 +129,10 @@ function makeDoc<T extends AnyDoc>(
 
 // ─── Selector matching ────────────────────────────────────────────────────────
 
-function matchesSelector<T extends AnyDoc>(doc: T, selector: Selector): boolean {
+function matchesSelector<T extends AnyDoc>(
+  doc: T,
+  selector: Selector,
+): boolean {
   for (const [key, condition] of Object.entries(selector)) {
     const docVal = (doc as Record<string, unknown>)[key];
     if (condition !== null && typeof condition === "object") {
@@ -206,7 +220,9 @@ export class HosanaCollection<T extends AnyDoc> {
       const overrides: Partial<T> = {};
       for (const lf of this._localFields) {
         if (lf in existing) {
-          (overrides as Record<string, unknown>)[lf] = (existing as Record<string, unknown>)[lf];
+          (overrides as Record<string, unknown>)[lf] = (
+            existing as Record<string, unknown>
+          )[lf];
         }
       }
       merged = { ...serverDoc, ...overrides };
@@ -259,7 +275,9 @@ export class HosanaCollection<T extends AnyDoc> {
       $: {
         subscribe: (fn: (doc: HosanaDoc<T> | null) => void): Subscription => {
           fn(execNow());
-          const unsubDoc = busSubscribe(this._storeName, id, () => fn(execNow()));
+          const unsubDoc = busSubscribe(this._storeName, id, () =>
+            fn(execNow()),
+          );
           return { unsubscribe: unsubDoc };
         },
       },
@@ -270,7 +288,9 @@ export class HosanaCollection<T extends AnyDoc> {
 
   async insert(doc: T): Promise<HosanaDoc<T>> {
     if (this._store.has(doc.id)) {
-      throw new Error(`[hosana-idb] "${doc.id}" already exists in "${this._storeName}"`);
+      throw new Error(
+        `[hosana-idb] "${doc.id}" already exists in "${this._storeName}"`,
+      );
     }
     await this._put(doc);
     return makeDoc(this._store.get(doc.id)!, this);
@@ -283,7 +303,9 @@ export class HosanaCollection<T extends AnyDoc> {
       const overrides: Partial<T> = {};
       for (const lf of this._localFields) {
         if (lf in existing) {
-          (overrides as Record<string, unknown>)[lf] = (existing as Record<string, unknown>)[lf];
+          (overrides as Record<string, unknown>)[lf] = (
+            existing as Record<string, unknown>
+          )[lf];
         }
       }
       merged = { ...doc, ...overrides };
@@ -292,7 +314,9 @@ export class HosanaCollection<T extends AnyDoc> {
     return makeDoc(this._store.get(doc.id)!, this);
   }
 
-  async bulkInsert(docs: T[]): Promise<{ success: HosanaDoc<T>[]; error: T[] }> {
+  async bulkInsert(
+    docs: T[],
+  ): Promise<{ success: HosanaDoc<T>[]; error: T[] }> {
     const success: HosanaDoc<T>[] = [];
     const error: T[] = [];
     const toWrite: T[] = [];

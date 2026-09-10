@@ -72,12 +72,16 @@ async function _open(): Promise<HosanaDatabase> {
       songsStore.createIndex("isDeleted", "isDeleted");
       songsStore.createIndex("path", "path");
 
-      const foldersStore = db.createObjectStore(STORE_FOLDERS, { keyPath: "id" });
+      const foldersStore = db.createObjectStore(STORE_FOLDERS, {
+        keyPath: "id",
+      });
       foldersStore.createIndex("updatedAt", "updatedAt");
       foldersStore.createIndex("isDeleted", "isDeleted");
       foldersStore.createIndex("parentId", "parentId");
 
-      const servicesStore = db.createObjectStore(STORE_SERVICES, { keyPath: "id" });
+      const servicesStore = db.createObjectStore(STORE_SERVICES, {
+        keyPath: "id",
+      });
       servicesStore.createIndex("updatedAt", "updatedAt");
       servicesStore.createIndex("isDeleted", "isDeleted");
       servicesStore.createIndex("archived", "archived");
@@ -100,8 +104,16 @@ async function _open(): Promise<HosanaDatabase> {
   const db: HosanaDatabase = {
     songs: new HosanaCollection<AsSongDoc>(idb, STORE_SONGS, rawSongs),
     folders: new HosanaCollection<AsFolderDoc>(idb, STORE_FOLDERS, rawFolders),
-    services: new HosanaCollection<AsServiceDoc>(idb, STORE_SERVICES, rawServices),
-    agendaEvents: new HosanaCollection<AsAgendaDoc>(idb, STORE_AGENDA, rawAgenda),
+    services: new HosanaCollection<AsServiceDoc>(
+      idb,
+      STORE_SERVICES,
+      rawServices,
+    ),
+    agendaEvents: new HosanaCollection<AsAgendaDoc>(
+      idb,
+      STORE_AGENDA,
+      rawAgenda,
+    ),
   };
 
   return db;

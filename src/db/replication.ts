@@ -33,7 +33,9 @@ export type ReplicationSyncState = "syncing" | "synced" | "offline" | "error";
 
 /** Minimal Subject-like object so SyncContext can subscribe with .subscribe() */
 export interface StatusSubject {
-  subscribe: (fn: (s: ReplicationSyncState) => void) => { unsubscribe: () => void };
+  subscribe: (fn: (s: ReplicationSyncState) => void) => {
+    unsubscribe: () => void;
+  };
   next: (s: ReplicationSyncState) => void;
 }
 
@@ -88,7 +90,13 @@ function omitVolatile<T extends Record<string, unknown>>(doc: T): Partial<T> {
 
 function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
-  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (
+    typeof a !== "object" ||
+    typeof b !== "object" ||
+    a === null ||
+    b === null
+  )
+    return false;
   const aKeys = Object.keys(a as object);
   const bKeys = Object.keys(b as object);
   if (aKeys.length !== bKeys.length) return false;
@@ -123,9 +131,15 @@ async function pushWithConflictRetry<T extends SyncableDoc>(
 
   for (let attempt = 0; attempt <= CONFLICT_RETRY_LIMIT; attempt++) {
     const formattedChanges = pending.map((row) => ({
-      newDocumentState: { ...row.newDocumentState, _deleted: !!row.newDocumentState._deleted },
+      newDocumentState: {
+        ...row.newDocumentState,
+        _deleted: !!row.newDocumentState._deleted,
+      },
       assumedMasterState: row.assumedMasterState
-        ? { ...row.assumedMasterState, _deleted: !!row.assumedMasterState._deleted }
+        ? {
+            ...row.assumedMasterState,
+            _deleted: !!row.assumedMasterState._deleted,
+          }
         : null,
     }));
 
@@ -137,8 +151,11 @@ async function pushWithConflictRetry<T extends SyncableDoc>(
       },
     );
 
-    const conflicts = (Array.isArray(res) ? res : (res as { conflicts?: T[] })?.conflicts || []).map(
-      (doc) => ({ ...doc, _deleted: !!doc._deleted }) as T & { _deleted: boolean },
+    const conflicts = (
+      Array.isArray(res) ? res : (res as { conflicts?: T[] })?.conflicts || []
+    ).map(
+      (doc) =>
+        ({ ...doc, _deleted: !!doc._deleted }) as T & { _deleted: boolean },
     );
 
     if (conflicts.length === 0) break;
@@ -152,10 +169,7 @@ async function pushWithConflictRetry<T extends SyncableDoc>(
 
       const canRetry =
         attempt < CONFLICT_RETRY_LIMIT &&
-        isSpuriousConflict(
-          row.assumedMasterState ?? undefined,
-          serverDoc,
-        );
+        isSpuriousConflict(row.assumedMasterState ?? undefined, serverDoc);
 
       if (canRetry) {
         retryRows.push({
@@ -199,7 +213,9 @@ function saveCheckpoint(collectionName: CollectionName, cp: Checkpoint): void {
 
 type AnyCollection = HosanaCollection<SyncableDoc & Record<string, unknown>>;
 
-async function replicateCollection<T extends SyncableDoc & Record<string, unknown>>(
+async function replicateCollection<
+  T extends SyncableDoc & Record<string, unknown>,
+>(
   collection: AnyCollection,
   collectionName: CollectionName,
   client: ReturnType<typeof getApiClient>,
@@ -232,7 +248,9 @@ async function replicateCollection<T extends SyncableDoc & Record<string, unknow
           // Hard-deleted on server — remove from local store
           await collection._put({ ...doc } as T & Record<string, unknown>);
         } else {
-          await (collection as unknown as HosanaCollection<T>)._mergeFromServer(doc);
+          await (collection as unknown as HosanaCollection<T>)._mergeFromServer(
+            doc,
+          );
         }
       }
     }
@@ -275,7 +293,9 @@ async function replicateCollection<T extends SyncableDoc & Record<string, unknow
 
   // Merge any real conflicts back (server wins on content)
   for (const serverDoc of conflicts) {
-    await (collection as unknown as HosanaCollection<T>)._mergeFromServer(serverDoc);
+    await (collection as unknown as HosanaCollection<T>)._mergeFromServer(
+      serverDoc,
+    );
   }
 }
 
@@ -317,8 +337,16 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
         client,
       );
       await Promise.all([
-        replicateCollection(db.songs as unknown as AnyCollection, "songs", client),
-        replicateCollection(db.folders as unknown as AnyCollection, "folders", client),
+        replicateCollection(
+          db.songs as unknown as AnyCollection,
+          "songs",
+          client,
+        ),
+        replicateCollection(
+          db.folders as unknown as AnyCollection,
+          "folders",
+          client,
+        ),
       ]);
       await replicateCollection(
         db.agendaEvents as unknown as AnyCollection,
