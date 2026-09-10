@@ -12,6 +12,7 @@ import {
 } from "../components/explorer";
 import { useAuth } from "../contexts/AuthContext";
 import { useAppNavigate } from "../hooks/useAppNavigate";
+import { usePersonalSettings } from "../hooks/usePersonalSettings";
 import { Can, CanAll } from "../lib/permissions/components";
 
 interface FolderExplorerContext {
@@ -113,6 +114,7 @@ export const FoldersPage: React.FC = () => {
   const { t } = useI18n();
   const context = useOutletContext<FolderExplorerContext>() ?? DEFAULT_CONTEXT;
   const { organization } = useAuth();
+  const { settings: personalSettings } = usePersonalSettings();
   const slugPrefix = organization?.slug ? `/${organization.slug}` : "";
 
   const {
@@ -284,6 +286,8 @@ export const FoldersPage: React.FC = () => {
               isSearchingOrFiltering={isSearchingOrFiltering}
               getFolderPathString={getFolderPathString}
               density={density}
+              showSongScore={personalSettings.showSongScore}
+              songScoreLayout={personalSettings.songScoreLayout}
               onClick={(e) => handleItemClick(e, song.id, "song")}
               onDoubleClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
               onContextMenu={(e) => handleContextMenu(e, "song", song)}
@@ -311,6 +315,11 @@ export const FoldersPage: React.FC = () => {
                 <th className={isCompact ? "py-2.5 px-4" : "py-4 px-6"}>
                   {t("common.details")}
                 </th>
+                {personalSettings.showSongScore && (
+                  <th className={isCompact ? "py-2.5 px-4" : "py-4 px-6"}>
+                    Score
+                  </th>
+                )}
                 <th
                   className={`${isCompact ? "py-2.5 px-4" : "py-4 px-6"} text-right`}
                 >
@@ -353,6 +362,8 @@ export const FoldersPage: React.FC = () => {
                   isSearchingOrFiltering={isSearchingOrFiltering}
                   getFolderPathString={getFolderPathString}
                   density={density}
+                  showSongScore={personalSettings.showSongScore}
+                  songScoreLayout={personalSettings.songScoreLayout}
                   onClick={(e) => handleItemClick(e, song.id, "song")}
                   onDoubleClick={() =>
                     navigate(`${slugPrefix}/songs/${song.id}`)

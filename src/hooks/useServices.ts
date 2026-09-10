@@ -7,12 +7,7 @@ import { useI18n } from "@/src/lib/i18n";
 import { Service, ServiceElement } from "@/src/types";
 import { useCallback, useEffect, useState } from "react";
 import { useSync } from "../contexts/SyncContext";
-import {
-  getDatabase,
-  getPurgeAt,
-  ServiceDocType,
-  validateServiceRules,
-} from "../db";
+import { getDatabase, getPurgeAt, validateServiceRules } from "../db";
 
 let cachedServicesMap: Map<string, Service[]> = new Map();
 let cachedSingleServices: Map<string, Service> = new Map();
@@ -84,7 +79,7 @@ export function useServices(includeArchived: boolean = false) {
         validateServiceRules(data);
         const db = await getDatabase();
         const now = new Date().toISOString();
-        const newService: ServiceDocType = {
+        const newService = {
           id: data.id || crypto.randomUUID(),
           name: data.name!.trim(),
           date: data.date || now,

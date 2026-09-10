@@ -11,6 +11,7 @@ import { Eye, EyeOff } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { clearDemoData, isDemoMode } from "../../demo/index";
 import { authClient } from "../../lib/authClient";
 import { posthog } from "../../lib/posthog";
 import LoginLayout from "./Layout";
@@ -47,6 +48,12 @@ export const LoginPage: React.FC = () => {
     }
     setErrorMsg("");
     setIsLoading(true);
+
+    // If coming from a demo session, wipe demo data before signing in
+    if (isDemoMode()) {
+      localStorage.clear();
+      await clearDemoData();
+    }
 
     const { data, error } = await authClient.signIn.email({
       email: email.trim(),

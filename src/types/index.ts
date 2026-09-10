@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { SongScore } from "@hosanna/chordpro";
+
 export interface Song {
   id: string;
   orgId?: string;
@@ -13,7 +15,8 @@ export interface Song {
   folderId?: string | null;
   path: string; // e.g., "Hymns/Amazing Grace.pro" or "Amazing Grace.pro"
   tags: string[];
-  createdAt?: string;
+  score?: SongScore;
+  createdAt: string;
   updatedAt: string;
   deleted?: boolean;
   purgeAt?: string | null;

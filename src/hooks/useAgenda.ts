@@ -220,7 +220,7 @@ export function useAgenda() {
         validateAgendaEventRules(input);
         const db = await getDatabase();
         const now = new Date().toISOString();
-        const event: AgendaEventDocType = {
+        const event = {
           id: newId("evt"),
           date: input.date,
           title: input.title.trim(),

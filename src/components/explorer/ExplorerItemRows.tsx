@@ -1,4 +1,5 @@
 import { Button } from "@/src/components/common";
+import { SongScoreLayout } from "@/src/hooks/usePersonalSettings";
 import { useI18n } from "@/src/lib/i18n";
 import { Folder, Song } from "@/src/types";
 import { FileText, MoreVertical } from "lucide-react";
@@ -7,6 +8,7 @@ import {
   getFolderColorStyle,
   getFolderIconComponent,
 } from "../../utils/folderCustomization";
+import { SongScoreVisualizer } from "./SongScoreVisualizer";
 
 export interface FolderTableRowProps {
   folder: Folder;
@@ -138,6 +140,10 @@ export interface SongTableRowProps {
   isSearchingOrFiltering?: boolean;
   getFolderPathString?: (folderId: string | null | undefined) => string;
   density?: "comfortable" | "compact";
+  /** Whether to show the song score visualizer */
+  showSongScore?: boolean;
+  /** Which layout to use for the score visualizer */
+  songScoreLayout?: SongScoreLayout;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: (e: React.MouseEvent) => void;
   onContextMenu: (e: React.MouseEvent) => void;
@@ -152,6 +158,8 @@ export const SongTableRow: React.FC<SongTableRowProps> = React.memo(
     isSearchingOrFiltering,
     getFolderPathString,
     density = "comfortable",
+    showSongScore = false,
+    songScoreLayout = "ring",
     onClick,
     onDoubleClick,
     onContextMenu,
@@ -161,6 +169,8 @@ export const SongTableRow: React.FC<SongTableRowProps> = React.memo(
     const { t } = useI18n();
     const isCompact = density === "compact";
     const cellPadding = isCompact ? "py-2.5 px-4" : "py-4 px-6";
+    const scoreValue = (song as { score?: { score: number } }).score?.score;
+    const hasScore = showSongScore && scoreValue !== undefined;
 
     return (
       <tr
@@ -200,6 +210,31 @@ export const SongTableRow: React.FC<SongTableRowProps> = React.memo(
         <td className={`${cellPadding} text-m3-secondary`}>
           {song.artist || "—"}
         </td>
+
+        {/* Score column — only rendered when enabled */}
+        {hasScore && (
+          <td className={`${cellPadding}`}>
+            {/* ring & badge: just drop the widget inline */}
+            {(songScoreLayout === "ring" || songScoreLayout === "badge") && (
+              <SongScoreVisualizer
+                score={scoreValue!}
+                layout={songScoreLayout}
+                compact={isCompact}
+              />
+            )}
+            {/* bar & dots: constrain to a reasonable width */}
+            {(songScoreLayout === "bar" || songScoreLayout === "dots") && (
+              <div className="min-w-[80px] max-w-[120px]">
+                <SongScoreVisualizer
+                  score={scoreValue!}
+                  layout={songScoreLayout}
+                  compact={isCompact}
+                />
+              </div>
+            )}
+          </td>
+        )}
+
         <td className={`${cellPadding} text-right`}>
           <div className="flex items-center justify-end gap-1">
             <Button

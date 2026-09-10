@@ -3,9 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { RxDocument } from "rxdb";
-import { HosanaDatabase } from "./database";
-import { FolderDocType, ServiceDocType, SongDocType } from "./schemas";
+import { Song } from "../types";
+import type { HosanaDatabase } from "./database";
+import type { HosanaDoc } from "./engine/collection";
+import type { FolderDocType, ServiceDocType, SongDocType } from "./schemas";
+
+// ─── Internal convenience type aliases ────────────────────────────────────────
+// HosanaDatabase stores collections as HosanaCollection<DocType & Record<string,unknown>>.
+// These aliases reflect what findOne/find actually return so callers get full typing.
+type SongDoc = HosanaDoc<SongDocType & Record<string, unknown>>;
+type FolderDoc = HosanaDoc<FolderDocType & Record<string, unknown>>;
 
 export class SchemaValidationError extends Error {
   readonly code: string;
@@ -97,7 +104,7 @@ export async function computeSongPath(
         folderId,
       );
     }
-    folderName = folderDoc.name;
+    folderName = folderDoc.name as string;
   }
 
   return `${folderName.trim()}/${trimmedTitle}.pro`;
@@ -106,15 +113,12 @@ export async function computeSongPath(
 /**
  * Recomputes the path of every active song inside a folder via computeSongPath.
  * Returns only the songs whose path actually changes, so callers can patch them.
- *
- * Used when a folder is moved, renamed (folderNameOverride with the new name), or
- * when its songs are detached (e.g. folder deleted with move-to-root).
  */
 export async function computeFolderSongPaths(
   db: HosanaDatabase,
   folderId: string,
   options: { folderNameOverride?: string } = {},
-): Promise<{ doc: RxDocument<SongDocType>; newPath: string }[]> {
+): Promise<{ doc: SongDoc; newPath: string }[]> {
   const songsInFolder = await db.songs
     .find({
       selector: {
@@ -125,12 +129,12 @@ export async function computeFolderSongPaths(
     })
     .exec();
 
-  const songsToUpdate: { doc: RxDocument<SongDocType>; newPath: string }[] = [];
+  const songsToUpdate: { doc: SongDoc; newPath: string }[] = [];
 
   for (const songDoc of songsInFolder) {
     const newPath = await computeSongPath(
       db,
-      songDoc.title,
+      songDoc.title as string,
       folderId,
       undefined,
       options.folderNameOverride,
@@ -147,7 +151,7 @@ export async function computeFolderSongPaths(
  * Validates a song against Prisma schema rules:
  * 1. Required fields: title (non-empty)
  * 2. Referential integrity: folderId references active Folder
- * 3. @@unique([orgId, path]): No other active song in local RxDB can share the same path
+ * 3. @@unique([orgId, path]): No other active song can share the same path
  */
 export async function validateSongRules(
   db: HosanaDatabase,
@@ -162,7 +166,6 @@ export async function validateSongRules(
   const folderId = song.folderId ?? null;
   const computedPath = await computeSongPath(db, title, folderId, song.path);
 
-  // Check unique index rule @@unique([orgId, path])
   const targetId = options.existingId || song.id;
   const existingWithSamePath = await db.songs
     .find({
@@ -184,10 +187,7 @@ export async function validateSongRules(
     );
   }
 
-  return {
-    path: computedPath,
-    folderId,
-  };
+  return { path: computedPath, folderId };
 }
 
 /**
@@ -223,9 +223,9 @@ export async function validateFolderRules(
       );
     }
 
-    // Cycle check: verify parentId is not a descendant of folderId
     if (folderId) {
-      let currentParent: string | null = parentDoc.parentId ?? null;
+      let currentParent: string | null =
+        (parentDoc.parentId as string | null) ?? null;
       const visited = new Set<string>([parentId]);
 
       while (currentParent) {
@@ -238,7 +238,9 @@ export async function validateFolderRules(
         visited.add(currentParent);
 
         const nextDoc = await db.folders.findOne(currentParent).exec();
-        currentParent = nextDoc ? (nextDoc.parentId ?? null) : null;
+        currentParent = nextDoc
+          ? ((nextDoc.parentId as string | null) ?? null)
+          : null;
       }
     }
   }
@@ -248,15 +250,15 @@ export async function validateFolderRules(
  * Validates renaming a folder:
  * - Checks folder name
  * - Computes new paths for all active child songs
- * - Ensures none of the child songs will collide with an existing song in the database
+ * - Ensures none of the child songs will collide with an existing song
  */
 export async function validateFolderRename(
   db: HosanaDatabase,
   folderId: string,
   newName: string,
 ): Promise<{
-  folderDoc: RxDocument<FolderDocType>;
-  songsToUpdate: { doc: RxDocument<SongDocType>; newPath: string }[];
+  folderDoc: FolderDoc;
+  songsToUpdate: { doc: SongDoc; newPath: string }[];
 }> {
   const trimmedName = newName.trim();
   if (!trimmedName) {
@@ -272,12 +274,10 @@ export async function validateFolderRename(
     );
   }
 
-  // Recompute paths for all active child songs using the new folder name
   const songsToUpdate = await computeFolderSongPaths(db, folderId, {
     folderNameOverride: trimmedName,
   });
 
-  // Ensure none of the child songs will collide with an existing song in the database
   for (const { doc: songDoc, newPath } of songsToUpdate) {
     const existing = await db.songs
       .find({
@@ -292,7 +292,7 @@ export async function validateFolderRename(
     const conflict = existing.find((d) => d.id !== songDoc.id);
     if (conflict) {
       throw new UniqueConstraintError(
-        `Cannot rename folder: song "${songDoc.title}" would conflict with an existing song at "${newPath}".`,
+        `Cannot rename folder: song "${songDoc.title as string}" would conflict with an existing song at "${newPath}".`,
         ["orgId", "path"],
         newPath,
       );
@@ -313,7 +313,7 @@ export async function validateSongMove(
   songId: string,
   targetFolderId: string | null,
   explicitPath?: string,
-): Promise<{ songDoc: RxDocument<SongDocType>; newPath: string }> {
+): Promise<{ songDoc: SongDoc; newPath: string }> {
   const songDoc = await db.songs.findOne(songId).exec();
   if (!songDoc || songDoc.isDeleted || songDoc._deleted) {
     throw new ForeignKeyError(
@@ -325,7 +325,7 @@ export async function validateSongMove(
 
   const newPath = await computeSongPath(
     db,
-    songDoc.title,
+    songDoc.title as string,
     targetFolderId,
     explicitPath,
   );
@@ -346,7 +346,7 @@ export async function validateSongMove(
       ? `in the destination folder`
       : `at the root level`;
     throw new UniqueConstraintError(
-      `A song with the title "${songDoc.title}" already exists ${inFolderMsg} ("${newPath}").`,
+      `A song with the title "${songDoc.title as string}" already exists ${inFolderMsg} ("${newPath}").`,
       ["orgId", "path"],
       newPath,
     );
@@ -377,10 +377,7 @@ export function validateServiceRules(
 }
 
 /**
- * Validates an agenda event against the server's required fields:
- * `date` (local "yyyy-mm-dd" — never timezone-shifted), `title`, `type`
- * (non-empty), `time` ("HH:mm") and `durationMinutes` (required number ≥ 0).
- * Mirrors the defaults table in the agendaEvents replication contract.
+ * Validates an agenda event against the server's required fields.
  */
 export function validateAgendaEventRules(event: {
   title?: string;
@@ -424,14 +421,12 @@ export function validateAgendaEventRules(event: {
 }
 
 /**
- * Validates a batch of songs before creation/import:
- * - Checks internal batch duplicate paths
- * - Checks database duplicate paths
+ * Validates a batch of songs before creation/import.
  */
 export async function validateBatchSongs(
   db: HosanaDatabase,
   songsList: Array<Partial<SongDocType> & { title: string }>,
-): Promise<Array<SongDocType>> {
+): Promise<Array<Song>> {
   const now = new Date().toISOString();
   const prepared: SongDocType[] = [];
   const seenPaths = new Set<string>();
@@ -454,7 +449,6 @@ export async function validateBatchSongs(
     }
     seenPaths.add(computedPath);
 
-    // Check DB for collision
     const existing = await db.songs
       .find({
         selector: {

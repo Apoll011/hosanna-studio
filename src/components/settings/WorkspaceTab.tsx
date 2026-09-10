@@ -356,6 +356,7 @@ export const WorkspaceTab: React.FC<WorkspaceTabProps> = ({
         content: `{title: Quão Grande és Tu}\n{artist: Carl Boberg}\n{key: G}\n{tempo: 72}\n{time: 4/4}\n{capo: 0}\n{ccli: 4672}\n\n{c: Verso 1}\n[G]Senhor meu Deus, quando eu mara[C]vilhado\n[G]Fico a pensar nas [D]obras de Tuas [G]mãos\n[G]O céu azul de estrelas pon[C]tilhado\n[G]Mostrando a glória [D]do Teu grande a[G]mor\n\n{c: Coro}\n[D]Então minha alma [G]canta a Ti, Se[C]nhor\nQuão grande és [G]Tu! Quão grande és [D]Tu!\n[D]Então minha alma [G]canta a Ti, Se[C]nhor\nQuão grande és [G]Tu! [D]Quão grande és [G]Tu!\n\n{c: Verso 2}\n[G]Quando eu contemplo a cruz daquela es[C]trada\n[G]Onde Jesus por [D]mim ali mor[G]reu\n[G]Meu coração se rende à graça a[C]mada\n[G]E a redenção que [D]o Pai me conce[G]deu`,
         path: "Hinos/Quão Grande és Tu.pro",
         tags: ["Hinos", "Louvor"],
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
       activeOpts,

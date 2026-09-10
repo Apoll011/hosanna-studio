@@ -6,18 +6,29 @@
 import { parseSong } from "@/src/api/songs";
 import { useI18n } from "@/src/lib/i18n";
 import { Folder, GetSongsParams, SearchableSong, Song } from "@/src/types";
-import { parseChordPro } from "@hosanna/chordpro";
 import { parsedSongToSearchableSong } from "@/src/utils";
+import { parseChordPro } from "@hosanna/chordpro";
 import { useCallback, useEffect, useState } from "react";
 import { useSync } from "../contexts/SyncContext";
 import {
+  computeSongPath,
   getDatabase,
   getPurgeAt,
-  SongDocType,
+  updateFolderCounts,
   validateBatchSongs,
   validateSongMove,
   validateSongRules,
 } from "../db";
+
+let cachedSongsByFolder: Map<string, Song[]> = new Map();
+let cachedAllSongs: Song[] | null = null;
+let cachedSingleSongs: Map<string, Song> = new Map();
+
+export function invalidateSongsCache(): void {
+  cachedSongsByFolder.clear();
+  cachedAllSongs = null;
+  cachedSingleSongs.clear();
+}
 
 function useSongMutations() {
   const { showToast } = useSync();
@@ -46,7 +57,7 @@ function useSongMutations() {
           path: data.path,
         });
 
-        const newSong: SongDocType = {
+        const newSong = {
           id,
           title,
           artist: data.artist || "",
@@ -61,6 +72,10 @@ function useSongMutations() {
         };
 
         const doc = await db.songs.insert(newSong);
+        if (folderId) {
+          await updateFolderCounts(db, folderId);
+        }
+        invalidateSongsCache();
         const result = doc.toJSON() as Song;
         showToast(t("hooks.songs.created"), "success");
         return result;
@@ -198,12 +213,17 @@ function useSongMutations() {
         const db = await getDatabase();
         const doc = await db.songs.findOne(id).exec();
         if (doc) {
+          const folderId = doc.folderId;
           // Move to trash; permanent removal happens at purgeAt via the trash verifier
           await doc.patch({
             isDeleted: true,
             purgeAt: getPurgeAt(),
             updatedAt: new Date().toISOString(),
           });
+          if (folderId) {
+            await updateFolderCounts(db, folderId);
+          }
+          invalidateSongsCache();
         }
         showToast(t("hooks.songs.deleted"), "info");
       } catch (err: unknown) {
@@ -229,11 +249,33 @@ function useSongMutations() {
         const db = await getDatabase();
         const doc = await db.songs.findOne(id).exec();
         if (doc) {
+          let targetFolderId = doc.folderId ?? null;
+          let targetPath = doc.path;
+
+          // If the song had a folder assigned, verify that the folder still exists and is not deleted.
+          // If the folder was deleted/purged while the song was in trash, move the song to root
+          // so it remains reachable and visible on FoldersPage.
+          if (targetFolderId) {
+            const folder = await db.folders.findOne(targetFolderId).exec();
+            if (!folder || folder.isDeleted || folder._deleted) {
+              targetFolderId = null;
+              targetPath = await computeSongPath(db, doc.title, null);
+            }
+          }
+
           await doc.patch({
             isDeleted: false,
+            _deleted: false,
             purgeAt: null,
+            folderId: targetFolderId,
+            path: targetPath,
             updatedAt: new Date().toISOString(),
           });
+
+          if (targetFolderId) {
+            await updateFolderCounts(db, targetFolderId);
+          }
+          invalidateSongsCache();
         }
         showToast(t("trashPage.restore"), "success");
       } catch (err: unknown) {
@@ -272,12 +314,24 @@ function useSongMutations() {
           folderId,
           newPath,
         );
+        const oldFolderId = songDoc.folderId ?? null;
+        const targetFolderId = folderId ?? null;
         const now = new Date().toISOString();
         await songDoc.patch({
-          folderId: folderId ?? null,
+          folderId: targetFolderId,
           path: computedPath,
           updatedAt: now,
         });
+
+        // Recalculate folder counts on affected source and destination folders
+        if (oldFolderId && oldFolderId !== targetFolderId) {
+          await updateFolderCounts(db, oldFolderId);
+        }
+        if (targetFolderId && targetFolderId !== oldFolderId) {
+          await updateFolderCounts(db, targetFolderId);
+        }
+        invalidateSongsCache();
+
         showToast(t("hooks.songs.moved"), "success");
         return songDoc.toJSON() as Song;
       } catch (err: unknown) {
@@ -363,7 +417,9 @@ function useSongMutations() {
             title: i.title || t("forms.untitled"),
           })),
         );
-        await db.songs.bulkInsert(prepared);
+        await db.songs.bulkInsert(
+          prepared as unknown as Parameters<typeof db.songs.bulkInsert>[0],
+        );
         showToast(
           t("songsPage.movedToast", { count: prepared.length }),
           "success",
@@ -403,10 +459,6 @@ function useSongMutations() {
     isRestoring,
   };
 }
-
-let cachedSongsByFolder: Map<string, Song[]> = new Map();
-let cachedAllSongs: Song[] | null = null;
-let cachedSingleSongs: Map<string, Song> = new Map();
 
 export function useSongs(params: GetSongsParams = {}) {
   const folder = params.folder;
