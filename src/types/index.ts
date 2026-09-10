@@ -13,7 +13,7 @@ export interface Song {
   folderId?: string | null;
   path: string; // e.g., "Hymns/Amazing Grace.pro" or "Amazing Grace.pro"
   tags: string[];
-  createdAt?: string;
+  createdAt: string;
   updatedAt: string;
   deleted?: boolean;
   purgeAt?: string | null;

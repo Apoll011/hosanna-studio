@@ -27,22 +27,22 @@ export async function seedDemoDatabase(
   // Bulk-insert each collection, skipping docs that already exist.
   await Promise.all([
     ...folders.map((doc) =>
-      db.folders.upsert(doc).catch(() => {
+      db.folders.upsert(doc as any).catch(() => {
         /* already exists — ignore */
       }),
     ),
     ...songs.map((doc) =>
-      db.songs.upsert(doc).catch(() => {
+      db.songs.upsert(doc as any).catch(() => {
         /* already exists — ignore */
       }),
     ),
     ...services.map((doc) =>
-      db.services.upsert(doc).catch(() => {
+      db.services.upsert(doc as any).catch(() => {
         /* already exists — ignore */
       }),
     ),
     ...agendaEvents.map((doc) => {
-      return db.agendaEvents.upsert(doc).catch(() => {
+      return db.agendaEvents.upsert(doc as any).catch(() => {
         /* already exists — ignore */
       });
     }),

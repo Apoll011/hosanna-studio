@@ -9,7 +9,6 @@ import { useSync } from "../contexts/SyncContext";
 import {
   computeFolderSongPaths,
   computeSongPath,
-  FolderDocType,
   getDatabase,
   getPurgeAt,
   validateFolderRename,
@@ -97,7 +96,7 @@ export function useFolders() {
         await validateFolderRules(db, { name: trimmedName, parentId: parent });
 
         const now = new Date().toISOString();
-        const newFolder: FolderDocType = {
+        const newFolder = {
           id: crypto.randomUUID(),
           name: trimmedName,
           parentId: parent,

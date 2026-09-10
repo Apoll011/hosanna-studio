@@ -6,14 +6,13 @@
 import { parseSong } from "@/src/api/songs";
 import { useI18n } from "@/src/lib/i18n";
 import { Folder, GetSongsParams, SearchableSong, Song } from "@/src/types";
-import { parseChordPro } from "@hosanna/chordpro";
 import { parsedSongToSearchableSong } from "@/src/utils";
+import { parseChordPro } from "@hosanna/chordpro";
 import { useCallback, useEffect, useState } from "react";
 import { useSync } from "../contexts/SyncContext";
 import {
   getDatabase,
   getPurgeAt,
-  SongDocType,
   validateBatchSongs,
   validateSongMove,
   validateSongRules,
@@ -46,7 +45,7 @@ function useSongMutations() {
           path: data.path,
         });
 
-        const newSong: SongDocType = {
+        const newSong = {
           id,
           title,
           artist: data.artist || "",
@@ -363,7 +362,7 @@ function useSongMutations() {
             title: i.title || t("forms.untitled"),
           })),
         );
-        await db.songs.bulkInsert(prepared);
+        await db.songs.bulkInsert(prepared as any);
         showToast(
           t("songsPage.movedToast", { count: prepared.length }),
           "success",

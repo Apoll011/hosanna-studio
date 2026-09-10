@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { HosanaDoc } from "./engine/collection";
+import { Song } from "../types";
 import type { HosanaDatabase } from "./database";
+import type { HosanaDoc } from "./engine/collection";
 import type { FolderDocType, ServiceDocType, SongDocType } from "./schemas";
 
 // ─── Internal convenience type aliases ────────────────────────────────────────
@@ -223,7 +224,8 @@ export async function validateFolderRules(
     }
 
     if (folderId) {
-      let currentParent: string | null = (parentDoc.parentId as string | null) ?? null;
+      let currentParent: string | null =
+        (parentDoc.parentId as string | null) ?? null;
       const visited = new Set<string>([parentId]);
 
       while (currentParent) {
@@ -236,7 +238,9 @@ export async function validateFolderRules(
         visited.add(currentParent);
 
         const nextDoc = await db.folders.findOne(currentParent).exec();
-        currentParent = nextDoc ? ((nextDoc.parentId as string | null) ?? null) : null;
+        currentParent = nextDoc
+          ? ((nextDoc.parentId as string | null) ?? null)
+          : null;
       }
     }
   }
@@ -422,7 +426,7 @@ export function validateAgendaEventRules(event: {
 export async function validateBatchSongs(
   db: HosanaDatabase,
   songsList: Array<Partial<SongDocType> & { title: string }>,
-): Promise<Array<SongDocType>> {
+): Promise<Array<Song>> {
   const now = new Date().toISOString();
   const prepared: SongDocType[] = [];
   const seenPaths = new Set<string>();

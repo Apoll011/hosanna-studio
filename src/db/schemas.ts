@@ -13,10 +13,10 @@ export interface SongDocType {
   title: string;
   artist: string;
   content: string;
-  folderId: string | null;
+  folderId?: string | null;
   path: string;
   tags: string[];
-  song_number: number | null;
+  song_number?: number | null;
   createdAt: string;
   updatedAt: string;
   _deleted?: boolean;
@@ -29,11 +29,11 @@ export interface FolderDocType {
   name: string;
   color?: string;
   icon?: string;
-  songCount: number | null;
-  folderCount: number | null;
-  parentId: string | null;
-  createdAt: string;
-  updatedAt: string;
+  songCount?: number | null;
+  folderCount?: number | null;
+  parentId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   _deleted?: boolean;
   isDeleted?: boolean;
   purgeAt?: string | null;
@@ -43,11 +43,11 @@ export interface ServiceDocType {
   id: string;
   name: string;
   date: string;
-  notes: string | null;
-  elements: ServiceElement[];
+  notes?: string | null;
+  elements?: ServiceElement[];
   archived: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
   _deleted?: boolean;
   isDeleted?: boolean;
   purgeAt?: string | null;
@@ -80,20 +80,20 @@ export interface AgendaEventDocType {
   /** 24h start time "HH:mm". */
   time: string;
   durationMinutes: number;
-  location: string | null;
-  notes: string | null;
+  location?: string | null;
+  notes?: string | null;
   /** Reminder settings — always present. */
   reminder: ReminderSettings;
   /** Optional FK to an order-of-worship `services` doc id. */
-  linkedServiceId: string | null;
+  linkedServiceId?: string | null;
   /** Responsibilities assigned to this event (may be []). */
   responsibilities: Responsibility[];
-  createdAt: string;
-  updatedAt: string; // conflict-detection field — keep verbatim from the server
+  createdAt?: string;
+  updatedAt?: string; // conflict-detection field — keep verbatim from the server
   /** Trash flag — NOT the replication tombstone (see `_deleted`). */
-  isDeleted: boolean;
+  isDeleted?: boolean;
   /** Set while trashed; null when live or restored. */
-  purgeAt: string | null;
+  purgeAt?: string | null;
   /** Reserved replication tombstone. Always false on pull. */
   _deleted?: boolean;
 }
