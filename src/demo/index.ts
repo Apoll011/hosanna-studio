@@ -55,3 +55,54 @@ export function markDemoSeeded(): void {
     // ignore
   }
 }
+
+/**
+ * Wipes all demo data from IndexedDB, resets the DB + replication singletons,
+ * and clears demo session flags. Safe to call even if demo was never started.
+ *
+ * Call this before login/signup when the user might be coming from a demo
+ * session, and during the demo logout flow.
+ */
+export async function clearDemoData(): Promise<void> {
+  // Disable demo flags first so nothing re-enters demo mode during cleanup
+  disableDemoMode();
+
+  // Reset singletons *before* deleting IDB so in-flight writes don't recreate it
+  // (dynamic imports avoid circular deps — these modules aren't loaded until here)
+  try {
+    const { resetDatabase } = await import("../db/database");
+    resetDatabase();
+  } catch {
+    // ignore if not yet loaded
+  }
+  try {
+    const { resetReplication } = await import("../db/replication");
+    resetReplication();
+  } catch {
+    // ignore if not yet loaded
+  }
+
+  // Delete all IndexedDB databases
+  if (typeof indexedDB !== "undefined" && indexedDB.databases) {
+    try {
+      const databases = await indexedDB.databases();
+      await Promise.all(
+        databases.map(
+          (db) =>
+            new Promise<void>((resolve) => {
+              if (!db.name) {
+                resolve();
+                return;
+              }
+              const req = indexedDB.deleteDatabase(db.name);
+              req.onsuccess = () => resolve();
+              req.onerror = () => resolve();
+              req.onblocked = () => resolve();
+            }),
+        ),
+      );
+    } catch {
+      // indexedDB.databases() may not be available in all browsers — ignore
+    }
+  }
+}

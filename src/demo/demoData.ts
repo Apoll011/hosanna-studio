@@ -15,6 +15,7 @@ import type {
   ServiceDocType,
   SongDocType,
 } from "../db/schemas";
+import { AgendaEvent, Folder, Service, Song } from "../types";
 
 // ---------------------------------------------------------------------------
 // Date helpers
@@ -812,10 +813,10 @@ const DEMO_MEMBER_ID_BY_NAME: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export interface DemoData {
-  folders: FolderDocType[];
-  songs: SongDocType[];
-  services: ServiceDocType[];
-  agendaEvents: AgendaEventDocType[];
+  folders: Folder[];
+  songs: Song[];
+  services: Service[];
+  agendaEvents: AgendaEvent[];
 }
 
 export function generateDemoData(locale: string): DemoData {
@@ -874,7 +875,7 @@ export function generateDemoData(locale: string): DemoData {
         folderAssignment[i] === null
           ? `${s.title.replace(/\s/g, "_")}.chopro`
           : `${L.folders[folderAssignment[i]]}/${s.title.replace(/\s/g, "_")}.chopro`,
-      tags: s.tags as string[],
+      tags: s.tags as unknown as string[],
       song_number: i + 1,
       createdAt: nowIso,
       updatedAt: nowIso,

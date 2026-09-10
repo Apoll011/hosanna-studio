@@ -1,3 +1,4 @@
+import { SongScoreLayout } from "@/src/hooks/usePersonalSettings";
 import { useI18n } from "@/src/lib/i18n";
 import { Folder, Song } from "@/src/types";
 import { FileMusicIcon, MoreVertical } from "lucide-react";
@@ -6,6 +7,7 @@ import {
   getFolderColorStyle,
   getFolderIconComponent,
 } from "../../utils/folderCustomization";
+import { SongScoreVisualizer } from "./SongScoreVisualizer";
 
 export interface FolderGridCardProps {
   folder: Folder;
@@ -133,6 +135,10 @@ export interface SongGridCardProps {
   isSearchingOrFiltering?: boolean;
   getFolderPathString?: (folderId: string | null | undefined) => string;
   density?: "comfortable" | "compact";
+  /** Whether to show the song score visualizer */
+  showSongScore?: boolean;
+  /** Which layout to use for the score visualizer */
+  songScoreLayout?: SongScoreLayout;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: (e: React.MouseEvent) => void;
   onContextMenu: (e: React.MouseEvent) => void;
@@ -147,6 +153,8 @@ export const SongGridCard: React.FC<SongGridCardProps> = React.memo(
     isSearchingOrFiltering,
     getFolderPathString,
     density = "comfortable",
+    showSongScore = false,
+    songScoreLayout = "ring",
     onClick,
     onDoubleClick,
     onContextMenu,
@@ -155,6 +163,9 @@ export const SongGridCard: React.FC<SongGridCardProps> = React.memo(
   }) => {
     const { t } = useI18n();
     const isCompact = density === "compact";
+    const scoreValue = (song as { score?: { score: number } }).score?.score;
+    const hasScore = showSongScore && scoreValue !== undefined;
+
     return (
       <div
         data-item-id={song.id}
@@ -199,12 +210,41 @@ export const SongGridCard: React.FC<SongGridCardProps> = React.memo(
           </span>
         )}
 
-        <div
-          className={`${isCompact ? "w-10 h-10 rounded-xl mb-2" : "w-14 h-14 rounded-2xl mb-3"} bg-m3-primary-light/20 border border-m3-primary/20 flex items-center justify-center text-m3-primary group-hover:scale-110 transition-transform`}
-        >
-          <FileMusicIcon
-            className={`${isCompact ? "w-5 h-5" : "w-8 h-8"} opacity-80`}
-          />
+        {/* Icon box — ring layout overlays the score on the icon */}
+        <div className="relative">
+          <div
+            className={`${isCompact ? "w-10 h-10 rounded-xl mb-2" : "w-14 h-14 rounded-2xl mb-3"} bg-m3-primary-light/20 border border-m3-primary/20 flex items-center justify-center text-m3-primary group-hover:scale-110 transition-transform`}
+          >
+            <FileMusicIcon
+              className={`${isCompact ? "w-5 h-5" : "w-8 h-8"} opacity-80`}
+            />
+          </div>
+
+          {/* Ring overlaid on the icon in the top-right corner */}
+          {hasScore && songScoreLayout === "ring" && (
+            <div
+              className={`absolute ${isCompact ? "-top-1.5 -right-12" : "-top-1 -right-15"}`}
+            >
+              <SongScoreVisualizer
+                score={scoreValue!}
+                layout="ring"
+                compact={isCompact}
+              />
+            </div>
+          )}
+
+          {/* Badge overlaid on the icon in the top-right corner */}
+          {hasScore && songScoreLayout === "badge" && (
+            <div
+              className={`absolute ${isCompact ? "-top-3 -right-12" : "-top-1 -right-15"}`}
+            >
+              <SongScoreVisualizer
+                score={scoreValue!}
+                layout="badge"
+                compact={isCompact}
+              />
+            </div>
+          )}
         </div>
 
         <span
@@ -216,6 +256,18 @@ export const SongGridCard: React.FC<SongGridCardProps> = React.memo(
         <span className="text-[10px] text-m3-secondary font-bold truncate w-full px-1 mt-0.5 opacity-70">
           {song.artist || t("explorer.cifra")}
         </span>
+
+        {/* Bar / dots rendered below the artist name, full width */}
+        {hasScore &&
+          (songScoreLayout === "bar" || songScoreLayout === "dots") && (
+            <div className="w-full px-1">
+              <SongScoreVisualizer
+                score={scoreValue!}
+                layout={songScoreLayout}
+                compact={isCompact}
+              />
+            </div>
+          )}
 
         {isSearchingOrFiltering && getFolderPathString && (
           <span className="text-[10px] font-black text-m3-secondary uppercase tracking-widest bg-m3-bg px-2 py-0.5 rounded-lg mt-2 truncate max-w-full border border-m3-border/50">

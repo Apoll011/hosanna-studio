@@ -11,6 +11,7 @@ import { PersonalLanguage } from "../lib/i18n/types";
 export type PersonalTheme = "light" | "dark" | "system";
 export type ViewMode = "grid" | "list";
 export type ExplorerDensity = "comfortable" | "compact";
+export type SongScoreLayout = "ring" | "bar" | "dots" | "badge";
 
 /**
  * Single source of truth for every user-level preference. All of these were
@@ -26,6 +27,8 @@ export interface PersonalSettings {
   sidebarCollapsed: boolean;
   viewMode: ViewMode;
   explorerDensity: ExplorerDensity;
+  showSongScore: boolean;
+  songScoreLayout: SongScoreLayout;
 }
 
 export const DEFAULT_SETTINGS: PersonalSettings = {
@@ -36,6 +39,8 @@ export const DEFAULT_SETTINGS: PersonalSettings = {
   sidebarCollapsed: false,
   viewMode: "grid",
   explorerDensity: "comfortable",
+  showSongScore: true,
+  songScoreLayout: "ring",
 };
 
 const STORAGE_KEY = "personal-settings";

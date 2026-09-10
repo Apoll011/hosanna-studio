@@ -4,10 +4,13 @@
  */
 
 import { usePersonalSettings } from "@/src/hooks/usePersonalSettings";
+import type { SongScoreLayout } from "@/src/hooks/usePersonalSettings";
 import { useI18n } from "@/src/lib/i18n";
 import { LANGUAGES } from "@/src/lib/i18n/languages";
 import { PersonalLanguage } from "@/src/lib/i18n/types";
+import { SongScoreVisualizer } from "@/src/components/explorer/SongScoreVisualizer";
 import {
+  BarChart2,
   Check,
   FolderTree,
   Globe,
@@ -17,6 +20,7 @@ import {
   Music2,
   Sliders,
   Smartphone,
+  Star,
   Sun,
   User,
 } from "lucide-react";
@@ -345,6 +349,124 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
               </p>
             </div>
           </label>
+        </div>
+      </div>
+
+      {/* ========================================== */}
+      {/* 5. SONG SCORE VISUALIZATION               */}
+      {/* ========================================== */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-500" />
+              Song Score
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Show a quality score indicator on each song card.
+            </p>
+          </div>
+          <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full flex items-center gap-1.5 font-semibold">
+            <BarChart2 className="w-3.5 h-3.5" />
+            Explorer
+          </span>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Enable toggle */}
+          <label className="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+            <div className="flex items-center h-5 mt-0.5">
+              <input
+                type="checkbox"
+                checked={settings.showSongScore}
+                onChange={(e) =>
+                  updateSetting("showSongScore", e.target.checked)
+                }
+                className="w-4.5 h-4.5 text-amber-500 border-slate-300 rounded focus:ring-amber-400 cursor-pointer"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Star className="w-4 h-4 text-slate-400" />
+                Show song score
+              </span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Display a completeness score on each song card in the explorer.
+              </p>
+            </div>
+          </label>
+
+          {/* Layout picker — shown only when enabled */}
+          {settings.showSongScore && (
+            <div>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                Visualization style
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {(
+                  [
+                    {
+                      id: "ring" as SongScoreLayout,
+                      label: "Ring",
+                      desc: "Circular arc around the song icon",
+                    },
+                    {
+                      id: "bar" as SongScoreLayout,
+                      label: "Bar",
+                      desc: "Thin progress bar below the title",
+                    },
+                    {
+                      id: "dots" as SongScoreLayout,
+                      label: "Dots",
+                      desc: "Row of five pip indicators",
+                    },
+                    {
+                      id: "badge" as SongScoreLayout,
+                      label: "Badge",
+                      desc: "Coloured pill chip with the score",
+                    },
+                  ] as const
+                ).map((opt) => {
+                  const selected = settings.songScoreLayout === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => updateSetting("songScoreLayout", opt.id)}
+                      aria-pressed={selected}
+                      className={`group relative rounded-2xl border p-4 text-left transition-all duration-200 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-amber-400/50 ${
+                        selected
+                          ? "border-amber-400 bg-amber-50/60 dark:bg-amber-400/5 ring-2 ring-amber-400/25 shadow-sm"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/30 dark:bg-slate-900/40"
+                      }`}
+                    >
+                      {selected && (
+                        <div className="absolute top-3 right-3 h-5 w-5 rounded-full bg-amber-400 flex items-center justify-center shadow-xs">
+                          <Check className="h-3.5 w-3.5 text-white stroke-[2.5]" />
+                        </div>
+                      )}
+
+                      {/* Live mini-preview */}
+                      <div className="flex items-center justify-center mb-3 h-10">
+                        <SongScoreVisualizer
+                          score={74}
+                          layout={opt.id}
+                          compact
+                        />
+                      </div>
+
+                      <span className="block font-bold text-sm text-slate-900 dark:text-slate-100">
+                        {opt.label}
+                      </span>
+                      <span className="block mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        {opt.desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
