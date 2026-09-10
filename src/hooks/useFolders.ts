@@ -11,6 +11,7 @@ import {
   computeSongPath,
   getDatabase,
   getPurgeAt,
+  updateFolderCounts,
   validateFolderRename,
   validateFolderRules,
 } from "../db";
@@ -108,6 +109,9 @@ export function useFolders() {
         };
 
         const doc = await db.folders.insert(newFolder);
+        if (parent) {
+          await updateFolderCounts(db, parent);
+        }
         const result = doc.toJSON() as Folder;
         showToast(`Folder "${result.name}" created`, "success");
         return result;
@@ -219,9 +223,11 @@ export function useFolders() {
 
         const doc = await db.folders.findOne(id).exec();
         if (doc) {
+          const oldParentId = doc.parentId ?? null;
+          const targetParentId = parentId ?? null;
           const now = new Date().toISOString();
           await doc.patch({
-            parentId: parentId ?? null,
+            parentId: targetParentId,
             updatedAt: now,
           });
 
@@ -234,6 +240,14 @@ export function useFolders() {
               path: newPath,
               updatedAt: now,
             });
+          }
+
+          // Recalculate folder counts on affected source and destination parent folders
+          if (oldParentId && oldParentId !== targetParentId) {
+            await updateFolderCounts(db, oldParentId);
+          }
+          if (targetParentId && targetParentId !== oldParentId) {
+            await updateFolderCounts(db, targetParentId);
           }
         }
         showToast("Folder moved", "success");
@@ -265,6 +279,7 @@ export function useFolders() {
 
         // 1. Move folder to trash
         const folderDoc = await db.folders.findOne(id).exec();
+        const parentId = folderDoc?.parentId ?? null;
         if (folderDoc) {
           await folderDoc.patch({
             isDeleted: true,
@@ -319,6 +334,11 @@ export function useFolders() {
           });
         }
 
+        // Recalculate parent folder count
+        if (parentId) {
+          await updateFolderCounts(db, parentId);
+        }
+
         showToast("Folder deleted", "info");
       } catch (err: unknown) {
         if (err && typeof err === "object" && "message" in err)
@@ -338,11 +358,27 @@ export function useFolders() {
         const db = await getDatabase();
         const doc = await db.folders.findOne(id).exec();
         if (doc) {
+          let targetParentId = doc.parentId ?? null;
+          if (targetParentId) {
+            const parent = await db.folders.findOne(targetParentId).exec();
+            if (!parent || parent.isDeleted || parent._deleted) {
+              targetParentId = null;
+            }
+          }
+
           await doc.patch({
             isDeleted: false,
+            _deleted: false,
             purgeAt: null,
+            parentId: targetParentId,
             updatedAt: new Date().toISOString(),
           });
+
+          // Recalculate counts for the restored folder and its parent
+          await updateFolderCounts(db, id);
+          if (targetParentId) {
+            await updateFolderCounts(db, targetParentId);
+          }
         }
         showToast("Folder restored", "success");
       } catch (err: unknown) {

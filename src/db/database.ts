@@ -61,11 +61,13 @@ export type HosanaDatabase = HosanaDatabaseCollections;
 export function calculateFolderSongCount(
   folderId: string,
   songs:
-    | Array<Pick<SongDocType, "folderId" | "isDeleted">>
+    | Array<Pick<SongDocType, "folderId" | "isDeleted" | "_deleted">>
     | HosanaCollection<AsSongDoc>,
 ): number {
   const list = Array.isArray(songs) ? songs : songs.getAllRaw();
-  return list.filter((s) => s.folderId === folderId && !s.isDeleted).length;
+  return list.filter(
+    (s) => s.folderId === folderId && !s.isDeleted && !s._deleted,
+  ).length;
 }
 
 /**
@@ -74,11 +76,13 @@ export function calculateFolderSongCount(
 export function calculateFolderCount(
   folderId: string,
   folders:
-    | Array<Pick<FolderDocType, "parentId" | "isDeleted">>
+    | Array<Pick<FolderDocType, "parentId" | "isDeleted" | "_deleted">>
     | HosanaCollection<AsFolderDoc>,
 ): number {
   const list = Array.isArray(folders) ? folders : folders.getAllRaw();
-  return list.filter((f) => f.parentId === folderId && !f.isDeleted).length;
+  return list.filter(
+    (f) => f.parentId === folderId && !f.isDeleted && !f._deleted,
+  ).length;
 }
 
 /**

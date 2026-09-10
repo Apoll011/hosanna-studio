@@ -137,7 +137,13 @@ function matchesSelector<T extends AnyDoc>(
     const docVal = (doc as Record<string, unknown>)[key];
     if (condition !== null && typeof condition === "object") {
       const cond = condition as Record<string, unknown>;
-      if ("$ne" in cond && docVal === cond["$ne"]) return false;
+      if ("$ne" in cond) {
+        if (cond["$ne"] === null) {
+          if (docVal == null) return false;
+        } else if (docVal === cond["$ne"]) {
+          return false;
+        }
+      }
       if ("$lte" in cond) {
         if (docVal == null || docVal > (cond["$lte"] as unknown)) return false;
       }
@@ -148,8 +154,11 @@ function matchesSelector<T extends AnyDoc>(
         const arr = cond["$in"] as unknown[];
         if (!arr.includes(docVal)) return false;
       }
+    } else if (condition === null) {
+      // In document queries, matching null matches both null and undefined
+      if (docVal != null) return false;
     } else {
-      // Equality (incl. null)
+      // Equality
       if (docVal !== condition) return false;
     }
   }
