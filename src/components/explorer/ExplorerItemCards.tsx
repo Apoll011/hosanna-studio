@@ -222,7 +222,9 @@ export const SongGridCard: React.FC<SongGridCardProps> = React.memo(
 
           {/* Ring overlaid on the icon in the top-right corner */}
           {hasScore && songScoreLayout === "ring" && (
-            <div className={`absolute ${isCompact ? "-top-1.5 -right-1.5" : "-top-2 -right-2"}`}>
+            <div
+              className={`absolute ${isCompact ? "-top-1.5 -right-12" : "-top-1 -right-15"}`}
+            >
               <SongScoreVisualizer
                 score={scoreValue!}
                 layout="ring"
@@ -233,7 +235,9 @@ export const SongGridCard: React.FC<SongGridCardProps> = React.memo(
 
           {/* Badge overlaid on the icon in the top-right corner */}
           {hasScore && songScoreLayout === "badge" && (
-            <div className={`absolute ${isCompact ? "-top-1.5 -right-1.5" : "-top-2 -right-2"}`}>
+            <div
+              className={`absolute ${isCompact ? "-top-3 -right-12" : "-top-1 -right-15"}`}
+            >
               <SongScoreVisualizer
                 score={scoreValue!}
                 layout="badge"
@@ -254,15 +258,16 @@ export const SongGridCard: React.FC<SongGridCardProps> = React.memo(
         </span>
 
         {/* Bar / dots rendered below the artist name, full width */}
-        {hasScore && (songScoreLayout === "bar" || songScoreLayout === "dots") && (
-          <div className="w-full px-1">
-            <SongScoreVisualizer
-              score={scoreValue!}
-              layout={songScoreLayout}
-              compact={isCompact}
-            />
-          </div>
-        )}
+        {hasScore &&
+          (songScoreLayout === "bar" || songScoreLayout === "dots") && (
+            <div className="w-full px-1">
+              <SongScoreVisualizer
+                score={scoreValue!}
+                layout={songScoreLayout}
+                compact={isCompact}
+              />
+            </div>
+          )}
 
         {isSearchingOrFiltering && getFolderPathString && (
           <span className="text-[10px] font-black text-m3-secondary uppercase tracking-widest bg-m3-bg px-2 py-0.5 rounded-lg mt-2 truncate max-w-full border border-m3-border/50">
