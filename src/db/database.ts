@@ -53,6 +53,63 @@ export interface HosanaDatabaseCollections {
 
 export type HosanaDatabase = HosanaDatabaseCollections;
 
+// ─── Automatic Count Calculation Functions ───────────────────────────────────
+
+/**
+ * Calculates the number of non-deleted songs belonging to a given folder.
+ */
+export function calculateFolderSongCount(
+  folderId: string,
+  songs:
+    | Array<Pick<SongDocType, "folderId" | "isDeleted">>
+    | HosanaCollection<AsSongDoc>,
+): number {
+  const list = Array.isArray(songs) ? songs : songs.getAllRaw();
+  return list.filter((s) => s.folderId === folderId && !s.isDeleted).length;
+}
+
+/**
+ * Calculates the number of non-deleted subfolders belonging to a given parent folder.
+ */
+export function calculateFolderCount(
+  folderId: string,
+  folders:
+    | Array<Pick<FolderDocType, "parentId" | "isDeleted">>
+    | HosanaCollection<AsFolderDoc>,
+): number {
+  const list = Array.isArray(folders) ? folders : folders.getAllRaw();
+  return list.filter((f) => f.parentId === folderId && !f.isDeleted).length;
+}
+
+/**
+ * Recalculates songCount and folderCount for an array of folders using the given songs.
+ */
+export function recalculateFolderCounts(
+  folders: AsFolderDoc[],
+  songs: Array<Pick<SongDocType, "folderId" | "isDeleted">>,
+): AsFolderDoc[] {
+  return folders.map((folder) => ({
+    ...folder,
+    songCount: calculateFolderSongCount(folder.id, songs),
+    folderCount: calculateFolderCount(folder.id, folders),
+  }));
+}
+
+/**
+ * Recalculates and updates songCount and folderCount for a specific folder in the database.
+ */
+export async function updateFolderCounts(
+  db: HosanaDatabase,
+  folderId: string,
+): Promise<void> {
+  const folder = await db.folders.findOne(folderId).exec();
+  if (!folder) return;
+  await folder.patch({
+    songCount: calculateFolderSongCount(folderId, db.songs),
+    folderCount: calculateFolderCount(folderId, db.folders),
+  });
+}
+
 // ─── Singleton ───────────────────────────────────────────────────────────────
 
 let dbPromise: Promise<HosanaDatabase> | null = null;
@@ -110,6 +167,9 @@ async function _open(): Promise<HosanaDatabase> {
     idbGetAll<AsAgendaDoc>(idb, STORE_AGENDA),
   ]);
 
+  // Compute initial counts from the loaded IDB data before collection instantiation
+  const initialFolders = recalculateFolderCounts(rawFolders, rawSongs);
+
   const db: HosanaDatabase = {
     songs: new HosanaCollection<AsSongDoc>(idb, STORE_SONGS, rawSongs, {
       localFields: ["score"],
@@ -117,7 +177,14 @@ async function _open(): Promise<HosanaDatabase> {
         score: (song) => parseChordPro(song.content).score(),
       },
     }),
-    folders: new HosanaCollection<AsFolderDoc>(idb, STORE_FOLDERS, rawFolders),
+    folders: new HosanaCollection<AsFolderDoc>(
+      idb,
+      STORE_FOLDERS,
+      initialFolders,
+      {
+        localFields: ["songCount", "folderCount"],
+      },
+    ),
     services: new HosanaCollection<AsServiceDoc>(
       idb,
       STORE_SERVICES,
