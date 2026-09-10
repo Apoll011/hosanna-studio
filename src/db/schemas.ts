@@ -7,6 +7,7 @@
  */
 
 import { ReminderSettings, Responsibility, ServiceElement } from "@/src/types";
+import { SongScore } from "@hosanna/chordpro";
 
 export interface SongDocType {
   id: string;
@@ -16,6 +17,7 @@ export interface SongDocType {
   folderId?: string | null;
   path: string;
   tags: string[];
+  score: SongScore;
   song_number?: number | null;
   createdAt: string;
   updatedAt: string;

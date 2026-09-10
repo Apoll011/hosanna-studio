@@ -9,8 +9,9 @@
  * React code needs to change.
  */
 
+import { parseChordPro } from "@hosanna/chordpro";
 import { HosanaCollection } from "./engine/collection";
-import { openIDB, idbGetAll } from "./engine/idb";
+import { idbGetAll, openIDB } from "./engine/idb";
 import type {
   AgendaEventDocType,
   FolderDocType,
@@ -102,7 +103,12 @@ async function _open(): Promise<HosanaDatabase> {
   ]);
 
   const db: HosanaDatabase = {
-    songs: new HosanaCollection<AsSongDoc>(idb, STORE_SONGS, rawSongs),
+    songs: new HosanaCollection<AsSongDoc>(idb, STORE_SONGS, rawSongs, {
+      localFields: ["score"],
+      computedFields: {
+        score: (song) => parseChordPro(song.content).score(),
+      },
+    }),
     folders: new HosanaCollection<AsFolderDoc>(idb, STORE_FOLDERS, rawFolders),
     services: new HosanaCollection<AsServiceDoc>(
       idb,
