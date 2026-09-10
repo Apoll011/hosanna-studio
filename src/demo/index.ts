@@ -90,7 +90,10 @@ export async function clearDemoData(): Promise<void> {
         databases.map(
           (db) =>
             new Promise<void>((resolve) => {
-              if (!db.name) { resolve(); return; }
+              if (!db.name) {
+                resolve();
+                return;
+              }
               const req = indexedDB.deleteDatabase(db.name);
               req.onsuccess = () => resolve();
               req.onerror = () => resolve();

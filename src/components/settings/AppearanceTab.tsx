@@ -379,7 +379,9 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
               <input
                 type="checkbox"
                 checked={settings.showSongScore}
-                onChange={(e) => updateSetting("showSongScore", e.target.checked)}
+                onChange={(e) =>
+                  updateSetting("showSongScore", e.target.checked)
+                }
                 className="w-4.5 h-4.5 text-amber-500 border-slate-300 rounded focus:ring-amber-400 cursor-pointer"
               />
             </div>
@@ -446,7 +448,11 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
 
                       {/* Live mini-preview */}
                       <div className="flex items-center justify-center mb-3 h-10">
-                        <SongScoreVisualizer score={74} layout={opt.id} compact />
+                        <SongScoreVisualizer
+                          score={74}
+                          layout={opt.id}
+                          compact
+                        />
                       </div>
 
                       <span className="block font-bold text-sm text-slate-900 dark:text-slate-100">

@@ -219,8 +219,10 @@ export const SongScoreVisualizer: React.FC<SongScoreVisualizerProps> = ({
   }
 
   if (layout === "bar") return <BarLayout score={clamped} compact={compact} />;
-  if (layout === "dots") return <DotsLayout score={clamped} compact={compact} />;
-  if (layout === "badge") return <BadgeLayout score={clamped} compact={compact} />;
+  if (layout === "dots")
+    return <DotsLayout score={clamped} compact={compact} />;
+  if (layout === "badge")
+    return <BadgeLayout score={clamped} compact={compact} />;
 
   return null;
 };

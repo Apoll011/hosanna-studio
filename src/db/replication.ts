@@ -235,14 +235,15 @@ async function replicateCollection<
 
   const pendingDocs = checkpointTs
     ? allDocs.filter(
-        (d) =>
-          typeof d.updatedAt === "string" && d.updatedAt > checkpointTs,
+        (d) => typeof d.updatedAt === "string" && d.updatedAt > checkpointTs,
       )
     : allDocs;
 
   // Also collect soft-deleted docs that need to be pushed as tombstones
   const deletedDocs = allDocs.filter(
-    (d) => d._deleted === true || (d as Record<string, unknown>)["isDeleted"] === true,
+    (d) =>
+      d._deleted === true ||
+      (d as Record<string, unknown>)["isDeleted"] === true,
   );
 
   // Merge pending + deleted (deduplicated by id)
@@ -255,7 +256,9 @@ async function replicateCollection<
     const changeRows: ChangeRow<T>[] = toPush.map((doc) => ({
       newDocumentState: {
         ...doc,
-        _deleted: !!(doc._deleted || (doc as Record<string, unknown>)["isDeleted"]),
+        _deleted: !!(
+          doc._deleted || (doc as Record<string, unknown>)["isDeleted"]
+        ),
       } as T & { _deleted: boolean },
       assumedMasterState: null,
     }));
@@ -317,9 +320,9 @@ async function replicateCollection<
               doc.id,
             );
           } else {
-            await (collection as unknown as HosanaCollection<T>)._mergeFromServer(
-              doc,
-            );
+            await (
+              collection as unknown as HosanaCollection<T>
+            )._mergeFromServer(doc);
           }
         }),
       );

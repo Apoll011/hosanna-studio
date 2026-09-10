@@ -11,7 +11,12 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { getDatabase, ReplicationManager, resetReplication, setupReplication } from "../db";
+import {
+  getDatabase,
+  ReplicationManager,
+  resetReplication,
+  setupReplication,
+} from "../db";
 import { SyncStatus } from "../types";
 import { useAuth } from "./AuthContext";
 import { isDemoMode } from "../demo/index";
