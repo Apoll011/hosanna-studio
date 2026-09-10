@@ -14,7 +14,7 @@ import React, {
   useState,
 } from "react";
 import { DEMO_ORGANIZATION, DEMO_USER } from "../demo/demoAuth";
-import { clearDemoData, disableDemoMode, isDemoMode } from "../demo/index";
+import { clearDemoData, isDemoMode } from "../demo/index";
 import { syncSettingsFromMetadata } from "../hooks/usePersonalSettings";
 import { authClient } from "../lib/authClient";
 import { clearPermissionCache } from "../lib/permissions/client";

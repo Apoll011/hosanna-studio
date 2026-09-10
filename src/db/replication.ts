@@ -20,16 +20,10 @@
  */
 
 import { getApiClient } from "@/src/api";
-import { idbDelete } from "./engine/idb";
+import type { HosanaDatabase } from "./database";
 import { notify } from "./engine/bus";
 import { HosanaCollection } from "./engine/collection";
-import type { HosanaDatabase } from "./database";
-import type {
-  AgendaEventDocType,
-  FolderDocType,
-  ServiceDocType,
-  SongDocType,
-} from "./schemas";
+import { idbDelete } from "./engine/idb";
 
 // ─── Public types (unchanged interface) ──────────────────────────────────────
 
