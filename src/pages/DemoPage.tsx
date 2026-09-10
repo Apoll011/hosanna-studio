@@ -6,15 +6,16 @@
 import { Spinner } from "@/src/components/common";
 import React, { useEffect, useRef, useState } from "react";
 import { getDatabase } from "../db";
-import { enableDemoMode, DEMO_ORG_SLUG } from "../demo/index";
+import { clearDemoData, enableDemoMode, DEMO_ORG_SLUG } from "../demo/index";
 import { seedDemoDatabase } from "../demo/seedDemoDatabase";
 
 /**
  * The `/demo` entry point.
  *
- * 1. Sets the `isDemo` sessionStorage flag.
- * 2. Opens the local RxDB database and seeds it with demo data.
- * 3. Hard-navigates to `/<demo-slug>/folders` so the full auth/routing
+ * 1. Clears any stale demo data / singletons from a previous demo session.
+ * 2. Sets the `isDemo` sessionStorage flag.
+ * 3. Opens the local IndexedDB database fresh and seeds it with demo data.
+ * 4. Hard-navigates to `/<demo-slug>/folders` so the full auth/routing
  *    stack re-boots with demo mode active.
  */
 export const DemoPage: React.FC = () => {
@@ -27,6 +28,9 @@ export const DemoPage: React.FC = () => {
 
     async function initDemo() {
       try {
+        // Wipe any previous demo session (stale IDB + singletons) before starting fresh.
+        await clearDemoData();
+
         // Activate demo mode before doing anything else so that the
         // re-booted app can detect it immediately.
         enableDemoMode();

@@ -14,7 +14,7 @@ import React, {
   useState,
 } from "react";
 import { DEMO_ORGANIZATION, DEMO_USER } from "../demo/demoAuth";
-import { disableDemoMode, isDemoMode } from "../demo/index";
+import { clearDemoData, disableDemoMode, isDemoMode } from "../demo/index";
 import { syncSettingsFromMetadata } from "../hooks/usePersonalSettings";
 import { authClient } from "../lib/authClient";
 import { clearPermissionCache } from "../lib/permissions/client";
@@ -167,32 +167,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLoading(false);
     const demoLogout = async () => {
       setIsLoading(true);
-      disableDemoMode();
       localStorage.clear();
-
-      // Clear all IndexedDB databases
-      if (typeof indexedDB !== "undefined" && indexedDB.databases) {
-        try {
-          const databases = await indexedDB.databases();
-          await Promise.all(
-            databases.map(
-              (db) =>
-                new Promise<void>((resolve) => {
-                  if (!db.name) {
-                    resolve();
-                    return;
-                  }
-                  const req = indexedDB.deleteDatabase(db.name);
-                  req.onsuccess = () => resolve();
-                  req.onerror = () => resolve();
-                  req.onblocked = () => resolve();
-                }),
-            ),
-          );
-        } catch {
-          // indexedDB.databases() may not be available in all browsers; ignore errors
-        }
-      }
+      await clearDemoData();
       window.location.assign("/login");
     };
     const demoNoOp = async () => {};

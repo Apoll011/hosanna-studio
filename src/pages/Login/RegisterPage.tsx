@@ -9,6 +9,7 @@ import { useI18n } from "@/src/lib/i18n";
 import { CheckCircle2 } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { clearDemoData, isDemoMode } from "../../demo/index";
 import { authClient } from "../../lib/authClient";
 import { posthog } from "../../lib/posthog";
 import LoginLayout from "./Layout";
@@ -62,6 +63,13 @@ export const RegisterPage: React.FC = () => {
     }
 
     setIsLoading(true);
+
+    // If coming from a demo session, wipe demo data before signing up
+    if (isDemoMode()) {
+      localStorage.clear();
+      await clearDemoData();
+    }
+
     const { error } = await authClient.signUp.email({
       name: name.trim(),
       email: email.trim(),

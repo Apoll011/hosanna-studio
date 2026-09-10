@@ -64,6 +64,14 @@ export async function getDatabase(): Promise<HosanaDatabase> {
   return dbPromise;
 }
 
+/**
+ * Bust the DB singleton so the next `getDatabase()` call reopens IDB fresh.
+ * Call this after deleting the IndexedDB (e.g. demo logout / wipe).
+ */
+export function resetDatabase(): void {
+  dbPromise = null;
+}
+
 async function _open(): Promise<HosanaDatabase> {
   const idb = await openIDB(DB_NAME, DB_VERSION, (db, oldVersion) => {
     if (oldVersion < 1) {
