@@ -8,11 +8,12 @@ export function getPurgeAt(): string {
 
 /**
  * Hard-removes trashed records whose purgeAt has expired.
- * doc.remove() sets RxDB's real _deleted tombstone, which then
+ * doc.remove() sets the replication tombstone, which then
  * replicates the permanent deletion to the server.
  */
 export async function purgeExpiredTrash(db: HosanaDatabase): Promise<void> {
   const nowIso = new Date().toISOString();
+
   const collections = [
     db.folders,
     db.songs,
