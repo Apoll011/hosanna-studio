@@ -211,21 +211,27 @@ export class HosanaCollection<T extends AnyDoc> {
 
   /**
    * @internal Merge a doc from the server, preserving local-only fields.
-   * Computed fields are recalculated.
+   * If a local field is missing or null on the existing doc, it is (re)computed.
+   * Computed fields are always recalculated.
    */
   async _mergeFromServer(serverDoc: T): Promise<void> {
     const existing = this._store.get(serverDoc.id);
     let merged: T = serverDoc;
-    if (existing && this._localFields.size > 0) {
+    if (this._localFields.size > 0) {
       const overrides: Partial<T> = {};
       for (const lf of this._localFields) {
-        if (lf in existing) {
-          (overrides as Record<string, unknown>)[lf] = (
-            existing as Record<string, unknown>
-          )[lf];
+        const existingVal = existing
+          ? (existing as Record<string, unknown>)[lf]
+          : undefined;
+        // Preserve existing local value only if it's non-null/undefined
+        if (existingVal != null) {
+          (overrides as Record<string, unknown>)[lf] = existingVal;
         }
+        // If missing/null, _applyComputedFields will (re)compute it inside _put.
       }
-      merged = { ...serverDoc, ...overrides };
+      if (Object.keys(overrides).length > 0) {
+        merged = { ...serverDoc, ...overrides };
+      }
     }
     await this._put(merged);
   }
@@ -234,6 +240,10 @@ export class HosanaCollection<T extends AnyDoc> {
     if (Object.keys(this._computedFields).length === 0) return doc;
     const out = { ...doc };
     for (const [field, fn] of Object.entries(this._computedFields)) {
+      const current = (out as Record<string, unknown>)[field];
+      // Always recompute if the field is a localField (may have been preserved
+      // with a stale value) OR if it's currently null/undefined.
+      if (current != null && !this._localFields.has(field)) continue;
       try {
         (out as Record<string, unknown>)[field] = fn(doc);
       } catch {
@@ -299,16 +309,19 @@ export class HosanaCollection<T extends AnyDoc> {
   async upsert(doc: T): Promise<HosanaDoc<T>> {
     const existing = this._store.get(doc.id);
     let merged = doc;
-    if (existing && this._localFields.size > 0) {
+    if (this._localFields.size > 0) {
       const overrides: Partial<T> = {};
       for (const lf of this._localFields) {
-        if (lf in existing) {
-          (overrides as Record<string, unknown>)[lf] = (
-            existing as Record<string, unknown>
-          )[lf];
+        const existingVal = existing
+          ? (existing as Record<string, unknown>)[lf]
+          : undefined;
+        if (existingVal != null) {
+          (overrides as Record<string, unknown>)[lf] = existingVal;
         }
       }
-      merged = { ...doc, ...overrides };
+      if (Object.keys(overrides).length > 0) {
+        merged = { ...doc, ...overrides };
+      }
     }
     await this._put(merged);
     return makeDoc(this._store.get(doc.id)!, this);

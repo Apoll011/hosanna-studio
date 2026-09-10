@@ -6,18 +6,22 @@
  * communicates between the server and the local store is rewritten here.
  *
  * Replication strategy:
- *  1. Pull: GET /replication/<collection>/pull with the last checkpoint.
+ *  1. Push FIRST: POST /replication/<collection>/push with all locally
+ *     changed/deleted docs since last checkpoint. This ensures local deletes
+ *     and edits appear on the server before we pull the authoritative state.
+ *  2. Pull: GET /replication/<collection>/pull with the last checkpoint.
  *     Documents are merged into the local store using _mergeFromServer(),
  *     which preserves local-only fields and re-runs computed fields.
- *  2. Push: POST /replication/<collection>/push with change rows built
- *     from local docs whose updatedAt is newer than the checkpoint.
+ *     Deleted docs (server tombstones) are removed from the local store.
  *  3. Conflict resolution: identical to the old implementation —
  *     spurious conflicts (volatile-field drift only) are auto-retried;
  *     real content conflicts surface as server docs.
- *  4. FK ordering: services always pushed before agendaEvents.
+ *  4. FK ordering: services always pushed/pulled before agendaEvents.
  */
 
 import { getApiClient } from "@/src/api";
+import { idbDelete } from "./engine/idb";
+import { notify } from "./engine/bus";
 import { HosanaCollection } from "./engine/collection";
 import type { HosanaDatabase } from "./database";
 import type {
@@ -220,8 +224,62 @@ async function replicateCollection<
   collectionName: CollectionName,
   client: ReturnType<typeof getApiClient>,
 ): Promise<void> {
-  // ─ Pull ──────────────────────────────────────────────────────────────────
-  let checkpoint = loadCheckpoint(collectionName);
+  const checkpoint = loadCheckpoint(collectionName);
+  const checkpointTs = checkpoint
+    ? new Date(checkpoint.updatedAt).toISOString()
+    : null;
+
+  // ─ Push FIRST ──────────────────────────────────────────────────────────────
+  // Include both changed docs AND locally deleted docs (tombstones).
+  const allDocs = (collection as unknown as HosanaCollection<T>).getAllRaw();
+
+  const pendingDocs = checkpointTs
+    ? allDocs.filter(
+        (d) =>
+          typeof d.updatedAt === "string" && d.updatedAt > checkpointTs,
+      )
+    : allDocs;
+
+  // Also collect soft-deleted docs that need to be pushed as tombstones
+  const deletedDocs = allDocs.filter(
+    (d) => d._deleted === true || (d as Record<string, unknown>)["isDeleted"] === true,
+  );
+
+  // Merge pending + deleted (deduplicated by id)
+  const toPushMap = new Map<string, T>();
+  for (const d of pendingDocs) toPushMap.set(d.id, d);
+  for (const d of deletedDocs) toPushMap.set(d.id, d);
+  const toPush = Array.from(toPushMap.values());
+
+  if (toPush.length > 0) {
+    const changeRows: ChangeRow<T>[] = toPush.map((doc) => ({
+      newDocumentState: {
+        ...doc,
+        _deleted: !!(doc._deleted || (doc as Record<string, unknown>)["isDeleted"]),
+      } as T & { _deleted: boolean },
+      assumedMasterState: null,
+    }));
+
+    const conflicts = await pushWithConflictRetry<T>(
+      client,
+      collectionName,
+      changeRows,
+    );
+
+    // Merge any real conflicts back immediately (server wins on content)
+    if (conflicts.length > 0) {
+      await Promise.all(
+        conflicts.map((serverDoc) =>
+          (collection as unknown as HosanaCollection<T>)._mergeFromServer(
+            serverDoc,
+          ),
+        ),
+      );
+    }
+  }
+
+  // ─ Pull ────────────────────────────────────────────────────────────────────
+  let pullCheckpoint = checkpoint;
   const BATCH = 100;
 
   // eslint-disable-next-line no-constant-condition
@@ -232,7 +290,7 @@ async function replicateCollection<
     }>(`/replication/${collectionName}/pull`, {
       method: "POST",
       body: JSON.stringify({
-        checkpoint: checkpoint || null,
+        checkpoint: pullCheckpoint || null,
         limit: BATCH,
       }),
     });
@@ -243,65 +301,51 @@ async function replicateCollection<
     })) as T[];
 
     if (docs.length > 0) {
-      for (const doc of docs) {
-        if (doc._deleted) {
-          // Hard-deleted on server — remove from local store
-          await collection._put({ ...doc } as T & Record<string, unknown>);
-        } else {
-          await (collection as unknown as HosanaCollection<T>)._mergeFromServer(
-            doc,
-          );
-        }
-      }
+      // Process all docs in parallel for speed
+      await Promise.all(
+        docs.map(async (doc) => {
+          if (doc._deleted) {
+            // Hard-deleted on server — remove from local store immediately
+            (collection as unknown as HosanaCollection<T>)._storeDelete(doc.id);
+            await idbDelete(
+              (collection as unknown as HosanaCollection<T>)._db,
+              (collection as unknown as HosanaCollection<T>)._storeName,
+              doc.id,
+            );
+            notify(
+              (collection as unknown as HosanaCollection<T>)._storeName,
+              doc.id,
+            );
+          } else {
+            await (collection as unknown as HosanaCollection<T>)._mergeFromServer(
+              doc,
+            );
+          }
+        }),
+      );
     }
 
     if (res.checkpoint) {
-      checkpoint = res.checkpoint;
-      saveCheckpoint(collectionName, checkpoint);
+      pullCheckpoint = res.checkpoint;
+      saveCheckpoint(collectionName, pullCheckpoint);
     }
 
     // Stop when server returns fewer than batchSize (last page)
     if (docs.length < BATCH) break;
-  }
-
-  // ─ Push ──────────────────────────────────────────────────────────────────
-  const allDocs = (collection as unknown as HosanaCollection<T>).getAllRaw();
-  const serverCheckpoint = checkpoint;
-
-  // Only push docs updated after the checkpoint's updatedAt
-  const pendingDocs = serverCheckpoint
-    ? allDocs.filter(
-        (d) =>
-          !d._deleted &&
-          typeof d.updatedAt === "string" &&
-          d.updatedAt > new Date(serverCheckpoint.updatedAt).toISOString(),
-      )
-    : allDocs.filter((d) => !d._deleted);
-
-  if (pendingDocs.length === 0) return;
-
-  const changeRows: ChangeRow<T>[] = pendingDocs.map((doc) => ({
-    newDocumentState: { ...doc, _deleted: false } as T & { _deleted: boolean },
-    assumedMasterState: null, // let server decide conflicts
-  }));
-
-  const conflicts = await pushWithConflictRetry<T>(
-    client,
-    collectionName,
-    changeRows,
-  );
-
-  // Merge any real conflicts back (server wins on content)
-  for (const serverDoc of conflicts) {
-    await (collection as unknown as HosanaCollection<T>)._mergeFromServer(
-      serverDoc,
-    );
   }
 }
 
 // ─── Replication manager singleton ───────────────────────────────────────────
 
 let replicationManagerInstance: ReplicationManager | null = null;
+
+/** Tear down the existing singleton so a fresh one can be created (e.g. on re-login). */
+export function resetReplication(): void {
+  if (replicationManagerInstance) {
+    replicationManagerInstance.stop();
+    replicationManagerInstance = null;
+  }
+}
 
 export function setupReplication(db: HosanaDatabase): ReplicationManager {
   if (replicationManagerInstance) return replicationManagerInstance;
@@ -313,6 +357,10 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
   let onlineListener: (() => void) | null = null;
   let offlineListener: (() => void) | null = null;
 
+  // Debounce guard — prevents overlapping sync runs
+  let syncInProgress = false;
+  let syncQueued = false;
+
   const updateStatus = (s: ReplicationSyncState) => {
     if (currentStatus !== s) {
       currentStatus = s;
@@ -321,11 +369,18 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
   };
 
   const doSync = async () => {
+    // If already running, queue a follow-up sync instead of overlapping
+    if (syncInProgress) {
+      syncQueued = true;
+      return;
+    }
+
     if (!navigator.onLine) {
       updateStatus("offline");
       return;
     }
 
+    syncInProgress = true;
     updateStatus("syncing");
     const client = getApiClient();
 
@@ -358,6 +413,13 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
     } catch (err) {
       console.error("[hosana-repl] Sync error:", err);
       updateStatus(navigator.onLine ? "error" : "offline");
+    } finally {
+      syncInProgress = false;
+      // If a sync was queued while we were running, kick it off now
+      if (syncQueued) {
+        syncQueued = false;
+        void doSync();
+      }
     }
   };
 
@@ -368,8 +430,8 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
     // Initial sync
     void doSync();
 
-    // Periodic background sync every 30 s
-    interval = setInterval(() => void doSync(), 30_000);
+    // Periodic background sync every 15 s (was 30 s)
+    interval = setInterval(() => void doSync(), 15_000);
 
     onlineListener = () => void doSync();
     offlineListener = () => updateStatus("offline");

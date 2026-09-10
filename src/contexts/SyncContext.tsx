@@ -11,7 +11,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { getDatabase, ReplicationManager, setupReplication } from "../db";
+import { getDatabase, ReplicationManager, resetReplication, setupReplication } from "../db";
 import { SyncStatus } from "../types";
 import { useAuth } from "./AuthContext";
 import { isDemoMode } from "../demo/index";
@@ -103,7 +103,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const { isAuthenticated } = useAuth();
 
-  // Initialise database and replication on start
+  // Initialise database and replication on start / auth change
   useEffect(() => {
     let sub: { unsubscribe: () => void } | null = null;
     let isMounted = true;
@@ -119,6 +119,10 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
 
+        // Tear down any previous manager before creating a fresh one.
+        // This handles logout → login cycles correctly.
+        resetReplication();
+
         const repl = setupReplication(db);
         replicationManagerRef.current = repl;
 
@@ -131,6 +135,8 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (isAuthenticated) {
           repl.start();
+        } else {
+          repl.stop();
         }
       } catch (err) {
         console.error("Failed to initialize RxDB / Replication:", err);
