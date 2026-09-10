@@ -17,7 +17,7 @@ export interface SongDocType {
   folderId?: string | null;
   path: string;
   tags: string[];
-  score: SongScore;
+  score?: SongScore;
   song_number?: number | null;
   createdAt: string;
   updatedAt: string;
