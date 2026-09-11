@@ -7,6 +7,7 @@ export const pt = {
   common: {
     library: "Biblioteca",
     services: "Cultos",
+    collections: "Coleções",
     settings: "Definições",
     teams: "Equipas",
     agenda: "Agenda",
@@ -75,6 +76,7 @@ export const pt = {
     importSongs: "Importar Cânticos de um outro Provedor",
     newService: "Novo Plano de Culto",
     newFolder: "Nova Pasta",
+    newCollection: "Nova Coleção",
   },
 
   toolbar: {

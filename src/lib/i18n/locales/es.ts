@@ -9,6 +9,7 @@ export const es: typeof pt = {
   common: {
     library: "Biblioteca",
     services: "Cultos",
+    collections: "Colecciones",
     settings: "Configuración",
     teams: "Equipos",
     agenda: "Agenda",
@@ -77,6 +78,7 @@ export const es: typeof pt = {
     importSongs: "Importar Canciones de otro Proveedor",
     newService: "Nuevo Plan de Culto",
     newFolder: "Nueva Carpeta",
+    newCollection: "Nueva Colección",
   },
 
   toolbar: {
