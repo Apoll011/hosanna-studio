@@ -23,6 +23,7 @@ interface CommandPaletteContextType {
   unregisterDynamicActions: (id: string) => void;
   recordRecentAction: (id: string) => void;
   recentActionIds: string[];
+  allActions: CommandAction[];
 }
 
 const CommandPaletteContext = createContext<CommandPaletteContextType | null>(
@@ -183,6 +184,7 @@ export function CommandPaletteProvider({
         unregisterDynamicActions,
         recordRecentAction,
         recentActionIds,
+        allActions,
       }}
     >
       {children}

@@ -16,7 +16,8 @@ import { MiniCalendar, toIso } from "@/src/components/agenda/MiniCalendar";
 import { ResponsibilitiesPanel } from "@/src/components/agenda/ResponsibilitiesPanel";
 import { useI18n } from "@/src/lib/i18n";
 import { AlertTriangle, CalendarPlus, Printer } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Modal } from "../components/common";
 import { Button } from "../components/common/Button";
 import { usePrint } from "../contexts/PrintContext";
@@ -26,6 +27,7 @@ export const AgendaPage: React.FC = () => {
   const { t } = useI18n();
   const store = useAgenda();
   const { printEvent, printEvents } = usePrint();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(() => toIso(new Date()));
@@ -40,6 +42,17 @@ export const AgendaPage: React.FC = () => {
   );
 
   const [isDeleteModalOpen, setIsDeleteModal] = useState<boolean>(false);
+
+  // Open create modal when navigated here with ?create=1 (e.g. from command palette)
+  useEffect(() => {
+    if (searchParams.get("create") === "1") {
+      setIsNewEventOpen(true);
+      setSearchParams((prev) => {
+        prev.delete("create");
+        return prev;
+      }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const markedDates = useMemo(
     () => new Set(store.events.map((ev) => ev.date)),
