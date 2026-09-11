@@ -124,7 +124,7 @@ export async function updateFolderCounts(
 export function calculateCollectionSongCount(
   collectionId: string,
   songs:
-    | Array<Pick<SongDocType, "collectionIds" | "isDeleted" | "_deleted">>
+    | Array<Pick<SongDocType, "id" | "collectionIds" | "isDeleted" | "_deleted">>
     | HosanaCollection<AsSongDoc>,
 ): number {
   const list = Array.isArray(songs) ? songs : songs.getAllRaw();
@@ -138,23 +138,43 @@ export function calculateCollectionSongCount(
 }
 
 /**
- * Recalculates songCount for an array of collections using the given songs.
+ * Recalculates songCount and synchronizes songIds for an array of collections using the given songs.
  */
 export function recalculateCollectionCounts(
   collections: AsCollectionDoc[],
-  songs: Array<Pick<SongDocType, "collectionIds" | "isDeleted" | "_deleted">>,
+  songs: Array<Pick<SongDocType, "id" | "collectionIds" | "isDeleted" | "_deleted">>,
 ): AsCollectionDoc[] {
-  return collections.map((collection) => ({
-    ...collection,
-    songCount:
-      Array.isArray(collection.songIds) && collection.songIds.length > 0
-        ? collection.songIds.length
-        : calculateCollectionSongCount(collection.id, songs),
-  }));
+  const activeSongs = songs.filter((s) => !s.isDeleted && !s._deleted);
+  const activeSongIdSet = new Set(activeSongs.map((s) => s.id));
+
+  return collections.map((collection) => {
+    const songIdsSet = new Set<string>();
+    for (const s of activeSongs) {
+      if (
+        Array.isArray(s.collectionIds) &&
+        s.collectionIds.includes(collection.id)
+      ) {
+        songIdsSet.add(s.id);
+      }
+    }
+    if (Array.isArray(collection.songIds)) {
+      for (const sid of collection.songIds) {
+        if (activeSongIdSet.has(sid)) {
+          songIdsSet.add(sid);
+        }
+      }
+    }
+    const syncedSongIds = Array.from(songIdsSet);
+    return {
+      ...collection,
+      songIds: syncedSongIds,
+      songCount: syncedSongIds.length,
+    };
+  });
 }
 
 /**
- * Recalculates and updates songCount for a specific collection in the database.
+ * Recalculates and updates songCount and songIds for a specific collection in the database.
  */
 export async function updateCollectionCounts(
   db: HosanaDatabase,
@@ -162,12 +182,32 @@ export async function updateCollectionCounts(
 ): Promise<void> {
   const collection = await db.collections.findOne(collectionId).exec();
   if (!collection) return;
-  const count =
-    Array.isArray(collection.songIds) && collection.songIds.length > 0
-      ? collection.songIds.length
-      : calculateCollectionSongCount(collectionId, db.songs);
+
+  const allSongs = db.songs.getAllRaw();
+  const activeSongs = allSongs.filter((s) => !s.isDeleted && !s._deleted);
+  const activeSongIdSet = new Set(activeSongs.map((s) => s.id));
+
+  const songIdsSet = new Set<string>();
+  for (const s of activeSongs) {
+    if (
+      Array.isArray(s.collectionIds) &&
+      s.collectionIds.includes(collectionId)
+    ) {
+      songIdsSet.add(s.id);
+    }
+  }
+  if (Array.isArray(collection.songIds)) {
+    for (const sid of collection.songIds) {
+      if (activeSongIdSet.has(sid)) {
+        songIdsSet.add(sid);
+      }
+    }
+  }
+
+  const syncedSongIds = Array.from(songIdsSet);
   await collection.patch({
-    songCount: count,
+    songIds: syncedSongIds,
+    songCount: syncedSongIds.length,
   });
 }
 

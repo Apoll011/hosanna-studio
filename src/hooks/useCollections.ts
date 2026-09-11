@@ -195,9 +195,49 @@ export function useCollections() {
         if (songIds !== undefined) {
           patchData.songIds = songIds;
           patchData.songCount = songIds.length;
+
+          const oldSongIds = new Set(
+            Array.isArray(doc.songIds) ? doc.songIds : [],
+          );
+          const newSongIds = new Set(songIds);
+
+          for (const sId of newSongIds) {
+            if (!oldSongIds.has(sId)) {
+              const songDoc = await db.songs.findOne(sId).exec();
+              if (songDoc) {
+                const currentIds = Array.isArray(songDoc.collectionIds)
+                  ? [...songDoc.collectionIds]
+                  : [];
+                if (!currentIds.includes(id)) {
+                  currentIds.push(id);
+                  await songDoc.patch({
+                    collectionIds: currentIds,
+                    updatedAt: now,
+                  });
+                }
+              }
+            }
+          }
+
+          for (const sId of oldSongIds) {
+            if (!newSongIds.has(sId)) {
+              const songDoc = await db.songs.findOne(sId).exec();
+              if (songDoc && Array.isArray(songDoc.collectionIds)) {
+                const updatedIds = songDoc.collectionIds.filter(
+                  (cid: string) => cid !== id,
+                );
+                await songDoc.patch({
+                  collectionIds: updatedIds,
+                  updatedAt: now,
+                });
+              }
+            }
+          }
+          invalidateSongsCache();
         }
 
         await doc.patch(patchData);
+        await updateCollectionCounts(db, id);
         invalidateCollectionsCache();
         showToast("Coleção atualizada", "success");
       } catch (err: unknown) {

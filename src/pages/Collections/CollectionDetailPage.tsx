@@ -39,7 +39,7 @@ import { useOutletContext, useParams } from "react-router-dom";
 export const CollectionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { navigate } = useAppNavigate();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { organization } = useAuth();
   const slugPrefix = organization?.slug ? `/${organization.slug}` : "";
 
@@ -89,7 +89,6 @@ export const CollectionDetailPage: React.FC = () => {
   const songsInCollection = useMemo(() => {
     if (!collection) return [];
     const songIdSet = new Set(collection.songIds || []);
-    console.log(songIdSet);
     return allSongs.filter(
       (song) =>
         songIdSet.has(song.id) ||
@@ -162,17 +161,9 @@ export const CollectionDetailPage: React.FC = () => {
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-m3-bg text-center">
         <EmptyState
           icon={<FolderKanban className="w-12 h-12 text-slate-400 mx-auto" />}
-          title={
-            locale === "pt" ? "Coleção não encontrada" : "Collection not found"
-          }
-          description={
-            locale === "pt"
-              ? "A coleção que você procura pode ter sido removida."
-              : "The collection you are looking for may have been removed."
-          }
-          actionLabel={
-            locale === "pt" ? "Voltar para Coleções" : "Back to Collections"
-          }
+          title={t("collectionsPage.notFoundTitle")}
+          description={t("collectionsPage.notFoundDesc")}
+          actionLabel={t("collectionsPage.backToCollections")}
           onAction={() => navigate(`${slugPrefix}/collections`)}
         />
       </div>
@@ -205,9 +196,7 @@ export const CollectionDetailPage: React.FC = () => {
         <button
           onClick={() => navigate(`${slugPrefix}/collections`)}
           className="absolute top-4 left-4 p-2.5 rounded-2xl bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all cursor-pointer shadow-md"
-          title={
-            locale === "pt" ? "Voltar para Coleções" : "Back to Collections"
-          }
+          title={t("collectionsPage.backToCollections")}
         >
           <ArrowLeft className="w-4.5 h-4.5" />
         </button>
@@ -230,13 +219,10 @@ export const CollectionDetailPage: React.FC = () => {
                 {collection.name}
               </h1>
               <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-                {locale === "pt"
-                  ? `${songsInCollection.length} ${
-                      songsInCollection.length === 1 ? "música" : "músicas"
-                    }`
-                  : `${songsInCollection.length} ${
-                      songsInCollection.length === 1 ? "song" : "songs"
-                    }`}
+                {t(
+                  `collectionsPage.songCount.${songsInCollection.length === 1 ? "one" : "other"}`,
+                  { count: songsInCollection.length },
+                )}
               </span>
             </div>
           </div>
@@ -249,7 +235,7 @@ export const CollectionDetailPage: React.FC = () => {
               icon={<Plus className="w-4 h-4" />}
               onClick={() => setIsAddSongsModalOpen(true)}
             >
-              {locale === "pt" ? "Adicionar Músicas" : "Add Songs"}
+              {t("collectionsPage.addSongs")}
             </Button>
 
             <div className="relative" onClick={(e) => e.stopPropagation()}>
@@ -273,7 +259,7 @@ export const CollectionDetailPage: React.FC = () => {
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
                   >
                     <Edit2 className="w-3.5 h-3.5 text-sky-500" />
-                    {locale === "pt" ? "Editar Coleção" : "Edit Collection"}
+                    {t("collectionsPage.editCollection")}
                   </button>
                   <button
                     type="button"
@@ -284,7 +270,7 @@ export const CollectionDetailPage: React.FC = () => {
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
                   >
                     <Plus className="w-3.5 h-3.5 text-emerald-500" />
-                    {locale === "pt" ? "Adicionar Músicas" : "Add Songs"}
+                    {t("collectionsPage.addSongs")}
                   </button>
                   <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                   <button
@@ -296,7 +282,7 @@ export const CollectionDetailPage: React.FC = () => {
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left"
                   >
                     <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                    {locale === "pt" ? "Excluir Coleção" : "Delete Collection"}
+                    {t("collectionsPage.deleteTitle")}
                   </button>
                 </div>
               )}
@@ -319,23 +305,17 @@ export const CollectionDetailPage: React.FC = () => {
               icon={<Music className="w-12 h-12 text-slate-400 mx-auto" />}
               title={
                 songsInCollection.length === 0
-                  ? locale === "pt"
-                    ? "Esta coleção ainda não possui músicas"
-                    : "This collection does not have songs yet"
-                  : locale === "pt"
-                    ? "Nenhuma música correspondente encontrada"
-                    : "No matching songs found"
+                  ? t("collectionsPage.emptyTitle")
+                  : t("collectionsPage.noSearchResultsTitle")
               }
               description={
                 songsInCollection.length === 0
-                  ? locale === "pt"
-                    ? "Adicione músicas da sua biblioteca a esta coleção para organizá-las."
-                    : "Add songs from your library to organize them in this collection."
-                  : locale === "pt"
-                    ? `Nenhuma música encontrada para "${searchQuery}".`
-                    : `No songs found for "${searchQuery}".`
+                  ? t("collectionsPage.emptyDesc")
+                  : t("collectionsPage.noSearchResultsDesc", {
+                      query: searchQuery,
+                    })
               }
-              actionLabel={locale === "pt" ? "Adicionar Músicas" : "Add Songs"}
+              actionLabel={t("collectionsPage.addSongs")}
               onAction={() => setIsAddSongsModalOpen(true)}
             />
           </div>
@@ -405,7 +385,7 @@ export const CollectionDetailPage: React.FC = () => {
                             className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
                           >
                             <Music className="w-3.5 h-3.5 text-sky-500" />
-                            {locale === "pt" ? "Ver Música" : "View Song"}
+                            {t("collectionsPage.viewSong")}
                           </button>
                           <button
                             type="button"
@@ -416,9 +396,7 @@ export const CollectionDetailPage: React.FC = () => {
                             className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left"
                           >
                             <X className="w-3.5 h-3.5 text-rose-500" />
-                            {locale === "pt"
-                              ? "Remover da Coleção"
-                              : "Remove from Collection"}
+                            {t("collectionsPage.removeFromCollection")}
                           </button>
                         </div>
                       )}
@@ -435,21 +413,11 @@ export const CollectionDetailPage: React.FC = () => {
       {totalSongs > 0 && (
         <div className="px-6 sm:px-8 py-3 bg-white dark:bg-m3-bg border-t border-m3-border/70 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-auto">
           <span>
-            {locale === "pt"
-              ? `${Math.min(
-                  (currentPage - 1) * itemsPerPage + 1,
-                  totalSongs,
-                )} a ${Math.min(
-                  currentPage * itemsPerPage,
-                  totalSongs,
-                )} de ${totalSongs} músicas`
-              : `${Math.min(
-                  (currentPage - 1) * itemsPerPage + 1,
-                  totalSongs,
-                )} to ${Math.min(
-                  currentPage * itemsPerPage,
-                  totalSongs,
-                )} of ${totalSongs} songs`}
+            {t("collectionsPage.paginationInfo", {
+              from: Math.min((currentPage - 1) * itemsPerPage + 1, totalSongs),
+              to: Math.min(currentPage * itemsPerPage, totalSongs),
+              total: totalSongs,
+            })}
           </span>
 
           {totalPages > 1 && (
@@ -530,13 +498,11 @@ export const CollectionDetailPage: React.FC = () => {
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDelete}
-        title={locale === "pt" ? "Excluir Coleção" : "Delete Collection"}
-        message={
-          locale === "pt"
-            ? `Tem certeza que deseja excluir a coleção "${collection.name}"? As músicas permanecerão disponíveis na biblioteca.`
-            : `Are you sure you want to delete "${collection.name}"? Songs will remain in your library.`
-        }
-        confirmText={locale === "pt" ? "Excluir" : "Delete"}
+        title={t("collectionsPage.deleteTitle")}
+        message={t("collectionsPage.deletePermanentMessage", {
+          name: collection.name,
+        })}
+        confirmText={t("collectionsPage.delete")}
         cancelText={t("common.cancel")}
         variant="danger"
       />
@@ -546,15 +512,11 @@ export const CollectionDetailPage: React.FC = () => {
         isOpen={Boolean(songToRemove)}
         onClose={() => setSongToRemove(null)}
         onConfirm={handleRemoveSong}
-        title={
-          locale === "pt" ? "Remover da Coleção" : "Remove from Collection"
-        }
-        message={
-          locale === "pt"
-            ? `Deseja remover "${songToRemove?.title}" desta coleção? A música continuará salva na biblioteca.`
-            : `Do you want to remove "${songToRemove?.title}" from this collection? The song will remain in the library.`
-        }
-        confirmText={locale === "pt" ? "Remover" : "Remove"}
+        title={t("collectionsPage.removeSongTitle")}
+        message={t("collectionsPage.removeSongMessage", {
+          title: songToRemove?.title ?? "",
+        })}
+        confirmText={t("collectionsPage.removeFromCollection")}
         cancelText={t("common.cancel")}
         variant="danger"
       />

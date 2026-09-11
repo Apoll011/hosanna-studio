@@ -5,7 +5,7 @@
 
 import { Button, Input, Modal } from "@/src/components/common";
 import { useI18n } from "@/src/lib/i18n";
-import { Folder, Song } from "@/src/types";
+import { Collection, Folder, Song } from "@/src/types";
 import { ConversionResult } from "@hosanna/chordpro";
 import {
   AlertTriangle,
@@ -28,10 +28,12 @@ import {
 import { FolderForm } from "../forms/FolderForm";
 import { ServiceForm } from "../forms/ServiceForm";
 import { SongForm } from "../forms/SongForm";
+import { AddToCollectionModal } from "../modals/AddToCollectionModal";
 import { BatchDeleteModal } from "../modals/BatchDeleteModal";
 import { BatchMoveModal } from "../modals/BatchMoveModal";
 import { BatchTagModal } from "../modals/BatchTagModal";
 import { CifraClubImportModal } from "../modals/CifraModal";
+import { CreateCollectionModal } from "../modals/CreateCollectionModal";
 import { CustomizeFolderModal } from "../modals/CustomizeFolderModal";
 import { MoveSongModal } from "../modals/MoveSongModal";
 
@@ -577,6 +579,26 @@ interface ExplorerModalsProps {
   currentQuery: string;
   onApplyQuery: (query: string) => void;
   availableTags: string[];
+
+  // Create Collection
+  isCreateCollectionModalOpen?: boolean;
+  setIsCreateCollectionModalOpen?: (v: boolean) => void;
+  onCreateCollectionSubmit?: (data: {
+    name: string;
+    description?: string | null;
+    color?: string;
+    icon?: string;
+    image?: string | null;
+  }) => Promise<void>;
+
+  // Add to Collection
+  addToCollectionTarget?: Song | null;
+  setAddToCollectionTarget?: (s: Song | null) => void;
+  isBatchAddToCollectionOpen?: boolean;
+  setIsBatchAddToCollectionOpen?: (v: boolean) => void;
+  allCollections?: Collection[];
+  onAddToCollectionConfirm?: (collectionId: string) => Promise<void>;
+  onOpenCreateCollectionFromAdd?: () => void;
 }
 
 export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
@@ -641,6 +663,16 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
   currentQuery,
   onApplyQuery,
   availableTags,
+  isCreateCollectionModalOpen = false,
+  setIsCreateCollectionModalOpen,
+  onCreateCollectionSubmit,
+  addToCollectionTarget,
+  setAddToCollectionTarget,
+  isBatchAddToCollectionOpen = false,
+  setIsBatchAddToCollectionOpen,
+  allCollections = [],
+  onAddToCollectionConfirm,
+  onOpenCreateCollectionFromAdd,
 }) => {
   const { t } = useI18n();
 
@@ -1020,6 +1052,43 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
         availableFolders={allFolders}
         currentFolder={currentFolder}
       />
+
+      {/* CREATE COLLECTION MODAL */}
+      {onCreateCollectionSubmit && setIsCreateCollectionModalOpen && (
+        <CreateCollectionModal
+          isOpen={isCreateCollectionModalOpen}
+          onClose={() => setIsCreateCollectionModalOpen(false)}
+          onSave={onCreateCollectionSubmit}
+        />
+      )}
+
+      {/* ADD TO COLLECTION MODAL (SINGLE SONG) */}
+      {addToCollectionTarget &&
+        setAddToCollectionTarget &&
+        onAddToCollectionConfirm && (
+          <AddToCollectionModal
+            isOpen={!!addToCollectionTarget}
+            onClose={() => setAddToCollectionTarget(null)}
+            collections={allCollections}
+            songTitle={addToCollectionTarget.title}
+            onConfirm={onAddToCollectionConfirm}
+            onCreateNewCollection={onOpenCreateCollectionFromAdd}
+          />
+        )}
+
+      {/* ADD TO COLLECTION MODAL (BATCH SONGS) */}
+      {isBatchAddToCollectionOpen &&
+        setIsBatchAddToCollectionOpen &&
+        onAddToCollectionConfirm && (
+          <AddToCollectionModal
+            isOpen={isBatchAddToCollectionOpen}
+            onClose={() => setIsBatchAddToCollectionOpen(false)}
+            collections={allCollections}
+            songCount={selectedSongIds.size}
+            onConfirm={onAddToCollectionConfirm}
+            onCreateNewCollection={onOpenCreateCollectionFromAdd}
+          />
+        )}
     </>
   );
 };

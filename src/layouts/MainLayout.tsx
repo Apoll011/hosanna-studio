@@ -771,8 +771,39 @@ export const MainLayout: React.FC = () => {
   const [dropTargetFolderId, setDropTargetFolderId] = useState<string | null>(
     null,
   );
+  const { collections, createCollection, addSongsToCollection } =
+    useCollections();
+  const [addToCollectionTarget, setAddToCollectionTarget] =
+    useState<Song | null>(null);
+  const [isBatchAddToCollectionOpen, setIsBatchAddToCollectionOpen] =
+    useState(false);
 
-  const { collections } = useCollections();
+  const handleCreateCollectionSubmit = useCallback(
+    async (data: {
+      name: string;
+      description?: string | null;
+      color?: string;
+      icon?: string;
+      image?: string | null;
+    }) => {
+      await createCollection(data);
+      setIsCreateCollectionModalOpen(false);
+    },
+    [createCollection],
+  );
+
+  const handleAddToCollectionConfirm = useCallback(
+    async (collectionId: string) => {
+      const songIdsToAdd = addToCollectionTarget
+        ? [addToCollectionTarget.id]
+        : Array.from(selectedSongIds);
+      if (songIdsToAdd.length === 0) return;
+      await addSongsToCollection(collectionId, songIdsToAdd);
+      setAddToCollectionTarget(null);
+      setIsBatchAddToCollectionOpen(false);
+    },
+    [addToCollectionTarget, selectedSongIds, addSongsToCollection],
+  );
 
   // Auto-expand folder tree
   useEffect(() => {
@@ -1650,6 +1681,8 @@ export const MainLayout: React.FC = () => {
           setSelectedSongIds(new Set([s.id]));
           setIsBatchTagOpen(true);
         }}
+        onAddToCollection={(s) => setAddToCollectionTarget(s)}
+        onBatchAddToCollection={() => setIsBatchAddToCollectionOpen(true)}
         onDeleteSong={setDeleteSongTarget}
         onPrintSong={(songId) => {
           const s = allSongs.find((x) => x.id === songId);
@@ -1761,6 +1794,16 @@ export const MainLayout: React.FC = () => {
         currentQuery={searchQuery}
         onApplyQuery={handleSearchChange}
         availableTags={availableTags}
+        isCreateCollectionModalOpen={isCreateCollectionModalOpen}
+        setIsCreateCollectionModalOpen={setIsCreateCollectionModalOpen}
+        onCreateCollectionSubmit={handleCreateCollectionSubmit}
+        addToCollectionTarget={addToCollectionTarget}
+        setAddToCollectionTarget={setAddToCollectionTarget}
+        isBatchAddToCollectionOpen={isBatchAddToCollectionOpen}
+        setIsBatchAddToCollectionOpen={setIsBatchAddToCollectionOpen}
+        allCollections={collections}
+        onAddToCollectionConfirm={handleAddToCollectionConfirm}
+        onOpenCreateCollectionFromAdd={() => setIsCreateCollectionModalOpen(true)}
       />
 
       {/* Marquee rubberband drag selection box */}

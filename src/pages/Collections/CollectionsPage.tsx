@@ -23,7 +23,7 @@ type CollectionSortBy = "updatedAt" | "title" | "number";
 
 export const CollectionsPage: React.FC = () => {
   const { navigate } = useAppNavigate();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { organization, user } = useAuth();
   const slugPrefix = organization?.slug ? `/${organization.slug}` : "";
 
@@ -244,7 +244,7 @@ export const CollectionsPage: React.FC = () => {
                               className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
                             >
                               <Edit2 className="w-3.5 h-3.5 text-sky-500" />
-                              {locale === "pt" ? "Editar" : "Edit"}
+                              {t("collectionsPage.edit")}
                             </button>
                             <button
                               type="button"
@@ -256,7 +256,7 @@ export const CollectionsPage: React.FC = () => {
                               className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                              {locale === "pt" ? "Excluir" : "Delete"}
+                              {t("collectionsPage.delete")}
                             </button>
                           </div>
                         )}
@@ -268,9 +268,10 @@ export const CollectionsPage: React.FC = () => {
                       {collection.name}
                     </h4>
                     <span className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">
-                      {locale === "pt"
-                        ? `${songCount} ${songCount === 1 ? "música" : "músicas"}`
-                        : `${songCount} ${songCount === 1 ? "song" : "songs"}`}
+                      {t(
+                        `collectionsPage.songCount.${songCount === 1 ? "one" : "other"}`,
+                        { count: songCount },
+                      )}
                     </span>
 
                     {/* Description */}
@@ -309,13 +310,11 @@ export const CollectionsPage: React.FC = () => {
         isOpen={Boolean(deletingCollection)}
         onClose={() => setDeletingCollection(null)}
         onConfirm={handleDeleteConfirm}
-        title={locale === "pt" ? "Excluir Coleção" : "Delete Collection"}
-        message={
-          locale === "pt"
-            ? `Tem certeza que deseja enviar a coleção "${deletingCollection?.name}" para a lixeira? As músicas continuarão salvas na biblioteca.`
-            : `Are you sure you want to move the collection "${deletingCollection?.name}" to trash? Songs will remain in your library.`
-        }
-        confirmText={locale === "pt" ? "Excluir" : "Delete"}
+        title={t("collectionsPage.deleteTitle")}
+        message={t("collectionsPage.deleteMessage", {
+          name: deletingCollection?.name ?? "",
+        })}
+        confirmText={t("collectionsPage.delete")}
         cancelText={t("common.cancel")}
         variant="danger"
       />
