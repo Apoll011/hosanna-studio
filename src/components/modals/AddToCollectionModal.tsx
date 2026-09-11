@@ -32,10 +32,10 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
   onConfirm,
   onCreateNewCollection,
 }) => {
-  const { t } = useI18n();
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(
-    null,
-  );
+  const { t, tc } = useI18n();
+  const [selectedCollectionId, setSelectedCollectionId] = useState<
+    string | null
+  >(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -154,7 +154,7 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
                         {col.name}
                       </span>
                       <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                        {t("collectionsPage.songCount", { count })}
+                        {tc(`collectionsPage.songCount`, count, { count })}
                       </span>
                     </div>
                   </div>
