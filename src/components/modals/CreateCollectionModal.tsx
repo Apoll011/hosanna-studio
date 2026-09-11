@@ -148,7 +148,10 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             : "New Collection"
       }
     >
-      <form onSubmit={handleSave} className="flex flex-col gap-4 max-h-[75vh] overflow-y-auto pr-1">
+      <form
+        onSubmit={handleSave}
+        className="flex flex-col gap-4 max-h-[75vh] overflow-y-auto pr-1"
+      >
         {/* Live Preview Card */}
         <div className="relative overflow-hidden flex items-center gap-4 p-3.5 rounded-2xl bg-linear-to-br from-slate-50 to-slate-100/70 dark:from-slate-800/70 dark:to-slate-900/80 border border-slate-200/80 dark:border-slate-700/60 shadow-inner">
           <div
@@ -159,7 +162,8 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
 
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-              {name || (locale === "pt" ? "Título da Coleção" : "Collection Title")}
+              {name ||
+                (locale === "pt" ? "Título da Coleção" : "Collection Title")}
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
               {description ||
@@ -200,7 +204,9 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
         {/* Collection Description */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-            {locale === "pt" ? "Descrição (opcional)" : "Description (optional)"}
+            {locale === "pt"
+              ? "Descrição (opcional)"
+              : "Description (optional)"}
           </label>
           <textarea
             value={description}
@@ -219,7 +225,11 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
             <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
-            <span>{locale === "pt" ? "Imagem de Capa / URL (opcional)" : "Cover Image URL (optional)"}</span>
+            <span>
+              {locale === "pt"
+                ? "Imagem de Capa / URL (opcional)"
+                : "Cover Image URL (optional)"}
+            </span>
           </label>
           <Input
             value={imageUrl}
@@ -284,7 +294,9 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder={locale === "pt" ? "Buscar ícone..." : "Search icon..."}
+                placeholder={
+                  locale === "pt" ? "Buscar ícone..." : "Search icon..."
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-7 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"

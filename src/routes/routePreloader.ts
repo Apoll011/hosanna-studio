@@ -150,8 +150,14 @@ export const routePreloaders: Array<{
 }> = [
   { pattern: /\/songs\/[^/]+/, preload: () => SongEditorPage.preload() },
   { pattern: /\/songs(\/|\?|#|$)/, preload: () => SongsPage.preload() },
-  { pattern: /\/collections\/[^/]+/, preload: () => CollectionDetailPage.preload() },
-  { pattern: /\/collections(\/|\?|#|$)/, preload: () => CollectionsPage.preload() },
+  {
+    pattern: /\/collections\/[^/]+/,
+    preload: () => CollectionDetailPage.preload(),
+  },
+  {
+    pattern: /\/collections(\/|\?|#|$)/,
+    preload: () => CollectionsPage.preload(),
+  },
   { pattern: /\/services\/[^/]+/, preload: () => ServiceDetailPage.preload() },
   { pattern: /\/services(\/|\?|#|$)/, preload: () => ServicesPage.preload() },
   { pattern: /\/folders(\/|\?|#|$)/, preload: () => FoldersPage.preload() },

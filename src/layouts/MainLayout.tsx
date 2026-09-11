@@ -1803,7 +1803,9 @@ export const MainLayout: React.FC = () => {
         setIsBatchAddToCollectionOpen={setIsBatchAddToCollectionOpen}
         allCollections={collections}
         onAddToCollectionConfirm={handleAddToCollectionConfirm}
-        onOpenCreateCollectionFromAdd={() => setIsCreateCollectionModalOpen(true)}
+        onOpenCreateCollectionFromAdd={() =>
+          setIsCreateCollectionModalOpen(true)
+        }
       />
 
       {/* Marquee rubberband drag selection box */}

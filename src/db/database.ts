@@ -124,7 +124,9 @@ export async function updateFolderCounts(
 export function calculateCollectionSongCount(
   collectionId: string,
   songs:
-    | Array<Pick<SongDocType, "id" | "collectionIds" | "isDeleted" | "_deleted">>
+    | Array<
+        Pick<SongDocType, "id" | "collectionIds" | "isDeleted" | "_deleted">
+      >
     | HosanaCollection<AsSongDoc>,
 ): number {
   const list = Array.isArray(songs) ? songs : songs.getAllRaw();
@@ -142,7 +144,9 @@ export function calculateCollectionSongCount(
  */
 export function recalculateCollectionCounts(
   collections: AsCollectionDoc[],
-  songs: Array<Pick<SongDocType, "id" | "collectionIds" | "isDeleted" | "_deleted">>,
+  songs: Array<
+    Pick<SongDocType, "id" | "collectionIds" | "isDeleted" | "_deleted">
+  >,
 ): AsCollectionDoc[] {
   const activeSongs = songs.filter((s) => !s.isDeleted && !s._deleted);
   const activeSongIdSet = new Set(activeSongs.map((s) => s.id));

@@ -47,10 +47,13 @@ export const AgendaPage: React.FC = () => {
   useEffect(() => {
     if (searchParams.get("create") === "1") {
       setIsNewEventOpen(true);
-      setSearchParams((prev) => {
-        prev.delete("create");
-        return prev;
-      }, { replace: true });
+      setSearchParams(
+        (prev) => {
+          prev.delete("create");
+          return prev;
+        },
+        { replace: true },
+      );
     }
   }, [searchParams, setSearchParams]);
 

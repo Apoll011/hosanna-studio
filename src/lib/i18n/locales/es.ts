@@ -795,7 +795,8 @@ export const es: typeof pt = {
     nameLabel: "Nombre de la Colección *",
     namePlaceholder: "Ej: Alabanza y Adoración, Jóvenes, Culto Dominical...",
     descLabel: "Descripción (opcional)",
-    descPlaceholder: "Canciones para momentos de alabanza y adoración a Dios...",
+    descPlaceholder:
+      "Canciones para momentos de alabanza y adoración a Dios...",
     coverLabel: "Imagen de Portada / URL (opcional)",
     colorLabel: "Color",
     iconLabel: "Ícono",

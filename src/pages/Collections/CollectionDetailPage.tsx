@@ -3,11 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  Button,
-  ConfirmDialog,
-  Spinner,
-} from "@/src/components/common";
+import { Button, ConfirmDialog, Spinner } from "@/src/components/common";
 import { AddSongsToCollectionModal } from "@/src/components/modals/AddSongsToCollectionModal";
 import { CreateCollectionModal } from "@/src/components/modals/CreateCollectionModal";
 import { useAuth } from "@/src/contexts/AuthContext";
@@ -219,9 +215,11 @@ export const CollectionDetailPage: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-white dark:bg-m3-bg">
-
       {/* ── HERO BANNER ──────────────────────────────────────────────────────── */}
-      <div className="relative w-full overflow-hidden" style={{ minHeight: 220 }}>
+      <div
+        className="relative w-full overflow-hidden"
+        style={{ minHeight: 220 }}
+      >
         {/* Background */}
         {collection.image ? (
           <img
@@ -376,7 +374,8 @@ export const CollectionDetailPage: React.FC = () => {
             <span>
               {totalSongs}
               <span className="text-slate-300 dark:text-slate-600">
-                {" "}/ {songCount}
+                {" "}
+                / {songCount}
               </span>
             </span>
           ) : (
@@ -448,8 +447,7 @@ export const CollectionDetailPage: React.FC = () => {
             </div>
 
             {paginatedSongs.map((song, index) => {
-              const globalIndex =
-                (currentPage - 1) * itemsPerPage + index + 1;
+              const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
               const keyMatch = song.content
                 ?.match(/\{key:\s*([^}]+)\}/i)?.[1]
                 ?.trim();
@@ -468,9 +466,7 @@ export const CollectionDetailPage: React.FC = () => {
                   {/* Index / Play icon on hover */}
                   <span
                     className="text-center cursor-pointer"
-                    onClick={() =>
-                      navigate(`${slugPrefix}/songs/${song.id}`)
-                    }
+                    onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
                   >
                     {isHovered ? (
                       <Music2 className="w-3.5 h-3.5 mx-auto text-m3-primary" />
@@ -484,9 +480,7 @@ export const CollectionDetailPage: React.FC = () => {
                   {/* Title + Artist */}
                   <div
                     className="flex flex-col min-w-0 cursor-pointer"
-                    onClick={() =>
-                      navigate(`${slugPrefix}/songs/${song.id}`)
-                    }
+                    onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
                   >
                     <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {song.title}
@@ -552,9 +546,7 @@ export const CollectionDetailPage: React.FC = () => {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setActiveSongMenuId(
-                            isMenuOpen ? null : song.id,
-                          );
+                          setActiveSongMenuId(isMenuOpen ? null : song.id);
                         }}
                         className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                           isMenuOpen
@@ -622,10 +614,7 @@ export const CollectionDetailPage: React.FC = () => {
         <div className="px-6 sm:px-8 py-3 border-t border-m3-border/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-m3-bg/90 backdrop-blur-sm">
           <span>
             {t("collectionsPage.paginationInfo", {
-              from: Math.min(
-                (currentPage - 1) * itemsPerPage + 1,
-                totalSongs,
-              ),
+              from: Math.min((currentPage - 1) * itemsPerPage + 1, totalSongs),
               to: Math.min(currentPage * itemsPerPage, totalSongs),
               total: totalSongs,
             })}
@@ -673,9 +662,7 @@ export const CollectionDetailPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() =>
-                setCurrentPage((p) => Math.min(totalPages, p + 1))
-              }
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage >= totalPages}
               className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >

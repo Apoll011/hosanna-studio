@@ -80,7 +80,10 @@ function useSongMutations() {
         if (folderId) {
           await updateFolderCounts(db, folderId);
         }
-        if (Array.isArray(data.collectionIds) && data.collectionIds.length > 0) {
+        if (
+          Array.isArray(data.collectionIds) &&
+          data.collectionIds.length > 0
+        ) {
           for (const cId of data.collectionIds) {
             await updateCollectionCounts(db, cId);
           }
@@ -327,7 +330,10 @@ function useSongMutations() {
           if (targetFolderId) {
             await updateFolderCounts(db, targetFolderId);
           }
-          if (Array.isArray(doc.collectionIds) && doc.collectionIds.length > 0) {
+          if (
+            Array.isArray(doc.collectionIds) &&
+            doc.collectionIds.length > 0
+          ) {
             for (const cId of doc.collectionIds) {
               await updateCollectionCounts(db, cId);
             }

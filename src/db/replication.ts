@@ -59,11 +59,7 @@ type SyncableDoc = {
 };
 
 type CollectionName =
-  | "songs"
-  | "folders"
-  | "collections"
-  | "services"
-  | "agendaEvents";
+  "songs" | "folders" | "collections" | "services" | "agendaEvents";
 
 const ALL_COLLECTION_NAMES: CollectionName[] = [
   "songs",
