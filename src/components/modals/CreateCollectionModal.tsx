@@ -8,11 +8,9 @@ import { useI18n } from "@/src/lib/i18n";
 import { Collection } from "@/src/types";
 import {
   Check,
-  FolderKanban,
   Image as ImageIcon,
   Loader2,
   Palette,
-  RotateCcw,
   Search,
   Sparkles,
   X,

@@ -6,7 +6,7 @@
 import { Button, Input, Modal } from "@/src/components/common";
 import { useI18n } from "@/src/lib/i18n";
 import { Collection, Song } from "@/src/types";
-import { Check, Music, Search } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import React, { useMemo, useState } from "react";
 
 interface AddSongsToCollectionModalProps {
