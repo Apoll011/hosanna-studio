@@ -71,6 +71,7 @@ export const es: typeof pt = {
     searchServices: "Buscar cultos...",
     searchLibrary: "Buscar biblioteca...",
     searchFolders: "Buscar carpetas...",
+    searchCollections: "Buscar colecciones...",
     clearSearch: "Limpiar búsqueda",
     create: "Crear...",
     createNew: "Crear Nuevo",

@@ -68,6 +68,7 @@ export const pt = {
     back: "Voltar",
     searchServices: "Pesquisar cultos...",
     searchLibrary: "Pesquisar biblioteca...",
+    searchCollections: "Pesquisar coleçôes...",
     searchFolders: "Pesquisar pastas...",
     clearSearch: "Limpar pesquisa",
     create: "Criar...",
@@ -101,6 +102,8 @@ export const pt = {
     compact: "Compacto",
     numberAsc: "Número (Menor-Maior)",
     numberDesc: "Número (Maior-Menor)",
+    songNumberAsc: "Mais Músicas",
+    songNumberDesc: "Menos Musicas",
   },
 
   commandPalette: {

@@ -13,7 +13,6 @@ import {
   CornerLeftUp,
   FileText,
   Folder as FolderIcon,
-  FolderKanban,
   FolderOpen,
   FolderPlus,
   HardDrive,
@@ -317,7 +316,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
             <>
               <ChevronRight className="w-3.5 h-3.5 text-m3-secondary/40 shrink-0" />
               <div className="flex items-center gap-2 font-black text-m3-primary shrink-0 tracking-wide">
-                <FolderKanban className="w-4 h-4" />
+                <LibraryBig className="w-4 h-4" />
                 <span>{t("common.collections")}</span>
               </div>
             </>
@@ -330,7 +329,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                 onClick={() => navigate(`${slugPrefix}/collections`)}
                 className="flex items-center gap-2 font-bold text-m3-secondary hover:text-m3-text transition-all cursor-pointer shrink-0"
               >
-                <FolderKanban className="w-4 h-4 opacity-70" />
+                <LibraryBig className="w-4 h-4 opacity-70" />
                 <span>{t("common.collections")}</span>
               </button>
             </>
@@ -341,7 +340,10 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
       {/* Search, Notifications & Plus Action */}
       <div className="flex items-center gap-3 w-full md:w-auto overflow-visible hide-scrollbar pb-1 md:pb-0 justify-end">
         {/* Search Input */}
-        {(view === "explorer" || view === "songs" || view === "services") && (
+        {(view === "explorer" ||
+          view === "songs" ||
+          view === "services" ||
+          view === "collections") && (
           <div className="relative w-full sm:w-64 min-w-0">
             <Input
               placeholder={
@@ -349,7 +351,9 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                   ? t("addressBar.searchServices")
                   : view === "songs"
                     ? t("addressBar.searchLibrary")
-                    : t("addressBar.searchFolders")
+                    : view === "explorer"
+                      ? t("addressBar.searchFolders")
+                      : t("addressBar.searchCollections")
               }
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}

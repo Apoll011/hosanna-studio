@@ -71,6 +71,7 @@ export const en: typeof pt = {
     searchServices: "Search services...",
     searchLibrary: "Search library...",
     searchFolders: "Search folders...",
+    searchCollections: "Search collections...",
     clearSearch: "Clear search",
     create: "Create...",
     createNew: "Create New",
@@ -103,6 +104,8 @@ export const en: typeof pt = {
     compact: "Compact",
     numberAsc: "Number (Lowest-Biggest)",
     numberDesc: "Number (Biggest-Lowest)",
+    songNumberAsc: "Más canciones",
+    songNumberDesc: "Menos canciones",
   },
 
   commandPalette: {

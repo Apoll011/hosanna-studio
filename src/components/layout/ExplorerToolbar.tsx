@@ -44,7 +44,12 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
   onOpenFilterPanel,
 }) => {
   const { t } = useI18n();
-  if (view !== "explorer" && view !== "services" && view !== "songs")
+  if (
+    view !== "explorer" &&
+    view !== "services" &&
+    view !== "songs" &&
+    view !== "collections"
+  )
     return null;
 
   return (
@@ -132,6 +137,17 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
                 <option value="title-asc">{t("toolbar.nameAsc")}</option>
                 <option value="title-desc">{t("toolbar.nameDesc")}</option>
               </>
+            ) : view === "collections" ? (
+              <>
+                <option value="number-asc">{t("toolbar.songNumberAsc")}</option>
+                <option value="number-desc">
+                  {t("toolbar.songNumberDesc")}
+                </option>
+                <option value="title-asc">{t("toolbar.nameAsc")}</option>
+                <option value="title-desc">{t("toolbar.nameDesc")}</option>
+                <option value="updatedAt-asc">{t("toolbar.dateAsc")}</option>
+                <option value="updatedAt-desc">{t("toolbar.dateDesc")}</option>
+              </>
             ) : (
               <>
                 <option value="number-asc">{t("toolbar.numberAsc")}</option>
@@ -151,7 +167,7 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
       {/* Right Side: View Mode Toggle & Density Selector */}
       <div className="flex items-center gap-2.5">
         {/* View Mode Toggle (hidden in Songs view) */}
-        {view !== "songs" && (
+        {view !== "songs" && view !== "collections" && (
           <div
             role="group"
             aria-label={t("toolbar.viewMode")}
