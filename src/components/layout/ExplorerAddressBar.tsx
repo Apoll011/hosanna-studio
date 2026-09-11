@@ -18,6 +18,7 @@ import {
   FolderPlus,
   HardDrive,
   HelpCircle,
+  LibraryBig,
   Menu,
   Music,
   Plus,
@@ -498,7 +499,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                     className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
                   >
                     <div className="w-8 h-8 rounded-xl bg-m3-primary/10 text-m3-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <FolderKanban className="w-4 h-4" />
+                      <LibraryBig className="w-4 h-4" />
                     </div>
                     {t("addressBar.newCollection")}
                   </button>

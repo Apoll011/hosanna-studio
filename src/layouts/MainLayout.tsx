@@ -37,6 +37,7 @@ import { useSync } from "../contexts/SyncContext";
 import { getDatabase, purgeExpiredTrash } from "../db";
 import { useAgenda } from "../hooks/useAgenda";
 import { useAppNavigate } from "../hooks/useAppNavigate";
+import { useCollections } from "../hooks/useCollections";
 import { useFolders } from "../hooks/useFolders";
 import { usePersonalSettings } from "../hooks/usePersonalSettings";
 import { useServices } from "../hooks/useServices";
@@ -735,6 +736,8 @@ export const MainLayout: React.FC = () => {
   const [isCreateSongModalOpen, setIsCreateSongModalOpen] = useState(false);
   const [isCreateServiceModalOpen, setIsCreateServiceModalOpen] =
     useState(false);
+  const [isCreateCollectionModalOpen, setIsCreateCollectionModalOpen] =
+    useState(false);
   const [isCifraImportOpen, setIsCifraImportOpen] = useState(false);
 
   const [renameTarget, setRenameTarget] = useState<Folder | null>(null);
@@ -768,6 +771,8 @@ export const MainLayout: React.FC = () => {
   const [dropTargetFolderId, setDropTargetFolderId] = useState<string | null>(
     null,
   );
+
+  const { collections } = useCollections();
 
   // Auto-expand folder tree
   useEffect(() => {
@@ -1396,6 +1401,7 @@ export const MainLayout: React.FC = () => {
           rootFoldersCount={rootFoldersCount}
           totalSongs={totalSongs}
           totalServices={totalServices}
+          totalCollections={collections.length}
           trashCount={trashItems.length}
           eventCount={upcomingEventCount}
           allFolders={allFolders}
@@ -1449,6 +1455,9 @@ export const MainLayout: React.FC = () => {
                   navigate(-1);
                 }
               }}
+              onOpenCreateCollection={() =>
+                setIsCreateCollectionModalOpen(true)
+              }
               navigate={navigate}
               onOpenCreateSong={() => setIsCreateSongModalOpen(true)}
               onOpenCifraImport={() => setIsCifraImportOpen(true)}
