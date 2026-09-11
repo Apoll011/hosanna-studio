@@ -104,6 +104,8 @@ export const es: typeof pt = {
     compact: "Compacto",
     numberAsc: "Números (Menor-Mayor)",
     numberDesc: "Números (Mayor-Menor)",
+    songNumberAsc: "Más canciones",
+    songNumberDesc: "Menos canciones",
   },
 
   commandPalette: {
