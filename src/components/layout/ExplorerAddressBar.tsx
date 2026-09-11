@@ -4,6 +4,7 @@
  */
 import { Input } from "@/src/components/common";
 import { useI18n } from "@/src/lib/i18n";
+import { posthog } from "@/src/lib/posthog";
 import { Folder, Service, Song } from "@/src/types";
 import {
   Calendar,
@@ -12,6 +13,7 @@ import {
   CornerLeftUp,
   FileText,
   Folder as FolderIcon,
+  FolderKanban,
   FolderOpen,
   FolderPlus,
   HardDrive,
@@ -54,6 +56,7 @@ interface ExplorerAddressBarProps {
   onOpenCifraImport: () => void;
   onOpenCreateService: () => void;
   onOpenCreateFolder: () => void;
+  onOpenCreateCollection: () => void;
 }
 
 export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
@@ -77,6 +80,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
   onOpenCifraImport,
   onOpenCreateService,
   onOpenCreateFolder,
+  onOpenCreateCollection,
 }) => {
   const { t, locale } = useI18n();
   const isDriveRoot = view === "explorer" && currentFolderId === null;
@@ -95,6 +99,8 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const collections_enabled = posthog.isFeatureEnabled("collection") || false;
 
   return (
     <div className="relative p-3 sm:p-4 bg-m3-sidebar/40 border-b border-m3-border/50 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
@@ -305,6 +311,29 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
               </div>
             </>
           )}
+
+          {view === "collections" && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 text-m3-secondary/40 shrink-0" />
+              <div className="flex items-center gap-2 font-black text-m3-primary shrink-0 tracking-wide">
+                <FolderKanban className="w-4 h-4" />
+                <span>{t("common.collections")}</span>
+              </div>
+            </>
+          )}
+
+          {view === "collection-detail" && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 text-m3-secondary/40 shrink-0" />
+              <button
+                onClick={() => navigate(`${slugPrefix}/collections`)}
+                className="flex items-center gap-2 font-bold text-m3-secondary hover:text-m3-text transition-all cursor-pointer shrink-0"
+              >
+                <FolderKanban className="w-4 h-4 opacity-70" />
+                <span>{t("common.collections")}</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -460,6 +489,20 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                     {t("addressBar.newFolder")}
                   </button>
                 </Can>
+                {collections_enabled && (
+                  <button
+                    onClick={() => {
+                      setIsPlusMenuOpen(false);
+                      onOpenCreateCollection();
+                    }}
+                    className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-m3-primary/10 text-m3-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <FolderKanban className="w-4 h-4" />
+                    </div>
+                    {t("addressBar.newCollection")}
+                  </button>
+                )}
               </div>
             )}
           </div>
