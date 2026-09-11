@@ -14,6 +14,7 @@ import {
   computeSongPath,
   getDatabase,
   getPurgeAt,
+  updateCollectionCounts,
   updateFolderCounts,
   validateBatchSongs,
   validateSongMove,
@@ -63,6 +64,9 @@ function useSongMutations() {
           artist: data.artist || "",
           content: data.content || "",
           folderId,
+          collectionIds: Array.isArray(data.collectionIds)
+            ? data.collectionIds
+            : [],
           path,
           tags: Array.isArray(data.tags) ? data.tags : [],
           song_number: data.song_number ?? null,
@@ -74,6 +78,11 @@ function useSongMutations() {
         const doc = await db.songs.insert(newSong);
         if (folderId) {
           await updateFolderCounts(db, folderId);
+        }
+        if (Array.isArray(data.collectionIds)) {
+          for (const cId of data.collectionIds) {
+            await updateCollectionCounts(db, cId);
+          }
         }
         invalidateSongsCache();
         const result = doc.toJSON() as Song;
@@ -468,6 +477,13 @@ export function useSongs(params: GetSongsParams = {}) {
   const [songs, setSongs] = useState<Song[]>(() => {
     if (folderKey === "__all__" && cachedAllSongs) {
       let items = cachedAllSongs;
+      if (params.collection) {
+        items = items.filter(
+          (s) =>
+            Array.isArray(s.collectionIds) &&
+            s.collectionIds.includes(params.collection!),
+        );
+      }
       if (params.search) {
         const q = params.search.toLowerCase();
         items = items.filter(
@@ -483,6 +499,13 @@ export function useSongs(params: GetSongsParams = {}) {
     const cached = cachedSongsByFolder.get(folderKey);
     if (cached) {
       let items = cached;
+      if (params.collection) {
+        items = items.filter(
+          (s) =>
+            Array.isArray(s.collectionIds) &&
+            s.collectionIds.includes(params.collection!),
+        );
+      }
       if (params.search) {
         const q = params.search.toLowerCase();
         items = items.filter(
@@ -543,6 +566,13 @@ export function useSongs(params: GetSongsParams = {}) {
           }
 
           let items = rawItems;
+          if (params.collection) {
+            items = items.filter(
+              (s) =>
+                Array.isArray(s.collectionIds) &&
+                s.collectionIds.includes(params.collection!),
+            );
+          }
           if (params.search) {
             const q = params.search.toLowerCase();
             items = items.filter(

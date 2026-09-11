@@ -15,12 +15,29 @@ export interface SongDocType {
   artist: string;
   content: string;
   folderId?: string | null;
+  collectionIds?: string[];
   path: string;
   tags: string[];
   score?: SongScore;
   song_number?: number | null;
   createdAt: string;
   updatedAt: string;
+  _deleted?: boolean;
+  isDeleted?: boolean;
+  purgeAt?: string | null;
+}
+
+export interface CollectionDocType {
+  id: string;
+  name: string;
+  description?: string | null;
+  color?: string;
+  icon?: string;
+  image?: string | null;
+  songCount?: number | null;
+  songIds?: string[];
+  createdAt?: string;
+  updatedAt?: string;
   _deleted?: boolean;
   isDeleted?: boolean;
   purgeAt?: string | null;

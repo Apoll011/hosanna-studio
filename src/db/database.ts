@@ -14,6 +14,7 @@ import { HosanaCollection } from "./engine/collection";
 import { idbGetAll, openIDB } from "./engine/idb";
 import type {
   AgendaEventDocType,
+  CollectionDocType,
   FolderDocType,
   ServiceDocType,
   SongDocType,
@@ -23,11 +24,12 @@ import type {
 // Bump this number whenever store structure changes (new indexes etc.).
 // Old stores are left intact — no migrations needed per the spec.
 const DB_NAME = "hosana_idb";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // ─── Store names ─────────────────────────────────────────────────────────────
 const STORE_SONGS = "songs";
 const STORE_FOLDERS = "folders";
+const STORE_COLLECTIONS = "collections";
 const STORE_SERVICES = "services";
 const STORE_AGENDA = "agendaEvents";
 
@@ -39,6 +41,7 @@ const STORE_AGENDA = "agendaEvents";
 
 type AsSongDoc = SongDocType & Record<string, unknown>;
 type AsFolderDoc = FolderDocType & Record<string, unknown>;
+type AsCollectionDoc = CollectionDocType & Record<string, unknown>;
 type AsServiceDoc = ServiceDocType & Record<string, unknown>;
 type AsAgendaDoc = AgendaEventDocType & Record<string, unknown>;
 
@@ -47,6 +50,7 @@ type AsAgendaDoc = AgendaEventDocType & Record<string, unknown>;
 export interface HosanaDatabaseCollections {
   songs: HosanaCollection<AsSongDoc>;
   folders: HosanaCollection<AsFolderDoc>;
+  collections: HosanaCollection<AsCollectionDoc>;
   services: HosanaCollection<AsServiceDoc>;
   agendaEvents: HosanaCollection<AsAgendaDoc>;
 }
@@ -114,6 +118,59 @@ export async function updateFolderCounts(
   });
 }
 
+/**
+ * Calculates the number of non-deleted songs belonging to a given collection.
+ */
+export function calculateCollectionSongCount(
+  collectionId: string,
+  songs:
+    | Array<Pick<SongDocType, "collectionIds" | "isDeleted" | "_deleted">>
+    | HosanaCollection<AsSongDoc>,
+): number {
+  const list = Array.isArray(songs) ? songs : songs.getAllRaw();
+  return list.filter(
+    (s) =>
+      Array.isArray(s.collectionIds) &&
+      s.collectionIds.includes(collectionId) &&
+      !s.isDeleted &&
+      !s._deleted,
+  ).length;
+}
+
+/**
+ * Recalculates songCount for an array of collections using the given songs.
+ */
+export function recalculateCollectionCounts(
+  collections: AsCollectionDoc[],
+  songs: Array<Pick<SongDocType, "collectionIds" | "isDeleted" | "_deleted">>,
+): AsCollectionDoc[] {
+  return collections.map((collection) => ({
+    ...collection,
+    songCount:
+      Array.isArray(collection.songIds) && collection.songIds.length > 0
+        ? collection.songIds.length
+        : calculateCollectionSongCount(collection.id, songs),
+  }));
+}
+
+/**
+ * Recalculates and updates songCount for a specific collection in the database.
+ */
+export async function updateCollectionCounts(
+  db: HosanaDatabase,
+  collectionId: string,
+): Promise<void> {
+  const collection = await db.collections.findOne(collectionId).exec();
+  if (!collection) return;
+  const count =
+    Array.isArray(collection.songIds) && collection.songIds.length > 0
+      ? collection.songIds.length
+      : calculateCollectionSongCount(collectionId, db.songs);
+  await collection.patch({
+    songCount: count,
+  });
+}
+
 // ─── Singleton ───────────────────────────────────────────────────────────────
 
 let dbPromise: Promise<HosanaDatabase> | null = null;
@@ -161,18 +218,34 @@ async function _open(): Promise<HosanaDatabase> {
       agendaStore.createIndex("date", "date");
       agendaStore.createIndex("isDeleted", "isDeleted");
     }
+
+    if (oldVersion < 2) {
+      if (!db.objectStoreNames.contains(STORE_COLLECTIONS)) {
+        const collectionsStore = db.createObjectStore(STORE_COLLECTIONS, {
+          keyPath: "id",
+        });
+        collectionsStore.createIndex("updatedAt", "updatedAt");
+        collectionsStore.createIndex("isDeleted", "isDeleted");
+      }
+    }
   });
 
   // Hydrate all collections in parallel — single read pass per store
-  const [rawSongs, rawFolders, rawServices, rawAgenda] = await Promise.all([
-    idbGetAll<AsSongDoc>(idb, STORE_SONGS),
-    idbGetAll<AsFolderDoc>(idb, STORE_FOLDERS),
-    idbGetAll<AsServiceDoc>(idb, STORE_SERVICES),
-    idbGetAll<AsAgendaDoc>(idb, STORE_AGENDA),
-  ]);
+  const [rawSongs, rawFolders, rawCollections, rawServices, rawAgenda] =
+    await Promise.all([
+      idbGetAll<AsSongDoc>(idb, STORE_SONGS),
+      idbGetAll<AsFolderDoc>(idb, STORE_FOLDERS),
+      idbGetAll<AsCollectionDoc>(idb, STORE_COLLECTIONS),
+      idbGetAll<AsServiceDoc>(idb, STORE_SERVICES),
+      idbGetAll<AsAgendaDoc>(idb, STORE_AGENDA),
+    ]);
 
   // Compute initial counts from the loaded IDB data before collection instantiation
   const initialFolders = recalculateFolderCounts(rawFolders, rawSongs);
+  const initialCollections = recalculateCollectionCounts(
+    rawCollections,
+    rawSongs,
+  );
 
   const db: HosanaDatabase = {
     songs: new HosanaCollection<AsSongDoc>(idb, STORE_SONGS, rawSongs, {
@@ -187,6 +260,14 @@ async function _open(): Promise<HosanaDatabase> {
       initialFolders,
       {
         localFields: ["songCount", "folderCount"],
+      },
+    ),
+    collections: new HosanaCollection<AsCollectionDoc>(
+      idb,
+      STORE_COLLECTIONS,
+      initialCollections,
+      {
+        localFields: ["songCount"],
       },
     ),
     services: new HosanaCollection<AsServiceDoc>(

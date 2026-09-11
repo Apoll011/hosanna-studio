@@ -58,7 +58,12 @@ type SyncableDoc = {
   _deleted?: boolean;
 };
 
-type CollectionName = "songs" | "folders" | "services" | "agendaEvents";
+type CollectionName =
+  | "songs"
+  | "folders"
+  | "collections"
+  | "services"
+  | "agendaEvents";
 
 // ─── Simple status subject ────────────────────────────────────────────────────
 
@@ -396,6 +401,11 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
         replicateCollection(
           db.folders as unknown as AnyCollection,
           "folders",
+          client,
+        ),
+        replicateCollection(
+          db.collections as unknown as AnyCollection,
+          "collections",
           client,
         ),
       ]);
