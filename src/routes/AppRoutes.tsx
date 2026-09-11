@@ -34,6 +34,8 @@ const PageLoader = () => {
 import {
   AcceptInvitationPage,
   AgendaPage,
+  CollectionDetailPage,
+  CollectionsPage,
   DemoPage,
   FoldersPage,
   ForgotPasswordPage,
@@ -175,6 +177,11 @@ export const AppRoutes: React.FC = () => {
                 <Route path="folders" element={<FoldersPage />} />
                 <Route path="songs" element={<SongsPage hideHeader />} />
                 <Route path="songs/:id" element={<SongEditorPage />} />
+                <Route path="collections" element={<CollectionsPage />} />
+                <Route
+                  path="collections/:id"
+                  element={<CollectionDetailPage />}
+                />
                 <Route path="services" element={<ServicesPage hideHeader />} />
                 <Route path="services/:id" element={<ServiceDetailPage />} />
                 <Route path="teams" element={<TeamsPage />} />

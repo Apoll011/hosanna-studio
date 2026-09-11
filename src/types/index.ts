@@ -13,11 +13,28 @@ export interface Song {
   song_number?: number | null;
   content: string; // ChordPro text format
   folderId?: string | null;
+  collectionIds?: string[];
   path: string; // e.g., "Hymns/Amazing Grace.pro" or "Amazing Grace.pro"
   tags: string[];
   score?: SongScore;
   createdAt: string;
   updatedAt: string;
+  deleted?: boolean;
+  purgeAt?: string | null;
+}
+
+export interface Collection {
+  id: string;
+  orgId?: string;
+  name: string;
+  description?: string | null;
+  color?: string;
+  icon?: string;
+  image?: string | null;
+  songCount?: number | null;
+  songIds?: string[];
+  createdAt?: string;
+  updatedAt?: string;
   deleted?: boolean;
   purgeAt?: string | null;
 }
@@ -205,6 +222,7 @@ export interface SyncStatusResponse {
 export interface GetSongsParams {
   search?: string;
   folder?: string;
+  collection?: string;
   sortBy?: "title" | "artist" | "updatedAt";
   sortOrder?: "asc" | "desc";
   page?: number;

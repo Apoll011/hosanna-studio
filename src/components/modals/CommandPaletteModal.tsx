@@ -55,6 +55,7 @@ export function CommandPaletteModal({
     setActiveParentId,
     recordRecentAction,
     recentActionIds,
+    allActions,
   } = useCommandPalette();
 
   const { t } = useI18n();
@@ -76,7 +77,7 @@ export function CommandPaletteModal({
     const q = searchQuery.toLowerCase().trim();
 
     // Context filter (Nested submenus)
-    let currentPool = staticActions.filter((a) => {
+    let currentPool = allActions.filter((a) => {
       if (activeParentId) return a.parent === activeParentId;
       return !a.parent; // Top level
     });
@@ -113,7 +114,7 @@ export function CommandPaletteModal({
       const matchSec = action.section?.toLowerCase().includes(q);
       return matchName || matchKeywords || matchSub || matchSec;
     });
-  }, [staticActions, searchQuery, activeParentId, recentActionIds, t]);
+  }, [allActions, searchQuery, activeParentId, recentActionIds, t]);
 
   // Group actions by Section
   const groupedActions = useMemo(() => {

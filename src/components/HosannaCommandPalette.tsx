@@ -2,6 +2,7 @@ import { useI18n } from "@/src/lib/i18n";
 import { Folder, Service, Song } from "@/src/types";
 import {
   Calendar,
+  CalendarPlus,
   ChevronRight,
   Church,
   Download,
@@ -153,6 +154,15 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
         icon: <Settings className="w-4 h-4 text-slate-500" />,
         perform: () => navigate(`${slugPrefix}/settings`),
       },
+      {
+        id: "nav-agenda",
+        name: t("commandPalette.navAgenda"),
+        shortcut: ["g", "a"],
+        keywords: "agenda calendario eventos calendar events schedule",
+        section: t("commandPalette.sections.navigation"),
+        icon: <Calendar className="w-4 h-4 text-violet-500" />,
+        perform: () => navigate(`${slugPrefix}/agenda`),
+      },
 
       // --- AÇÕES RÁPIDAS ---
       {
@@ -190,6 +200,15 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
         section: t("commandPalette.sections.quickActions"),
         icon: <FolderPlus className="w-4 h-4 text-amber-500" />,
         perform: () => setIsCreateModalOpen(true),
+      },
+      {
+        id: "action-create-agenda",
+        name: t("commandPalette.createAgenda"),
+        shortcut: ["c", "a"],
+        keywords: "novo evento agenda criar event schedule create add",
+        section: t("commandPalette.sections.quickActions"),
+        icon: <CalendarPlus className="w-4 h-4 text-violet-500" />,
+        perform: () => navigate(`${slugPrefix}/agenda?create=1`),
       },
       {
         id: "action-upload-files",

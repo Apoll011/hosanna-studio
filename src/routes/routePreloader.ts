@@ -127,6 +127,16 @@ export const ServiceDetailPage = lazyImport(() =>
 export const SettingsPage = lazyImport(() =>
   import("../pages/SettingsPage").then((m) => ({ default: m.SettingsPage })),
 );
+export const CollectionsPage = lazyImport(() =>
+  import("../pages/Collections/CollectionsPage").then((m) => ({
+    default: m.CollectionsPage,
+  })),
+);
+export const CollectionDetailPage = lazyImport(() =>
+  import("../pages/Collections/CollectionDetailPage").then((m) => ({
+    default: m.CollectionDetailPage,
+  })),
+);
 export const TeamsPage = lazyImport(() =>
   import("../pages/TeamsPage").then((m) => ({ default: m.TeamsPage })),
 );
@@ -140,6 +150,14 @@ export const routePreloaders: Array<{
 }> = [
   { pattern: /\/songs\/[^/]+/, preload: () => SongEditorPage.preload() },
   { pattern: /\/songs(\/|\?|#|$)/, preload: () => SongsPage.preload() },
+  {
+    pattern: /\/collections\/[^/]+/,
+    preload: () => CollectionDetailPage.preload(),
+  },
+  {
+    pattern: /\/collections(\/|\?|#|$)/,
+    preload: () => CollectionsPage.preload(),
+  },
   { pattern: /\/services\/[^/]+/, preload: () => ServiceDetailPage.preload() },
   { pattern: /\/services(\/|\?|#|$)/, preload: () => ServicesPage.preload() },
   { pattern: /\/folders(\/|\?|#|$)/, preload: () => FoldersPage.preload() },

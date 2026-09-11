@@ -9,6 +9,7 @@ export const es: typeof pt = {
   common: {
     library: "Biblioteca",
     services: "Cultos",
+    collections: "Colecciones",
     settings: "Configuración",
     teams: "Equipos",
     agenda: "Agenda",
@@ -70,6 +71,7 @@ export const es: typeof pt = {
     searchServices: "Buscar cultos...",
     searchLibrary: "Buscar biblioteca...",
     searchFolders: "Buscar carpetas...",
+    searchCollections: "Buscar colecciones...",
     clearSearch: "Limpiar búsqueda",
     create: "Crear...",
     createNew: "Crear Nuevo",
@@ -77,6 +79,7 @@ export const es: typeof pt = {
     importSongs: "Importar Canciones de otro Proveedor",
     newService: "Nuevo Plan de Culto",
     newFolder: "Nueva Carpeta",
+    newCollection: "Nueva Colección",
   },
 
   toolbar: {
@@ -101,6 +104,8 @@ export const es: typeof pt = {
     compact: "Compacto",
     numberAsc: "Números (Menor-Mayor)",
     numberDesc: "Números (Mayor-Menor)",
+    songNumberAsc: "Más canciones",
+    songNumberDesc: "Menos canciones",
   },
 
   commandPalette: {
@@ -116,10 +121,12 @@ export const es: typeof pt = {
     navSongs: "Ir a Biblioteca de Canciones",
     navServices: "Ir a Cultos / Planes",
     navSettings: "Ir a Configuración del Sistema",
+    navAgenda: "Ir a Agenda",
     createSong: "Crear Nueva Canción",
     importCifra: "Importar Canción de CifraClub",
     createService: "Crear Nuevo Plan de Culto",
     createFolder: "Crear Nueva Carpeta",
+    createAgenda: "Crear Nuevo Evento de Agenda",
     uploadFiles: "Subir Archivos",
     toggleTheme: "Alternar Tema Claro / Oscuro",
     toggleSidebarCollapse: "Contraer Barra Lateral",
@@ -756,6 +763,63 @@ export const es: typeof pt = {
     archiveAll: "Archivar Todos",
   },
 
+  collectionsPage: {
+    edit: "Editar",
+    delete: "Eliminar",
+    songCount: {
+      one: "{count} canción",
+      other: "{count} canciones",
+    },
+    deleteTitle: "Eliminar Colección",
+    deleteMessage:
+      '¿Está seguro de que desea mover la colección "{name}" a la papelera? Las canciones permanecerán guardadas en la biblioteca.',
+    deletePermanentMessage:
+      '¿Está seguro de que desea eliminar la colección "{name}"? Las canciones permanecerán disponibles en la biblioteca.',
+    notFoundTitle: "Colección no encontrada",
+    notFoundDesc: "La colección que buscas puede haber sido eliminada.",
+    backToCollections: "Volver a Colecciones",
+    addSongs: "Añadir Canciones",
+    viewSong: "Ver Canción",
+    removeFromCollection: "Quitar de la Colección",
+    removeSongTitle: "Quitar de la Colección",
+    removeSongMessage:
+      '¿Desea quitar "{title}" de esta colección? La canción continuará guardada en la biblioteca.',
+    emptyTitle: "Esta colección aún no tiene canciones",
+    emptyDesc:
+      "Añade canciones de tu biblioteca a esta colección para organizarlas.",
+    noSearchResultsTitle: "No se encontraron canciones coincidentes",
+    noSearchResultsDesc: 'No se encontraron canciones para "{query}".',
+    paginationInfo: "{from} a {to} de {total} canciones",
+    newCollection: "Nueva Colección",
+    editCollection: "Editar Colección",
+    nameLabel: "Nombre de la Colección *",
+    namePlaceholder: "Ej: Alabanza y Adoración, Jóvenes, Culto Dominical...",
+    descLabel: "Descripción (opcional)",
+    descPlaceholder:
+      "Canciones para momentos de alabanza y adoración a Dios...",
+    coverLabel: "Imagen de Portada / URL (opcional)",
+    colorLabel: "Color",
+    iconLabel: "Ícono",
+    searchIconPlaceholder: "Buscar ícono...",
+    nameRequired: "El nombre de la colección es obligatorio.",
+    saveError: "Ocurrió un error al guardar la colección.",
+    createBtn: "Crear Colección",
+    previewTitle: "Título de la Colección",
+    previewDesc: "Descripción de la colección...",
+    addSongsModalTitle: 'Añadir Canciones a "{name}"',
+    searchSongPlaceholder: "Buscar por título o artista...",
+    selectedSongsCount: "{count} seleccionada(s)",
+    selectAll: "Seleccionar todas",
+    deselectAll: "Deseleccionar todas",
+    noAvailableSongs: "No hay canciones disponibles para añadir.",
+    addSelectedBtn: "Añadir ({count})",
+    addToCollection: "Añadir a la Colección",
+    selectCollectionPrompt: "Seleccione la colección de destino:",
+    noCollectionsAvailable: "No se encontraron colecciones.",
+    createCollectionFirst:
+      "Cree una colección primero para poder añadir canciones.",
+  },
+
   agenda: {
     subtitle: "Planifica y asigna responsabilidades para cada día.",
     newEvent: "Nuevo Evento",
@@ -1106,6 +1170,8 @@ export const es: typeof pt = {
       openEditSong: "Abrir / Editar Canción",
       moveSong: "Mover Canción",
       tagSong: "Etiquetar Canción",
+      addToCollection: "Añadir a la Colección",
+      addToCollectionCount: "Añadir {count} a la Colección",
       printSong: "Imprimir Canción",
       deleteSong: "Eliminar Canción",
     },

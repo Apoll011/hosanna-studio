@@ -27,7 +27,12 @@
  */
 
 import { idbBulkPut, idbClear, idbDelete, idbGetAll, idbPut } from "./idb";
-import { notify, notifyCollection, subscribe as busSubscribe } from "./bus";
+import {
+  notify,
+  notifyCollection,
+  notifyLocalChange,
+  subscribe as busSubscribe,
+} from "./bus";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -200,22 +205,46 @@ export class HosanaCollection<T extends AnyDoc> {
     this._store.delete(id);
   }
 
-  /** @internal Put a raw record into memory + IDB and fire the bus. */
-  async _put(doc: T): Promise<void> {
-    const enriched = this._applyComputedFields(doc);
+  /**
+   * @internal Put a raw record into memory + IDB and fire the bus.
+   *
+   * `origin` distinguishes a genuine local write (insert/upsert/patch) from a
+   * write caused by replication itself (`_mergeFromServer`):
+   *  - "local" (default): stamps `updatedAt` to now — this is what makes the
+   *    checkpoint-based replication filter (see replication.ts) reliably pick
+   *    up every local change, including trash/isDeleted flips, without
+   *    depending on every call site remembering to bump `updatedAt` itself.
+   *    Also fires `notifyLocalChange` so replication can push-on-save.
+   *  - "remote": keeps the server-provided `updatedAt` verbatim (it's the
+   *    conflict-detection field) and never fires `notifyLocalChange`, so a
+   *    pull-triggered write can't loop back into another push/pull cycle.
+   */
+  async _put(doc: T, origin: "local" | "remote" = "local"): Promise<void> {
+    const stamped: T =
+      origin === "local" && "updatedAt" in doc
+        ? ({ ...doc, updatedAt: new Date().toISOString() } as T)
+        : doc;
+    const enriched = this._applyComputedFields(stamped);
     this._store.set(enriched.id, enriched);
     await idbPut(this._db, this._storeName, enriched);
     notify(this._storeName, enriched.id);
+    if (origin === "local") notifyLocalChange(this._storeName);
   }
 
-  /** @internal Put a batch; single IDB transaction. */
+  /** @internal Put a batch; single IDB transaction. Always treated as local. */
   async _putBatch(docs: T[]): Promise<void> {
-    const enriched = docs.map((d) => this._applyComputedFields(d));
+    const stamped = docs.map((d) =>
+      "updatedAt" in d
+        ? ({ ...d, updatedAt: new Date().toISOString() } as T)
+        : d,
+    );
+    const enriched = stamped.map((d) => this._applyComputedFields(d));
     for (const d of enriched) {
       this._store.set(d.id, d);
     }
     await idbBulkPut(this._db, this._storeName, enriched);
     notifyCollection(this._storeName);
+    notifyLocalChange(this._storeName);
   }
 
   /**
@@ -242,7 +271,7 @@ export class HosanaCollection<T extends AnyDoc> {
         merged = { ...serverDoc, ...overrides };
       }
     }
-    await this._put(merged);
+    await this._put(merged, "remote");
   }
 
   private _applyComputedFields(doc: T): T {

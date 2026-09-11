@@ -61,3 +61,34 @@ export function notifyCollection(collection: string): void {
     }
   }
 }
+
+/**
+ * Separate bus for LOCAL writes only (insert/upsert/patch) — used to trigger
+ * immediate push-on-save. Deliberately NOT fired for writes that originate
+ * from replication itself (_mergeFromServer), otherwise every pull would
+ * schedule another push/pull cycle and the two would feed each other.
+ */
+const localChangeListeners = new Map<string, Set<Listener>>();
+
+export function subscribeLocalChange(
+  collection: string,
+  fn: Listener,
+): () => void {
+  let set = localChangeListeners.get(collection);
+  if (!set) {
+    set = new Set();
+    localChangeListeners.set(collection, set);
+  }
+  set.add(fn);
+  return () => {
+    set!.delete(fn);
+    if (set!.size === 0) localChangeListeners.delete(collection);
+  };
+}
+
+export function notifyLocalChange(collection: string): void {
+  const set = localChangeListeners.get(collection);
+  if (set) {
+    for (const fn of set) fn();
+  }
+}

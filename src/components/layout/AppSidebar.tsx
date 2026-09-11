@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Church,
   HardDrive,
+  LibraryBig,
   LogOut,
   Music,
   Settings,
@@ -23,8 +24,8 @@ import {
   Users,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { ViewName } from "../../layouts/view";
 import type { Organization as AuthOrganization } from "../../contexts/AuthContext";
+import { ViewName } from "../../layouts/view";
 import { getAvatarGradient, getInitials } from "../../utils";
 import { FolderTreeItemNode, FolderTreeNode } from "../explorer";
 import { getRoleLabel } from "../settings/settingsUtils";
@@ -45,6 +46,7 @@ interface AppSidebarProps {
   rootFoldersCount: number;
   totalSongs: number;
   totalServices: number;
+  totalCollections: number;
   trashCount: number;
   eventCount: number;
   allFolders: Folder[];
@@ -82,6 +84,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   rootFoldersCount,
   totalSongs,
   totalServices,
+  totalCollections,
   trashCount,
   eventCount,
   allFolders,
@@ -105,7 +108,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const hasMultipleOrgs = (organizations?.length ?? 0) > 1;
 
   const teams_enabled = posthog.isFeatureEnabled("teams-enable") || false;
-  const agenda_enabled = posthog.isFeatureEnabled("agenda") || false;
+  const agenda_enabled = posthog.isFeatureEnabled("agenda") || true;
+  const collections_enabled = posthog.isFeatureEnabled("collection") || false;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -432,6 +436,60 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </Badge>
           </div>
         </button>
+
+        {collections_enabled && (
+          <button
+            onClick={() => {
+              navigate(`${slugPrefix}/collections`);
+              if (window.innerWidth < 768) setIsSidebarOpen(false);
+            }}
+            title={isSidebarCollapsed ? "Coleções" : undefined}
+            className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-bold rounded-2xl transition-all cursor-pointer group ${
+              view === "collections" || view === "collection-detail"
+                ? "bg-m3-primary/10 text-m3-primary border border-m3-primary/20 shadow-sm"
+                : "text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <LibraryBig
+                  className={`w-4.5 h-4.5 ${
+                    view === "collections" || view === "collection-detail"
+                      ? "text-m3-primary"
+                      : "text-m3-secondary"
+                  }`}
+                />
+              </div>
+              <span
+                className={`truncate transition-all duration-300 ease-in-out overflow-hidden whitespace-nowrap ${
+                  isSidebarCollapsed
+                    ? "opacity-0 max-w-0 -translate-x-2 pointer-events-none"
+                    : "opacity-100 max-w-35 translate-x-0"
+                }`}
+              >
+                {t("common.collections")}
+              </span>
+            </div>
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+                isSidebarCollapsed
+                  ? "opacity-0 max-w-0 scale-75 pointer-events-none"
+                  : "opacity-100 max-w-15 scale-100"
+              }`}
+            >
+              <Badge
+                variant={
+                  view === "collections" || view === "collection-detail"
+                    ? "sky"
+                    : "slate"
+                }
+              >
+                {totalCollections}
+              </Badge>
+            </div>
+          </button>
+        )}
+        {/* Collections Item */}
 
         {teams_enabled && (
           <button

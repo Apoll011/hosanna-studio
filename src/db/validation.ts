@@ -247,6 +247,21 @@ export async function validateFolderRules(
 }
 
 /**
+ * Validates Collection document rules:
+ * 1. Required fields: name (non-empty)
+ */
+export async function validateCollectionRules(
+  _db: HosanaDatabase,
+  collection: { id?: string; name?: string },
+  _options: { existingId?: string } = {},
+): Promise<void> {
+  const name = (collection.name || "").trim();
+  if (!name) {
+    throw new RequiredFieldError("name", "Collection name is required.");
+  }
+}
+
+/**
  * Validates renaming a folder:
  * - Checks folder name
  * - Computes new paths for all active child songs

@@ -21,7 +21,7 @@
 
 import { getApiClient } from "@/src/api";
 import type { HosanaDatabase } from "./database";
-import { notify } from "./engine/bus";
+import { notify, subscribeLocalChange } from "./engine/bus";
 import { HosanaCollection } from "./engine/collection";
 import { idbDelete } from "./engine/idb";
 
@@ -58,7 +58,16 @@ type SyncableDoc = {
   _deleted?: boolean;
 };
 
-type CollectionName = "songs" | "folders" | "services" | "agendaEvents";
+type CollectionName =
+  "songs" | "folders" | "collections" | "services" | "agendaEvents";
+
+const ALL_COLLECTION_NAMES: CollectionName[] = [
+  "songs",
+  "folders",
+  "collections",
+  "services",
+  "agendaEvents",
+];
 
 // ─── Simple status subject ────────────────────────────────────────────────────
 
@@ -224,27 +233,19 @@ async function replicateCollection<
     : null;
 
   // ─ Push FIRST ──────────────────────────────────────────────────────────────
-  // Include both changed docs AND locally deleted docs (tombstones).
+  // Every local write (insert/upsert/patch) stamps `updatedAt` to now — see
+  // collection.ts `_put(doc, "local")` — so this single checkpoint filter
+  // reliably catches every local change since the last sync, including
+  // isDeleted/_deleted flips. (Previously there was a second, unfiltered scan
+  // over every doc ever soft-deleted, which re-pushed all of them on every
+  // cycle forever — that was the "sends everything" bug.)
   const allDocs = (collection as unknown as HosanaCollection<T>).getAllRaw();
 
-  const pendingDocs = checkpointTs
+  const toPush = checkpointTs
     ? allDocs.filter(
         (d) => typeof d.updatedAt === "string" && d.updatedAt > checkpointTs,
       )
     : allDocs;
-
-  // Also collect soft-deleted docs that need to be pushed as tombstones
-  const deletedDocs = allDocs.filter(
-    (d) =>
-      d._deleted === true ||
-      (d as Record<string, unknown>)["isDeleted"] === true,
-  );
-
-  // Merge pending + deleted (deduplicated by id)
-  const toPushMap = new Map<string, T>();
-  for (const d of pendingDocs) toPushMap.set(d.id, d);
-  for (const d of deletedDocs) toPushMap.set(d.id, d);
-  const toPush = Array.from(toPushMap.values());
 
   if (toPush.length > 0) {
     const changeRows: ChangeRow<T>[] = toPush.map((doc) => ({
@@ -357,6 +358,21 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
   let syncInProgress = false;
   let syncQueued = false;
 
+  // Push-on-save: local writes (insert/upsert/patch) schedule a sync shortly
+  // after, instead of waiting for the 15s poll. Debounced so a burst of rapid
+  // edits (typing, drag-reorder, etc.) collapses into a single push+pull.
+  const SAVE_DEBOUNCE_MS = 800;
+  let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  const unsubscribeLocalChanges: Array<() => void> = [];
+
+  const scheduleSyncOnSave = () => {
+    if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = setTimeout(() => {
+      saveDebounceTimer = null;
+      void doSync();
+    }, SAVE_DEBOUNCE_MS);
+  };
+
   const updateStatus = (s: ReplicationSyncState) => {
     if (currentStatus !== s) {
       currentStatus = s;
@@ -398,6 +414,11 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
           "folders",
           client,
         ),
+        replicateCollection(
+          db.collections as unknown as AnyCollection,
+          "collections",
+          client,
+        ),
       ]);
       await replicateCollection(
         db.agendaEvents as unknown as AnyCollection,
@@ -433,6 +454,14 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
     offlineListener = () => updateStatus("offline");
     window.addEventListener("online", onlineListener);
     window.addEventListener("offline", offlineListener);
+
+    // Wire push-on-save: any local write to any managed collection schedules
+    // a debounced sync instead of waiting for the 15s poll.
+    for (const name of ALL_COLLECTION_NAMES) {
+      unsubscribeLocalChanges.push(
+        subscribeLocalChange(name, scheduleSyncOnSave),
+      );
+    }
   };
 
   const stop = () => {
@@ -443,6 +472,12 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
     if (offlineListener) window.removeEventListener("offline", offlineListener);
     onlineListener = null;
     offlineListener = null;
+
+    if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = null;
+    while (unsubscribeLocalChanges.length) {
+      unsubscribeLocalChanges.pop()!();
+    }
   };
 
   const replicateNow = async () => {
