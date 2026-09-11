@@ -343,7 +343,8 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
         {(view === "explorer" ||
           view === "songs" ||
           view === "services" ||
-          view === "collections") && (
+          view === "collections" ||
+          view === "collection-detail") && (
           <div className="relative w-full sm:w-64 min-w-0">
             <Input
               placeholder={

@@ -7,8 +7,6 @@ import {
   Button,
   ConfirmDialog,
   EmptyState,
-  Input,
-  Pagination,
   Spinner,
 } from "@/src/components/common";
 import { AddSongsToCollectionModal } from "@/src/components/modals/AddSongsToCollectionModal";
@@ -32,12 +30,11 @@ import {
   MoreHorizontal,
   Music,
   Plus,
-  Search,
   Trash2,
   X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useOutletContext, useParams } from "react-router-dom";
 
 export const CollectionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +46,11 @@ export const CollectionDetailPage: React.FC = () => {
   const { data: collection, isLoading: isCollectionLoading } = useCollection(
     id || null,
   );
+
+  const { searchQuery } = useOutletContext<{
+    searchQuery: string;
+  }>();
+
   const {
     updateCollection,
     deleteCollection,
@@ -63,7 +65,6 @@ export const CollectionDetailPage: React.FC = () => {
   );
 
   // Search & Pagination State
-  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -88,10 +89,12 @@ export const CollectionDetailPage: React.FC = () => {
   const songsInCollection = useMemo(() => {
     if (!collection) return [];
     const songIdSet = new Set(collection.songIds || []);
+    console.log(songIdSet);
     return allSongs.filter(
       (song) =>
         songIdSet.has(song.id) ||
-        (Array.isArray(song.collectionIds) && song.collectionIds.includes(collection.id)),
+        (Array.isArray(song.collectionIds) &&
+          song.collectionIds.includes(collection.id)),
     );
   }, [collection, allSongs]);
 
@@ -167,14 +170,10 @@ export const CollectionDetailPage: React.FC = () => {
               ? "A coleção que você procura pode ter sido removida."
               : "The collection you are looking for may have been removed."
           }
-          action={
-            <Button
-              variant="primary"
-              onClick={() => navigate(`${slugPrefix}/collections`)}
-            >
-              {locale === "pt" ? "Voltar para Coleções" : "Back to Collections"}
-            </Button>
+          actionLabel={
+            locale === "pt" ? "Voltar para Coleções" : "Back to Collections"
           }
+          onAction={() => navigate(`${slugPrefix}/collections`)}
         />
       </div>
     );
@@ -206,7 +205,9 @@ export const CollectionDetailPage: React.FC = () => {
         <button
           onClick={() => navigate(`${slugPrefix}/collections`)}
           className="absolute top-4 left-4 p-2.5 rounded-2xl bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all cursor-pointer shadow-md"
-          title={locale === "pt" ? "Voltar para Coleções" : "Back to Collections"}
+          title={
+            locale === "pt" ? "Voltar para Coleções" : "Back to Collections"
+          }
         >
           <ArrowLeft className="w-4.5 h-4.5" />
         </button>
@@ -256,7 +257,7 @@ export const CollectionDetailPage: React.FC = () => {
                 type="button"
                 onClick={() => setIsHeaderMenuOpen((v) => !v)}
                 className="p-2 rounded-2xl border border-m3-border bg-m3-card hover:bg-m3-hover text-m3-secondary hover:text-m3-text transition-all cursor-pointer shadow-xs"
-                title={t("common.more")}
+                title={t("explorer.moreOptions")}
               >
                 <MoreHorizontal className="w-4.5 h-4.5" />
               </button>
@@ -311,47 +312,6 @@ export const CollectionDetailPage: React.FC = () => {
         )}
       </div>
 
-      {/* Songs Toolbar (No "Detalhes" tab, just the songs view & search) */}
-      <div className="px-6 sm:px-8 py-3 bg-white dark:bg-m3-bg border-b border-m3-border/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 font-bold text-xs sm:text-sm text-m3-primary border-b-2 border-m3-primary pb-1">
-            <Music className="w-4 h-4" />
-            <span>{locale === "pt" ? "Músicas" : "Songs"}</span>
-            <span className="text-xs font-normal text-slate-400">
-              ({filteredSongs.length})
-            </span>
-          </div>
-        </div>
-
-        {/* Search input in this collection */}
-        <div className="relative w-full sm:w-72">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-m3-secondary pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder={
-              locale === "pt"
-                ? "Pesquisar nesta coleção..."
-                : "Search in this collection..."
-            }
-            className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl bg-m3-sidebar/40 border border-m3-border text-m3-text placeholder:text-m3-secondary/70 focus:outline-none focus:ring-1 focus:ring-m3-primary focus:border-m3-primary transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Songs List (SONGS DONT HAVE IMAGES as specified by user) */}
       <div className="flex-1 p-6 sm:px-8">
         {paginatedSongs.length === 0 ? (
           <div className="py-16 text-center">
@@ -375,24 +335,17 @@ export const CollectionDetailPage: React.FC = () => {
                     ? `Nenhuma música encontrada para "${searchQuery}".`
                     : `No songs found for "${searchQuery}".`
               }
-              action={
-                songsInCollection.length === 0 ? (
-                  <Button
-                    variant="primary"
-                    icon={<Plus className="w-4 h-4" />}
-                    onClick={() => setIsAddSongsModalOpen(true)}
-                  >
-                    {locale === "pt" ? "Adicionar Músicas" : "Add Songs"}
-                  </Button>
-                ) : undefined
-              }
+              actionLabel={locale === "pt" ? "Adicionar Músicas" : "Add Songs"}
+              onAction={() => setIsAddSongsModalOpen(true)}
             />
           </div>
         ) : (
           <div className="divide-y divide-m3-border/50 rounded-2xl border border-m3-border/80 bg-white dark:bg-m3-card overflow-hidden shadow-xs">
             {paginatedSongs.map((song, index) => {
               const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
-              const keyMatch = song.content?.match(/\{key:\s*([^}]+)\}/i)?.[1]?.trim();
+              const keyMatch = song.content
+                ?.match(/\{key:\s*([^}]+)\}/i)?.[1]
+                ?.trim();
               const isMenuOpen = activeSongMenuId === song.id;
 
               return (
@@ -436,7 +389,7 @@ export const CollectionDetailPage: React.FC = () => {
                           setActiveSongMenuId(isMenuOpen ? null : song.id);
                         }}
                         className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        title={t("common.more")}
+                        title={t("explorer.moreOptions")}
                       >
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
@@ -542,7 +495,9 @@ export const CollectionDetailPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage >= totalPages}
                 className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
