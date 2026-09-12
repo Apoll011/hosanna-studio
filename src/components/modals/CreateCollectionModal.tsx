@@ -173,10 +173,7 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             : "New Collection"
       }
     >
-      <form
-        onSubmit={handleSave}
-        className="flex flex-col gap-5 max-h-[78vh] overflow-y-auto pr-0.5"
-      >
+      <form onSubmit={handleSave} className="flex flex-col gap-5 pr-0.5">
         {/* Live Preview Card */}
         <div className="relative overflow-hidden flex items-center gap-4 p-4 rounded-2xl bg-linear-to-br from-slate-50 to-slate-100/70 dark:from-slate-800/70 dark:to-slate-900/80 border border-slate-200/80 dark:border-slate-700/60 shadow-inner">
           {imageBase64 ? (
@@ -196,7 +193,8 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
           )}
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
-              {name || (locale === "pt" ? "Título da Coleção" : "Collection Title")}
+              {name ||
+                (locale === "pt" ? "Título da Coleção" : "Collection Title")}
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
               {description ||
@@ -237,7 +235,9 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
         {/* Description */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-            {locale === "pt" ? "Descrição (opcional)" : "Description (optional)"}
+            {locale === "pt"
+              ? "Descrição (opcional)"
+              : "Description (optional)"}
           </label>
           <textarea
             value={description}
@@ -292,7 +292,10 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
           ) : (
             <div
               onClick={() => imageInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={`flex flex-col items-center justify-center gap-2 h-24 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
@@ -305,7 +308,9 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
                 <Loader2 className="w-5 h-5 animate-spin text-sky-500" />
               ) : (
                 <>
-                  <UploadCloud className={`w-5 h-5 ${isDragging ? "text-sky-500" : "text-slate-400"}`} />
+                  <UploadCloud
+                    className={`w-5 h-5 ${isDragging ? "text-sky-500" : "text-slate-400"}`}
+                  />
                   <span className="text-xs text-slate-400 dark:text-slate-500 text-center leading-relaxed">
                     {locale === "pt"
                       ? "Clique ou arraste uma imagem"
@@ -367,19 +372,22 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             })}
           </div>
         </div>
-
-        {/* Icon Selection */}
-        <div className="flex flex-col gap-2 min-h-0">
+        {/* Icon Selection with Search Header */}
+        <div className="flex flex-col gap-2 min-h-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 shrink-0">
               <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-              <span>{locale === "pt" ? "Ícone" : "Icon"}</span>
+              <span>
+                {t("modals.iconCount", { count: filteredIcons.length })}
+              </span>
             </label>
+
+            {/* Quick Search */}
             <div className="relative w-36 sm:w-48">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder={locale === "pt" ? "Buscar ícone..." : "Search icon..."}
+                placeholder={t("modals.searchIcons")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-7 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
@@ -388,42 +396,61 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   <X className="w-3 h-3" />
                 </button>
               )}
             </div>
           </div>
-          <div className="relative max-h-40 overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 p-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
-            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
-              {filteredIcons.map((item) => {
-                const IconComp = item.icon;
-                const isSelected = selectedIcon === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelectedIcon(item.id)}
-                    title={item.name}
-                    aria-label={item.name}
-                    className={`group relative flex items-center justify-center aspect-square p-2 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-sky-500/10 border-sky-500 text-sky-600 dark:text-sky-400 ring-2 ring-sky-500/20 shadow-2xs"
-                        : "bg-white dark:bg-slate-800/60 border-slate-200/70 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105"
-                    }`}
-                  >
-                    <IconComp className="w-5 h-5 transition-transform group-hover:scale-110" />
-                  </button>
-                );
-              })}
-            </div>
+
+          {/* Icons Grid with dedicated scroll containment */}
+          <div className="relative flex-1 min-h-35 max-h-55 sm:max-h-60 overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 p-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
+            {filteredIcons.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center py-8 text-center text-slate-400">
+                <Search className="w-6 h-6 mb-1 opacity-50" />
+                <p className="text-xs">
+                  {t("modals.noIconFound", { query: searchQuery })}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                {filteredIcons.map((item) => {
+                  const IconComp = item.icon;
+                  const isSelected = selectedIcon === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedIcon(item.id)}
+                      title={item.name}
+                      aria-label={item.name}
+                      className={`group relative flex flex-col items-center justify-center aspect-square p-2 rounded-xl border transition-all ${
+                        isSelected
+                          ? "bg-sky-500/10 border-sky-500 text-sky-600 dark:text-sky-400 ring-2 ring-sky-500/20 font-semibold shadow-2xs"
+                          : "bg-white dark:bg-slate-800/60 border-slate-200/70 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105"
+                      }`}
+                    >
+                      <IconComp className="w-5 h-5 transition-transform group-hover:scale-110" />
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate w-full text-center mt-1 leading-none opacity-80 group-hover:opacity-100">
+                        {item.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-1">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isSaving}>
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSaving}
+          >
             {t("common.cancel")}
           </Button>
           <Button
