@@ -15,6 +15,7 @@ import React, {
 } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useRegisterSW } from "virtual:pwa-register/react";
+import { EventFormValue } from "../components/agenda/EventModals";
 import {
   BatchActionFloatingBar,
   buildFolderTree,
@@ -22,7 +23,6 @@ import {
   getFolderDescendantIds,
 } from "../components/explorer";
 import { HosannaCommandPalette } from "../components/HosannaCommandPalette";
-import { EventFormValue } from "../components/agenda/EventModals";
 import {
   ActiveModal,
   AppSidebar,
@@ -1070,7 +1070,7 @@ export const MainLayout: React.FC = () => {
         artist,
         folderId: currentFolderId,
         content: `{title: ${title}}\n{artist: ${artist}}\n\n${chordpro.chordpro}`,
-        tags: ["cifraclub"],
+        tags: ["Imported"],
       });
       await Promise.all([songsQuery.refetch(), foldersQuery.refetch()]);
       closeModal();
