@@ -1510,7 +1510,6 @@ export const MainLayout: React.FC = () => {
               density={density}
               onDensityChange={handleDensityChange}
               onOpenFilterPanel={() => {
-                navigateBackToDrive();
                 setIsFilterPanelOpen(true);
               }}
             />

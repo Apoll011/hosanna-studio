@@ -117,7 +117,7 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
         </div>
 
         {/* Filter Pop-Up Panel Trigger Button */}
-        {view === "explorer" && (
+        {(view === "explorer" || view === "songs") && (
           <button
             onClick={onOpenFilterPanel}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all cursor-pointer relative ${

@@ -198,14 +198,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
       result = result.filter((song) => matchedIds.has(song.id));
     }
 
-    if (selectedFolder) {
-      if (selectedFolder === "root") {
-        result = result.filter((song) => !song.folderId);
-      } else {
-        result = result.filter((song) => song.folderId === selectedFolder);
-      }
-    }
-
     if (actualSelectedKey) {
       result = result.filter((song) => {
         const k = song.content?.match(/\{key:\s*([^}]+)\}/i)?.[1]?.trim();
@@ -248,7 +240,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
     allSongs,
     searchableSongs,
     finalSearchQuery,
-    selectedFolder,
     actualSelectedKey,
     actualSelectedTag,
     finalSortBy,
@@ -271,7 +262,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
     finalSortOrder,
     actualSelectedKey,
     actualSelectedTag,
-    selectedFolder,
     itemsPerPage,
   ]);
 
@@ -511,7 +501,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
               icon={<Music className="w-12 h-12 text-m3-primary opacity-40" />}
               title={t("songsPage.noResults")}
               description={
-                finalSearchQuery || selectedFolder
+                finalSearchQuery
                   ? t("songsPage.noResultsDesc")
                   : t("songsPage.emptyDesc")
               }
