@@ -9,6 +9,7 @@ import { Folder, Service, Song } from "@/src/types";
 import {
   Calendar,
   Calendar1,
+  CalendarPlus,
   ChevronRight,
   CornerLeftUp,
   FileText,
@@ -20,6 +21,7 @@ import {
   LibraryBig,
   Menu,
   Music,
+  Music2,
   Plus,
   Search,
   Settings,
@@ -462,7 +464,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                     className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
                   >
                     <div className="w-8 h-8 rounded-xl bg-m3-primary/10 text-m3-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <Music className="w-4 h-4" />
+                      <Music2 className="w-4 h-4" />
                     </div>
                     {t("addressBar.importSongs")}
                   </button>
@@ -507,6 +509,19 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                       <LibraryBig className="w-4 h-4" />
                     </div>
                     {t("addressBar.newCollection")}
+                  </button>
+                )}
+                {collections_enabled && (
+                  <button
+                    onClick={() => {
+                      navigate(`${slugPrefix}/agenda?create=1`);
+                    }}
+                    className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-m3-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <CalendarPlus className="w-4 h-4 text-amber-500" />
+                    </div>
+                    {t("agenda.newEvent")}
                   </button>
                 )}
               </div>

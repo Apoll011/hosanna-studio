@@ -2,7 +2,7 @@ import { Button } from "@/src/components/common";
 import { SongScoreLayout } from "@/src/hooks/usePersonalSettings";
 import { useI18n } from "@/src/lib/i18n";
 import { Folder, Song } from "@/src/types";
-import { FileText, MoreVertical } from "lucide-react";
+import { FileMusic, MoreVertical } from "lucide-react";
 import React from "react";
 import {
   getFolderColorStyle,
@@ -193,7 +193,7 @@ export const SongTableRow: React.FC<SongTableRowProps> = React.memo(
       >
         <td className={`${cellPadding} max-w-xs sm:max-w-md`}>
           <div className="flex items-center gap-3 group-hover:translate-x-1 transition-transform min-w-0">
-            <FileText
+            <FileMusic
               className={`${isCompact ? "w-4 h-4" : "w-5 h-5"} text-m3-primary opacity-80 shrink-0`}
             />
             <span className="truncate">{song.title}</span>
