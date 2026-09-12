@@ -107,7 +107,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const orgMenuRef = useRef<HTMLDivElement>(null);
   const hasMultipleOrgs = (organizations?.length ?? 0) > 1;
 
-  const teams_enabled = posthog.isFeatureEnabled("teams-enable") || false;
+  const teams_enabled = posthog.isFeatureEnabled("teams-enabled") || false;
   const agenda_enabled = posthog.isFeatureEnabled("agenda") || true;
   const collections_enabled = posthog.isFeatureEnabled("collection") || false;
 
