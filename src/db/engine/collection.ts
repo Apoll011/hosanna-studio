@@ -127,6 +127,8 @@ function makeDoc<T extends AnyDoc>(
     // Remove from IDB
     await idbDelete(this._collection._db, this._collection._storeName, id);
     notify(this._collection._storeName, id);
+    // Trigger replication push so the tombstone reaches the server
+    notifyLocalChange(this._collection._storeName);
   };
 
   return doc;

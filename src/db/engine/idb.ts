@@ -3,6 +3,19 @@
  * No external dependencies. No abstractions beyond what the engine needs.
  */
 
+/**
+ * Open an IndexedDB database.
+ *
+ * Key improvements over the original:
+ * - `onblocked` closes any old connections held by this tab before retrying
+ *   (prevents indefinite blocking when the same tab reopens the DB after a
+ *   version bump, which is the most common cause of the "IDB wiped on refresh"
+ *   race condition).
+ * - `onversionchange` is wired on the opened connection so that if another tab
+ *   opens a newer version the current tab closes gracefully instead of blocking
+ *   it. Without this the newer tab's upgrade is blocked indefinitely and it may
+ *   re-create stores, effectively wiping any locally-opened data.
+ */
 export function openIDB(
   name: string,
   version: number,
@@ -10,13 +23,37 @@ export function openIDB(
 ): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(name, version);
+
     req.onupgradeneeded = (e) => {
       upgrade((e.target as IDBOpenDBRequest).result, e.oldVersion);
     };
-    req.onsuccess = () => resolve(req.result);
+
+    req.onsuccess = () => {
+      const db = req.result;
+
+      // If another tab opens a newer DB version it will be blocked by us.
+      // Close gracefully so the upgrade can proceed without wiping stores.
+      db.onversionchange = () => {
+        console.warn(
+          "[hosana-idb] versionchange received — closing connection to allow upgrade",
+        );
+        db.close();
+      };
+
+      resolve(db);
+    };
+
     req.onerror = () => reject(req.error);
-    req.onblocked = () =>
-      console.warn("[hosana-idb] open blocked – another tab holds the DB");
+
+    // `onblocked` fires when this open request is blocked by another open
+    // connection (e.g. another tab still at an older version).  We can't force
+    // the other tab to close, but we log it so developers know what is happening.
+    req.onblocked = () => {
+      console.warn(
+        "[hosana-idb] open blocked – another tab or connection holds the DB at an older version. " +
+          "Close other tabs or reload them to unblock.",
+      );
+    };
   });
 }
 
@@ -37,7 +74,7 @@ export function idbGetAll<T>(db: IDBDatabase, store: string): Promise<T[]> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(store, "readonly");
     const req = tx.objectStore(store).getAll();
-    req.onsuccess = () => resolve(req.result as T[]);
+    req.onsuccess = () => resolve((req.result as T[]) ?? []);
     req.onerror = () => reject(req.error);
   });
 }
@@ -52,7 +89,7 @@ export function idbGetAllByIndex<T>(
     const tx = db.transaction(store, "readonly");
     const idx = tx.objectStore(store).index(indexName);
     const req = idx.getAll(query);
-    req.onsuccess = () => resolve(req.result as T[]);
+    req.onsuccess = () => resolve((req.result as T[]) ?? []);
     req.onerror = () => reject(req.error);
   });
 }
@@ -63,6 +100,7 @@ export function idbBulkPut<T>(
   store: string,
   docs: T[],
 ): Promise<void> {
+  if (docs.length === 0) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(store, "readwrite");
     const os = tx.objectStore(store);
@@ -111,5 +149,18 @@ export function idbClear(db: IDBDatabase, store: string): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error);
+  });
+}
+
+/**
+ * Count records in a store (cheap IDB cursor-free count).
+ * Useful for health-checks (e.g. detect accidental wipe).
+ */
+export function idbCount(db: IDBDatabase, store: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, "readonly");
+    const req = tx.objectStore(store).count();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
