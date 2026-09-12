@@ -7,52 +7,59 @@ import React, { useEffect, useRef } from "react";
 import { getDatabase } from "../db";
 import { isDemoMode } from "../demo/index";
 import { useAuth } from "./AuthContext";
-import { useSync } from "./SyncContext";
 
 interface Props {
   children: React.ReactNode;
 }
 
+/**
+ * CacheHydrationProvider
+ *
+ * Responsibilities:
+ *  1. On logout: clear ALL local collections so stale data from a previous
+ *     user session never leaks into the next session.
+ *
+ * What it does NOT do (and why):
+ *  - It no longer triggers an initial sync on login. SyncContext.SyncProvider
+ *    already calls `repl.start()` which runs an immediate sync. Triggering a
+ *    second sync here would race with the first and double-push any pending
+ *    local changes.
+ */
 export const CacheHydrationProvider: React.FC<Props> = ({ children }) => {
-  const { triggerSyncCheck } = useSync();
   const { isAuthenticated } = useAuth();
-  const hasSyncedRef = useRef(false);
+  // Track previous auth state to detect logout transitions
   const prevAuthRef = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {
-    // Demo mode — DemoPage is the sole seeder (runs before the hard navigation).
-    // CacheHydrationProvider must not seed here to avoid a race condition where
-    // generateDemoData() is called twice with fresh UUIDs, duplicating all docs.
-    if (isDemoMode()) return;
-
-    if (!hasSyncedRef.current && isAuthenticated) {
-      hasSyncedRef.current = true;
-      void triggerSyncCheck();
+    if (isDemoMode()) {
+      // Demo data is ephemeral — never clear on "logout"
+      prevAuthRef.current = isAuthenticated;
+      return;
     }
-  }, [triggerSyncCheck, isAuthenticated]);
 
-  useEffect(() => {
-    if (isDemoMode()) return; // Demo data is ephemeral — never clear on "logout"
-
-    if (prevAuthRef.current !== undefined) {
-      if (prevAuthRef.current && !isAuthenticated) {
-        // User logged out — clear all RxDB collections
-        void (async () => {
-          try {
-            const db = await getDatabase();
-            await Promise.all([
-              db.songs.remove(),
-              db.folders.remove(),
-              db.services.remove(),
-            ]);
-          } catch {
-            // ignore — DB may not be initialized yet
-          }
-        })();
-        hasSyncedRef.current = false;
-      }
-    }
+    const wasAuthenticated = prevAuthRef.current;
     prevAuthRef.current = isAuthenticated;
+
+    // Only act on a genuine logout transition (true → false).
+    // Skip on the very first render (prevAuthRef is still undefined).
+    if (wasAuthenticated === true && !isAuthenticated) {
+      void (async () => {
+        try {
+          const db = await getDatabase();
+          // Clear ALL collections — including collections and agendaEvents
+          // which were previously missing and could leak data between users.
+          await Promise.all([
+            db.songs.remove(),
+            db.folders.remove(),
+            db.collections.remove(),
+            db.services.remove(),
+            db.agendaEvents.remove(),
+          ]);
+        } catch {
+          // Ignore — DB may not be initialized (e.g. logout before DB opens)
+        }
+      })();
+    }
   }, [isAuthenticated]);
 
   return <>{children}</>;

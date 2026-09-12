@@ -13,6 +13,15 @@ import { I18nProvider } from "./lib/i18n";
 import { posthog } from "./lib/posthog";
 import { AppRoutes } from "./routes/AppRoutes";
 
+// Configure the API client once at module load time (not on every render).
+// Reading localStorage here is safe — it happens synchronously during the
+// module evaluation, before any React rendering.
+configureApiClient(
+  localStorage.getItem("server_url") ||
+    import.meta.env.VITE_API_URL ||
+    "/api",
+);
+
 function PageviewTracker() {
   const location = useLocation();
   useEffect(() => {
@@ -22,19 +31,15 @@ function PageviewTracker() {
 }
 
 export default function App() {
-  configureApiClient(
-    localStorage.getItem("server_url") ||
-      import.meta.env.VITE_API_URL ||
-      "/api",
-  );
-
+  // Preload the heavy ChordPro editor bundle after the UI has had 3 s to
+  // settle. The timer is cleared if the component unmounts (e.g. HMR).
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setTimeout(() => {
-        void preloadEditor();
-      }, 3000);
-    }
+    const id = setTimeout(() => {
+      void preloadEditor();
+    }, 3000);
+    return () => clearTimeout(id);
   }, []);
+
   return (
     <AuthProvider>
       <I18nProvider>

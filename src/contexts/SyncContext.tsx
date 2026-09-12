@@ -13,10 +13,10 @@ import React, {
 } from "react";
 import {
   getDatabase,
-  ReplicationManager,
   resetReplication,
   setupReplication,
 } from "../db";
+import type { ReplicationManager } from "../db";
 import { SyncStatus } from "../types";
 import { useAuth } from "./AuthContext";
 import { isDemoMode } from "../demo/index";
@@ -47,7 +47,6 @@ interface ShowToastOptions {
 
 interface SyncContextType {
   syncStatus: SyncStatus;
-  setSyncStatus: (status: SyncStatus) => void;
   toasts: ToastMessage[];
   showToast: (
     textOrOptions: string | ShowToastOptions,
@@ -68,7 +67,19 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const replicationManagerRef = useRef<ReplicationManager | null>(null);
 
+  // Track auto-dismiss timers so they can be cleared on manual dismissal
+  // and on unmount, preventing setState-after-unmount warnings.
+  const toastTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+
   const removeToast = useCallback((id: string) => {
+    // Cancel the auto-dismiss timer if the user dismisses manually
+    const timer = toastTimersRef.current.get(id);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      toastTimersRef.current.delete(id);
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
@@ -98,18 +109,45 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
       const duration =
         toastItem.duration !== undefined ? toastItem.duration : 4000;
       if (duration > 0) {
-        setTimeout(() => {
-          removeToast(id);
+        const timer = setTimeout(() => {
+          toastTimersRef.current.delete(id);
+          setToasts((prev) => prev.filter((t) => t.id !== id));
         }, duration);
+        toastTimersRef.current.set(id, timer);
       }
     },
-    [removeToast],
+    // removeToast intentionally not in deps — we inline the filter here to
+    // avoid capturing a stale removeToast that itself closes over stale state.
+    [],
   );
+
+  // Clear all pending toast timers on unmount
+  useEffect(() => {
+    return () => {
+      for (const timer of toastTimersRef.current.values()) {
+        clearTimeout(timer);
+      }
+      toastTimersRef.current.clear();
+    };
+  }, []);
 
   const { isAuthenticated } = useAuth();
 
-  // Initialise database and replication on start / auth change
+  // Initialise database and replication on mount / auth change.
+  //
+  // Key correctness invariants:
+  //  1. We call `resetReplication()` synchronously before the async `getDatabase()`
+  //     so any *previous* manager is torn down immediately, not after an await.
+  //  2. The `isMounted` guard prevents double-setup when StrictMode double-invokes
+  //     the effect — the cleanup sets it to false before the second run starts.
+  //  3. The subscription `sub` is stored in a local variable scoped to this
+  //     effect invocation; the cleanup always unsubscribes the *correct* sub even
+  //     if a concurrent async init is still in flight.
   useEffect(() => {
+    // Tear down any previous manager immediately (synchronously)
+    resetReplication();
+    replicationManagerRef.current = null;
+
     let sub: { unsubscribe: () => void } | null = null;
     let isMounted = true;
 
@@ -120,19 +158,16 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // In demo mode, skip replication entirely — the DB is local-only.
         if (isDemoMode()) {
-          setSyncStatus("local_only");
+          setSyncStatus("local_only" as SyncStatus);
           return;
         }
-
-        // Tear down any previous manager before creating a fresh one.
-        // This handles logout → login cycles correctly.
-        resetReplication();
 
         const repl = setupReplication(db);
         replicationManagerRef.current = repl;
 
         sub = repl.status$.subscribe((st) => {
-          setSyncStatus(st);
+          // Map replication states to SyncStatus
+          setSyncStatus(st as unknown as SyncStatus);
           if (st === "synced") {
             setLastSyncedAt(new Date());
           }
@@ -140,12 +175,12 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (isAuthenticated) {
           repl.start();
-        } else {
-          repl.stop();
         }
+        // If not authenticated, don't start — the CacheHydrationProvider
+        // logout handler will clear collections; next auth change re-enters here.
       } catch (err) {
-        console.error("Failed to initialize RxDB / Replication:", err);
-        setSyncStatus("error");
+        console.error("[SyncContext] Failed to initialize DB / Replication:", err);
+        if (isMounted) setSyncStatus("error" as SyncStatus);
       }
     }
 
@@ -154,6 +189,9 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       isMounted = false;
       if (sub) sub.unsubscribe();
+      // Stop the manager on cleanup; resetReplication() at the top of the next
+      // effect run handles full teardown.
+      replicationManagerRef.current?.stop();
     };
   }, [isAuthenticated]);
 
@@ -169,7 +207,6 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
     <SyncContext.Provider
       value={{
         syncStatus,
-        setSyncStatus,
         toasts,
         showToast,
         removeToast,
