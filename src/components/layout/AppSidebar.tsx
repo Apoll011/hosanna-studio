@@ -358,7 +358,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           title={isSidebarCollapsed ? t("common.library") : undefined}
           className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-bold rounded-2xl transition-all cursor-pointer group ${
             view === "songs"
-              ? "bg-m3-primary/10 text-m3-primary border border-m3-primary/20 shadow-sm"
+              ? "bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shadow-sm"
               : "text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
           }`}
         >
@@ -366,7 +366,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <Music
                 className={`w-4.5 h-4.5 ${
-                  view === "songs" ? "text-m3-primary" : "text-m3-secondary"
+                  view === "songs" ? "text-violet-500" : "text-m3-secondary"
                 }`}
               />
             </div>
@@ -392,6 +392,59 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </Badge>
           </div>
         </button>
+
+        {collections_enabled && (
+          <button
+            onClick={() => {
+              navigate(`${slugPrefix}/collections`);
+              if (window.innerWidth < 768) setIsSidebarOpen(false);
+            }}
+            title={isSidebarCollapsed ? "Coleções" : undefined}
+            className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-bold rounded-2xl transition-all cursor-pointer group ${
+              view === "collections" || view === "collection-detail"
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-sm"
+                : "text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                <LibraryBig
+                  className={`w-4.5 h-4.5 ${
+                    view === "collections" || view === "collection-detail"
+                      ? "text-amber-500"
+                      : "text-m3-secondary"
+                  }`}
+                />
+              </div>
+              <span
+                className={`truncate transition-all duration-300 ease-in-out overflow-hidden whitespace-nowrap ${
+                  isSidebarCollapsed
+                    ? "opacity-0 max-w-0 -translate-x-2 pointer-events-none"
+                    : "opacity-100 max-w-35 translate-x-0"
+                }`}
+              >
+                {t("common.collections")}
+              </span>
+            </div>
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+                isSidebarCollapsed
+                  ? "opacity-0 max-w-0 scale-75 pointer-events-none"
+                  : "opacity-100 max-w-15 scale-100"
+              }`}
+            >
+              <Badge
+                variant={
+                  view === "collections" || view === "collection-detail"
+                    ? "sky"
+                    : "slate"
+                }
+              >
+                {totalCollections}
+              </Badge>
+            </div>
+          </button>
+        )}
 
         {/* Services Item */}
         <button
@@ -437,60 +490,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </div>
         </button>
 
-        {collections_enabled && (
-          <button
-            onClick={() => {
-              navigate(`${slugPrefix}/collections`);
-              if (window.innerWidth < 768) setIsSidebarOpen(false);
-            }}
-            title={isSidebarCollapsed ? "Coleções" : undefined}
-            className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-bold rounded-2xl transition-all cursor-pointer group ${
-              view === "collections" || view === "collection-detail"
-                ? "bg-m3-primary/10 text-m3-primary border border-m3-primary/20 shadow-sm"
-                : "text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
-            }`}
-          >
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                <LibraryBig
-                  className={`w-4.5 h-4.5 ${
-                    view === "collections" || view === "collection-detail"
-                      ? "text-m3-primary"
-                      : "text-m3-secondary"
-                  }`}
-                />
-              </div>
-              <span
-                className={`truncate transition-all duration-300 ease-in-out overflow-hidden whitespace-nowrap ${
-                  isSidebarCollapsed
-                    ? "opacity-0 max-w-0 -translate-x-2 pointer-events-none"
-                    : "opacity-100 max-w-35 translate-x-0"
-                }`}
-              >
-                {t("common.collections")}
-              </span>
-            </div>
-            <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
-                isSidebarCollapsed
-                  ? "opacity-0 max-w-0 scale-75 pointer-events-none"
-                  : "opacity-100 max-w-15 scale-100"
-              }`}
-            >
-              <Badge
-                variant={
-                  view === "collections" || view === "collection-detail"
-                    ? "sky"
-                    : "slate"
-                }
-              >
-                {totalCollections}
-              </Badge>
-            </div>
-          </button>
-        )}
-        {/* Collections Item */}
-
         {teams_enabled && (
           <button
             onClick={() => {
@@ -500,7 +499,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             title={isSidebarCollapsed ? t("common.teams") : undefined}
             className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-bold rounded-2xl transition-all cursor-pointer group ${
               view === "teams"
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-sm"
+                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-sm"
                 : "text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
             }`}
           >
@@ -508,7 +507,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Users
                   className={`w-4.5 h-4.5 ${
-                    view === "teams" ? "text-amber-500" : "text-m3-secondary"
+                    view === "teams" ? "text-rose-500" : "text-m3-secondary"
                   }`}
                 />
               </div>
@@ -534,7 +533,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             title={isSidebarCollapsed ? t("common.agenda") : undefined}
             className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-bold rounded-2xl transition-all cursor-pointer group ${
               view === "agenda"
-                ? "bg-amber-500/10 text-red-600 dark:text-red-400 border border-red-500/20 shadow-sm"
+                ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 shadow-sm"
                 : "text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
             }`}
           >
@@ -542,7 +541,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Calendar1
                   className={`w-4.5 h-4.5 ${
-                    view === "agenda" ? "text-red-500" : "text-m3-secondary"
+                    view === "agenda" ? "text-orange-500" : "text-m3-secondary"
                   }`}
                 />
               </div>

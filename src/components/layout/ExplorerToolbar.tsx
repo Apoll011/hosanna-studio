@@ -56,53 +56,6 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
     <div className="px-4 py-2.5 bg-m3-sidebar/20 border-b border-m3-border/40 flex items-center justify-between gap-3 flex-wrap">
       {/* Left Side: Filter button, Archive button (services), Sort dropdown */}
       <div className="flex items-center gap-2.5 flex-wrap">
-        {/* Filter Pop-Up Panel Trigger Button */}
-        {view === "explorer" && (
-          <button
-            onClick={onOpenFilterPanel}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all cursor-pointer relative ${
-              activeFiltersCount > 0
-                ? "bg-m3-primary/10 border-m3-primary text-m3-primary shadow-lg shadow-m3-primary/10"
-                : "bg-m3-card border-m3-border text-m3-secondary hover:bg-m3-hover hover:text-m3-text hover:border-m3-primary/30"
-            }`}
-            title={t("toolbar.openFilters")}
-          >
-            <Filter className="w-4 h-4" />
-            <span>{t("toolbar.filters")}</span>
-            {activeFiltersCount > 0 && (
-              <span className="w-4.5 h-4.5 rounded-full bg-m3-primary text-white text-[10px] font-black flex items-center justify-center shadow-sm">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
-        )}
-
-        {/* Archive Toggle Button (Services View) */}
-        {view === "services" && (
-          <button
-            type="button"
-            onClick={() => setShowArchived((v) => !v)}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all cursor-pointer shrink-0 ${
-              showArchived
-                ? "bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400 shadow-lg shadow-amber-500/10"
-                : "bg-m3-card border-m3-border text-m3-secondary hover:bg-m3-hover hover:text-m3-text hover:border-amber-500/30"
-            }`}
-            title={
-              showArchived
-                ? t("toolbar.hideArchived")
-                : t("toolbar.showArchived")
-            }
-          >
-            <Archive className="w-4 h-4" />
-            <span>{t("toolbar.archived")}</span>
-            {showArchived && archivedServices.length > 0 && (
-              <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center">
-                {archivedServices.length}
-              </span>
-            )}
-          </button>
-        )}
-
         {/* Sort Control Button */}
         <div className="flex items-center gap-2 bg-m3-bg border border-m3-border rounded-2xl px-3 py-1.5 text-xs transition-all hover:border-m3-primary/30">
           <ArrowUpDown className="w-4 h-4 text-m3-secondary shrink-0" />
@@ -162,6 +115,53 @@ export const ExplorerToolbar: React.FC<ExplorerToolbarProps> = ({
             )}
           </select>
         </div>
+
+        {/* Filter Pop-Up Panel Trigger Button */}
+        {view === "explorer" && (
+          <button
+            onClick={onOpenFilterPanel}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all cursor-pointer relative ${
+              activeFiltersCount > 0
+                ? "bg-m3-primary/10 border-m3-primary text-m3-primary shadow-lg shadow-m3-primary/10"
+                : "bg-m3-card border-m3-border text-m3-secondary hover:bg-m3-hover hover:text-m3-text hover:border-m3-primary/30"
+            }`}
+            title={t("toolbar.openFilters")}
+          >
+            <Filter className="w-4 h-4" />
+            <span>{t("toolbar.filters")}</span>
+            {activeFiltersCount > 0 && (
+              <span className="w-4.5 h-4.5 rounded-full bg-m3-primary text-white text-[10px] font-black flex items-center justify-center shadow-sm">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* Archive Toggle Button (Services View) */}
+        {view === "services" && (
+          <button
+            type="button"
+            onClick={() => setShowArchived((v) => !v)}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all cursor-pointer shrink-0 ${
+              showArchived
+                ? "bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400 shadow-lg shadow-amber-500/10"
+                : "bg-m3-card border-m3-border text-m3-secondary hover:bg-m3-hover hover:text-m3-text hover:border-amber-500/30"
+            }`}
+            title={
+              showArchived
+                ? t("toolbar.hideArchived")
+                : t("toolbar.showArchived")
+            }
+          >
+            <Archive className="w-4 h-4" />
+            <span>{t("toolbar.archived")}</span>
+            {showArchived && archivedServices.length > 0 && (
+              <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center">
+                {archivedServices.length}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Right Side: View Mode Toggle & Density Selector */}
