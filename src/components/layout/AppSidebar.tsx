@@ -27,8 +27,8 @@ import React, { useEffect, useRef, useState } from "react";
 import type { Organization as AuthOrganization } from "../../contexts/AuthContext";
 import { ViewName } from "../../layouts/view";
 import { getAvatarGradient, getInitials } from "../../utils";
+import { getRoleLabel } from "../../utils/settingsUtils";
 import { FolderTreeItemNode, FolderTreeNode } from "../explorer";
-import { getRoleLabel } from "../settings/settingsUtils";
 
 interface AppSidebarProps {
   isSidebarOpen: boolean;

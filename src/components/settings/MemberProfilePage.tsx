@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { authClient } from "../../lib/authClient";
-import { getRoleBadge, getRoleLabel } from "./settingsUtils";
+import { getRoleBadge, getRoleLabel } from "../../utils/settingsUtils";
 
 interface MemberProfilePageProps {
   member: {
