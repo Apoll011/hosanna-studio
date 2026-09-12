@@ -23,11 +23,9 @@ import {
   Edit2,
   ExternalLink,
   FolderKanban,
-  ListMusic,
   MoreHorizontal,
   Music2,
   Plus,
-  Search,
   Tag,
   Trash2,
   X,
@@ -236,16 +234,41 @@ export const CollectionDetailPage: React.FC = () => {
           />
         )}
         {/* Scrim */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/65 via-black/20 to-transparent" />
 
-        {/* Back */}
-        <button
-          onClick={() => navigate(`${slugPrefix}/collections`)}
-          className="absolute top-4 left-4 z-10 p-2.5 rounded-2xl bg-black/30 hover:bg-black/55 text-white backdrop-blur-sm transition-all cursor-pointer shadow-md"
-          title={t("collectionsPage.backToCollections")}
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
+        {/* Collection identity */}
+        <div className="relative z-10 flex items-end gap-4 px-6 sm:px-8 pb-6 pt-16">
+          <div
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-white shadow-2xl shrink-0 border-2 border-white/20"
+            style={{ backgroundColor: colorStyle.colorHex }}
+          >
+            <IconComp className="w-8 h-8 sm:w-10 sm:h-10" />
+          </div>
+          <div className="flex flex-col min-w-0 pb-0.5">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/55 mb-0.5">
+              Collection
+            </p>
+            <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md truncate leading-tight">
+              {collection.name}
+            </h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-xs font-medium text-white/70">
+                {t(
+                  `collectionsPage.songCount.${songCount === 1 ? "one" : "other"}`,
+                  { count: songCount },
+                )}
+              </span>
+              {collection.description && (
+                <>
+                  <span className="text-white/30">·</span>
+                  <span className="text-xs text-white/60 line-clamp-1">
+                    {collection.description}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Top-right actions */}
         <div
@@ -309,82 +332,8 @@ export const CollectionDetailPage: React.FC = () => {
             )}
           </div>
         </div>
-
-        {/* Collection identity */}
-        <div className="relative z-10 flex items-end gap-4 px-6 sm:px-8 pb-6 pt-16">
-          <div
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-white shadow-2xl shrink-0 border-2 border-white/20"
-            style={{ backgroundColor: colorStyle.colorHex }}
-          >
-            <IconComp className="w-8 h-8 sm:w-10 sm:h-10" />
-          </div>
-          <div className="flex flex-col min-w-0 pb-0.5">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/55 mb-0.5">
-              Collection
-            </p>
-            <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md truncate leading-tight">
-              {collection.name}
-            </h1>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-xs font-medium text-white/70">
-                {t(
-                  `collectionsPage.songCount.${songCount === 1 ? "one" : "other"}`,
-                  { count: songCount },
-                )}
-              </span>
-              {collection.description && (
-                <>
-                  <span className="text-white/30">·</span>
-                  <span className="text-xs text-white/60 line-clamp-1">
-                    {collection.description}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* ── TOOLBAR ──────────────────────────────────────────────────────────── */}
-      <div className="px-6 sm:px-8 py-3 border-b border-m3-border/60 flex items-center gap-3 bg-white/90 dark:bg-m3-bg/90 backdrop-blur-sm sticky top-0 z-20">
-        {/* Local search */}
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder={t("collectionsPage.searchSongPlaceholder")}
-            className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-m3-primary/30 focus:border-m3-primary/50 transition-all"
-          />
-          {localSearch && (
-            <button
-              onClick={() => setLocalSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-
-        {/* Stats pill */}
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 ml-auto shrink-0">
-          <ListMusic className="w-3.5 h-3.5" />
-          {isFiltering ? (
-            <span>
-              {totalSongs}
-              <span className="text-slate-300 dark:text-slate-600">
-                {" "}
-                / {songCount}
-              </span>
-            </span>
-          ) : (
-            <span>{songCount}</span>
-          )}
-        </div>
-      </div>
-
-      {/* ── SONGS LIST ───────────────────────────────────────────────────────── */}
       <div className="flex-1 px-4 sm:px-6 py-4">
         {paginatedSongs.length === 0 ? (
           /* Empty / No-results state */
