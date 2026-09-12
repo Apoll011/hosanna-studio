@@ -9,7 +9,6 @@ import {
   Button,
   ConfirmDialog,
   EmptyState,
-  Input,
   Modal,
   Spinner,
 } from "@/src/components/common";
@@ -21,19 +20,13 @@ import { usePermissionValue } from "@/src/lib/permissions/client";
 import { Can } from "@/src/lib/permissions/components";
 import { Song } from "@/src/types";
 import {
-  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
   FileText,
-  Filter,
   FolderInput,
-  FolderTree,
-  HelpCircle,
   Music,
-  Plus,
-  Search,
   Tag,
   Trash2,
   X,
@@ -61,7 +54,6 @@ import { posthog } from "../../lib/posthog";
 import { filterSearchableSongsWithLiqe } from "../../utils";
 
 interface SongsPageProps {
-  hideHeader?: boolean;
   searchQuery?: string;
   sortBy?: "title" | "artist" | "updatedAt";
   sortOrder?: "asc" | "desc";
@@ -70,7 +62,6 @@ interface SongsPageProps {
 }
 
 export const SongsPage: React.FC<SongsPageProps> = ({
-  hideHeader,
   searchQuery: externalSearchQuery,
   sortBy: externalSortBy,
   sortOrder: externalSortOrder,
@@ -87,9 +78,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
     string,
     unknown
   >;
-
-  const actualHideHeader =
-    hideHeader ?? (context.hideHeader as boolean | undefined);
 
   // Density from context with the unified personal-settings fallback
   const contextDensity = context.density as
@@ -114,13 +102,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
 
   // Search, Filtering, Pagination, Sorting State
   const [internalSearchQuery, setInternalSearchQuery] = useState("");
-  const [selectedFolder, setSelectedFolder] = useState<string>("");
-  const [internalSortBy, setInternalSortBy] = useState<
-    "title" | "artist" | "updatedAt" | "number"
-  >("title");
-  const [internalSortOrder, setInternalSortOrder] = useState<"asc" | "desc">(
-    "asc",
-  );
   const [page, setPage] = useState(1);
 
   const finalSearchQuery: string =
@@ -135,14 +116,14 @@ export const SongsPage: React.FC<SongsPageProps> = ({
       ? externalSortBy
       : contextSortBy !== undefined
         ? contextSortBy
-        : internalSortBy;
+        : "title";
 
   const finalSortOrder =
     externalSortOrder !== undefined
       ? externalSortOrder
       : contextSortOrder !== undefined
         ? contextSortOrder
-        : internalSortOrder;
+        : "asc";
 
   const { value: emptyStateAction } = usePermissionValue(
     "song.create",
@@ -510,153 +491,8 @@ export const SongsPage: React.FC<SongsPageProps> = ({
     <div
       ref={containerRef}
       onMouseDown={handleWorkspaceMouseDown}
-      className={`flex-1 flex flex-col w-full mx-auto space-y-4 animate-in fade-in duration-300 overflow-y-auto h-full relative select-none ${
-        actualHideHeader ? "p-4 sm:p-6" : "p-4 sm:p-8 max-w-7xl"
-      }`}
+      className="flex-1 flex flex-col w-full mx-auto space-y-4 animate-in fade-in duration-300 overflow-y-auto h-full relative select-none p-4 sm:p-8 max-w-7xl"
     >
-      {/* Header Banner when Standalone */}
-      {!actualHideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-m3-text tracking-tighter flex items-center gap-3.5">
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-m3-primary/10 text-m3-primary flex items-center justify-center border border-m3-primary/20 shadow-xs">
-                <Music className="w-6 h-6 sm:w-7 sm:h-7" />
-              </div>
-              {t("songsPage.title")}
-            </h1>
-            <p className="text-xs text-m3-secondary font-bold uppercase tracking-widest mt-1.5 ml-14 sm:ml-16 opacity-60">
-              {tc("songsPage.subtitle", totalSongs, { count: totalSongs })}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <Button
-              variant="outline"
-              icon={<FolderTree className="w-4 h-4" />}
-              onClick={() => navigate(`${slugPrefix}/folders`)}
-              className="rounded-2xl py-3 px-4 sm:px-5 font-black uppercase tracking-wider text-[11px]"
-            >
-              {t("songsPage.explorer")}
-            </Button>
-
-            <Button
-              variant="primary"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={() => setIsCreateModalOpen(true)}
-              className="rounded-2xl py-3 px-4 sm:px-5 font-black uppercase tracking-wider text-[11px] shadow-lg shadow-m3-primary/20"
-            >
-              {t("songsPage.newSong")}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Standalone Toolbar (search, folder filter, sort, viewmode & density) */}
-      {!actualHideHeader && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 bg-m3-sidebar/30 border border-m3-border rounded-3xl shadow-xs transition-all">
-          <div className="flex-1 min-w-56 max-w-md relative">
-            <Input
-              placeholder={t("songsPage.searchPlaceholder")}
-              value={finalSearchQuery}
-              onChange={(e) => {
-                setInternalSearchQuery(e.target.value);
-                setPage(1);
-              }}
-              icon={<Search className="w-4 h-4 text-m3-secondary" />}
-              className="py-2 text-xs rounded-xl pr-16"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-              {finalSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInternalSearchQuery("");
-                    setPage(1);
-                  }}
-                  className="p-1 text-m3-secondary hover:text-m3-text hover:bg-m3-hover rounded-lg cursor-pointer transition-all"
-                  title={t("addressBar.clearSearch")}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsSearchHelpOpen(true)}
-                className="p-1 text-m3-secondary hover:text-m3-primary hover:bg-m3-primary/10 rounded-lg cursor-pointer transition-all"
-                title={
-                  locale === "pt"
-                    ? "Guia de sintaxe de pesquisa (Liqe / Lucene)"
-                    : "Search syntax guide (Liqe / Lucene)"
-                }
-              >
-                <HelpCircle className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Folder Filter */}
-            <div className="flex items-center gap-2 bg-m3-card border border-m3-border rounded-xl px-3 py-2 text-xs shadow-xs">
-              <Filter className="w-3.5 h-3.5 text-m3-primary opacity-70" />
-              <select
-                value={selectedFolder}
-                onChange={(e) => {
-                  setSelectedFolder(e.target.value);
-                  setPage(1);
-                }}
-                className="bg-transparent font-bold text-m3-text focus:outline-none cursor-pointer uppercase tracking-wider text-[10px]"
-              >
-                <option value="">{t("songsPage.allFolders")}</option>
-                <option value="root">{t("songsPage.root")}</option>
-                {folders.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort Filter */}
-            <div className="flex items-center gap-2 bg-m3-card border border-m3-border rounded-xl px-3 py-2 text-xs shadow-xs">
-              <ArrowUpDown className="w-3.5 h-3.5 text-m3-primary opacity-70" />
-              <select
-                value={`${finalSortBy}-${finalSortOrder}`}
-                onChange={(e) => {
-                  const [sb, so] = e.target.value.split("-") as [
-                    "title" | "artist" | "updatedAt",
-                    "asc" | "desc",
-                  ];
-                  setInternalSortBy(sb);
-                  setInternalSortOrder(so);
-                }}
-                className="bg-transparent font-bold text-m3-text focus:outline-none cursor-pointer uppercase tracking-wider text-[10px]"
-              >
-                <option value="title-asc">{t("toolbar.nameAsc")}</option>
-                <option value="title-desc">{t("toolbar.nameDesc")}</option>
-                <option value="artist-asc">{t("toolbar.artistAsc")}</option>
-                <option value="updatedAt-desc">{t("toolbar.dateDesc")}</option>
-              </select>
-            </div>
-
-            {/* Density Selector */}
-            <div className="flex items-center gap-1.5 bg-m3-card border border-m3-border rounded-xl px-2.5 py-1.5 text-xs shadow-xs">
-              <select
-                value={density}
-                onChange={(e) =>
-                  handleDensityChange(
-                    e.target.value as "comfortable" | "compact",
-                  )
-                }
-                className="bg-transparent font-bold text-m3-text focus:outline-none cursor-pointer text-[10px] uppercase tracking-wider"
-              >
-                <option value="comfortable">{t("toolbar.comfortable")}</option>
-                <option value="compact">{t("toolbar.compact")}</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Content Area: Grid / Table View */}
       <div className="bg-m3-card border border-m3-border rounded-3xl shadow-sm overflow-hidden flex flex-col flex-1 transition-all">
         {songsQuery.isLoading ? (
