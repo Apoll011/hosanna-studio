@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import { Can, CanAll } from "../../lib/permissions/components";
+import { ActiveModal } from "./ExplorerModals";
 
 export interface ContextMenuState {
   x: number;
@@ -43,13 +44,9 @@ export interface ExplorerContextMenuProps {
   navigate: (path: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onClose: () => void;
-  onOpenCreateFolder: () => void;
-  onOpenCreateSong: () => void;
+  onOpenModal: (modal: ActiveModal) => void;
   onSelectAll: () => void;
   onRefreshView: () => void;
-  onOpenBatchTag: () => void;
-  onOpenBatchMove: () => void;
-  onOpenBatchDelete: () => void;
   onClearSelection: () => void;
   onSelectFolder: (id: string) => void;
   onCustomizeFolder?: (folder: Folder) => void;
@@ -59,7 +56,6 @@ export interface ExplorerContextMenuProps {
   onMoveSong: (song: Song) => void;
   onTagSong: (song: Song) => void;
   onAddToCollection?: (song: Song) => void;
-  onBatchAddToCollection?: () => void;
   onDeleteSong: (song: Song) => void;
   onPrintSongs?: () => void;
   onPrintFolders?: () => void;
@@ -77,13 +73,9 @@ export const ExplorerContextMenu: React.FC<ExplorerContextMenuProps> = ({
   navigate,
   fileInputRef,
   onClose,
-  onOpenCreateFolder,
-  onOpenCreateSong,
+  onOpenModal,
   onSelectAll,
   onRefreshView,
-  onOpenBatchTag,
-  onOpenBatchMove,
-  onOpenBatchDelete,
   onClearSelection,
   onSelectFolder,
   onCustomizeFolder,
@@ -93,7 +85,6 @@ export const ExplorerContextMenu: React.FC<ExplorerContextMenuProps> = ({
   onMoveSong,
   onTagSong,
   onAddToCollection,
-  onBatchAddToCollection,
   onDeleteSong,
   onPrintSongs,
   onPrintFolders,
@@ -126,7 +117,7 @@ export const ExplorerContextMenu: React.FC<ExplorerContextMenuProps> = ({
           <Can permission="folder.create">
             <button
               onClick={() => {
-                onOpenCreateFolder();
+                onOpenModal("create-folder");
                 onClose();
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
@@ -139,7 +130,7 @@ export const ExplorerContextMenu: React.FC<ExplorerContextMenuProps> = ({
           <Can permission="song.create">
             <button
               onClick={() => {
-                onOpenCreateSong();
+                onOpenModal("create-song");
                 onClose();
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
@@ -198,7 +189,7 @@ export const ExplorerContextMenu: React.FC<ExplorerContextMenuProps> = ({
               <Can permission="song.update">
                 <button
                   onClick={() => {
-                    onOpenBatchTag();
+                    onOpenModal("batch-tag");
                     onClose();
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
@@ -210,22 +201,20 @@ export const ExplorerContextMenu: React.FC<ExplorerContextMenuProps> = ({
                     })}
                   </span>
                 </button>
-                {onBatchAddToCollection && (
-                  <button
-                    onClick={() => {
-                      onBatchAddToCollection();
-                      onClose();
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
-                  >
-                    <FolderPlus className="w-4 h-4 text-amber-500" />
-                    <span>
-                      {t("explorer.contextMenu.addToCollectionCount", {
-                        count: selectedSongIds.size,
-                      })}
-                    </span>
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    onOpenModal("batch-add-to-collection");
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
+                >
+                  <FolderPlus className="w-4 h-4 text-amber-500" />
+                  <span>
+                    {t("explorer.contextMenu.addToCollectionCount", {
+                      count: selectedSongIds.size,
+                    })}
+                  </span>
+                </button>
               </Can>
               <Can permission="export.pdf">
                 <button
@@ -268,7 +257,7 @@ export const ExplorerContextMenu: React.FC<ExplorerContextMenuProps> = ({
           <CanAll permissions={["song.update", "folder.update"]}>
             <button
               onClick={() => {
-                onOpenBatchMove();
+                onOpenModal("batch-move");
                 onClose();
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
@@ -285,7 +274,7 @@ export const ExplorerContextMenu: React.FC<ExplorerContextMenuProps> = ({
           <CanAll permissions={["song.delete", "folder.delete"]}>
             <button
               onClick={() => {
-                onOpenBatchDelete();
+                onOpenModal("batch-delete");
                 onClose();
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold transition-colors text-left cursor-pointer"

@@ -28,6 +28,7 @@ import {
 import { FolderForm } from "../forms/FolderForm";
 import { ServiceForm } from "../forms/ServiceForm";
 import { SongForm } from "../forms/SongForm";
+import { EventFormModal, EventFormValue } from "../agenda/EventModals";
 import { AddToCollectionModal } from "../modals/AddToCollectionModal";
 import { BatchDeleteModal } from "../modals/BatchDeleteModal";
 import { BatchMoveModal } from "../modals/BatchMoveModal";
@@ -36,6 +37,20 @@ import { CifraClubImportModal } from "../modals/CifraModal";
 import { CreateCollectionModal } from "../modals/CreateCollectionModal";
 import { CustomizeFolderModal } from "../modals/CustomizeFolderModal";
 import { MoveSongModal } from "../modals/MoveSongModal";
+
+export type ActiveModal =
+  | "cifra-import"
+  | "create-song"
+  | "create-service"
+  | "create-folder"
+  | "create-event"
+  | "create-collection"
+  | "filter"
+  | "batch-move"
+  | "batch-delete"
+  | "batch-tag"
+  | "batch-add-to-collection"
+  | null;
 
 // ─── Musical keys ───────────────────────────────────────────────────────────
 const MUSICAL_KEYS = [
@@ -475,9 +490,11 @@ const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 interface ExplorerModalsProps {
+  activeModal: ActiveModal;
+  onCloseModal: () => void;
+  onOpenModal?: (modal: ActiveModal) => void;
+
   // CifraClub
-  isCifraImportOpen: boolean;
-  setIsCifraImportOpen: (v: boolean) => void;
   onCifraClubSubmit: (
     chordpro: ConversionResult,
     artist: string,
@@ -485,8 +502,6 @@ interface ExplorerModalsProps {
   ) => Promise<void>;
 
   // Create Song
-  isCreateSongModalOpen: boolean;
-  setIsCreateSongModalOpen: (v: boolean) => void;
   currentFolder: Folder | undefined;
   currentFolderId: string | null;
   allFolders: Folder[];
@@ -498,17 +513,16 @@ interface ExplorerModalsProps {
   }) => Promise<void>;
 
   // Create Service
-  isCreateServiceModalOpen: boolean;
-  setIsCreateServiceModalOpen: (v: boolean) => void;
   onCreateServiceSubmit: (data: {
     name: string;
     date: string;
     notes: string;
   }) => Promise<void>;
 
+  // Create Event
+  onCreateEventSubmit?: (value: EventFormValue) => Promise<void>;
+
   // Create Folder
-  isCreateModalOpen: boolean;
-  setIsCreateModalOpen: (v: boolean) => void;
   onCreateFolderSubmit: (name: string) => Promise<void>;
 
   // Rename Folder
@@ -552,37 +566,27 @@ interface ExplorerModalsProps {
   onDeleteSongSubmit: () => Promise<void>;
 
   // Batch modals
-  isBatchMoveOpen: boolean;
-  setIsBatchMoveOpen: (v: boolean) => void;
   selectedFolderIds: Set<string>;
   selectedSongIds: Set<string>;
   disabledFolderIdsForBatchMove: Set<string>;
   onBatchMoveConfirm: (targetFolderId: string | null) => Promise<void>;
 
-  isBatchDeleteOpen: boolean;
-  setIsBatchDeleteOpen: (v: boolean) => void;
   selectedFolderObjects: Folder[];
   onBatchDeleteConfirm: (
     folderAction: "move_to_root" | "delete_songs",
   ) => Promise<void>;
 
-  isBatchTagOpen: boolean;
-  setIsBatchTagOpen: (v: boolean) => void;
   onBatchTagConfirm: (
     tags: string[],
     mode: "append" | "replace" | "remove",
   ) => Promise<void>;
 
   // Advanced Filter Modal — now Liqe-based
-  isFilterPanelOpen: boolean;
-  setIsFilterPanelOpen: (v: boolean) => void;
   currentQuery: string;
   onApplyQuery: (query: string) => void;
   availableTags: string[];
 
   // Create Collection
-  isCreateCollectionModalOpen?: boolean;
-  setIsCreateCollectionModalOpen?: (v: boolean) => void;
   onCreateCollectionSubmit?: (data: {
     name: string;
     description?: string | null;
@@ -594,28 +598,22 @@ interface ExplorerModalsProps {
   // Add to Collection
   addToCollectionTarget?: Song | null;
   setAddToCollectionTarget?: (s: Song | null) => void;
-  isBatchAddToCollectionOpen?: boolean;
-  setIsBatchAddToCollectionOpen?: (v: boolean) => void;
   allCollections?: Collection[];
   onAddToCollectionConfirm?: (collectionId: string) => Promise<void>;
   onOpenCreateCollectionFromAdd?: () => void;
 }
 
 export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
-  isCifraImportOpen,
-  setIsCifraImportOpen,
+  activeModal,
+  onCloseModal,
+  onOpenModal,
   onCifraClubSubmit,
-  isCreateSongModalOpen,
-  setIsCreateSongModalOpen,
   currentFolder,
   currentFolderId,
   allFolders,
   onCreateSongSubmit,
-  isCreateServiceModalOpen,
-  setIsCreateServiceModalOpen,
   onCreateServiceSubmit,
-  isCreateModalOpen,
-  setIsCreateModalOpen,
+  onCreateEventSubmit,
   onCreateFolderSubmit,
   renameTarget,
   setRenameTarget,
@@ -645,31 +643,19 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
   deleteSongTarget,
   setDeleteSongTarget,
   onDeleteSongSubmit,
-  isBatchMoveOpen,
-  setIsBatchMoveOpen,
   selectedFolderIds,
   selectedSongIds,
   disabledFolderIdsForBatchMove,
   onBatchMoveConfirm,
-  isBatchDeleteOpen,
-  setIsBatchDeleteOpen,
   selectedFolderObjects,
   onBatchDeleteConfirm,
-  isBatchTagOpen,
-  setIsBatchTagOpen,
   onBatchTagConfirm,
-  isFilterPanelOpen,
-  setIsFilterPanelOpen,
   currentQuery,
   onApplyQuery,
   availableTags,
-  isCreateCollectionModalOpen = false,
-  setIsCreateCollectionModalOpen,
   onCreateCollectionSubmit,
   addToCollectionTarget,
   setAddToCollectionTarget,
-  isBatchAddToCollectionOpen = false,
-  setIsBatchAddToCollectionOpen,
   allCollections = [],
   onAddToCollectionConfirm,
   onOpenCreateCollectionFromAdd,
@@ -679,15 +665,15 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
   return (
     <>
       <CifraClubImportModal
-        isOpen={isCifraImportOpen}
-        handleClose={() => setIsCifraImportOpen(false)}
+        isOpen={activeModal === "cifra-import"}
+        handleClose={onCloseModal}
         handleSave={onCifraClubSubmit}
       />
 
       {/* CREATE SONG MODAL */}
       <Modal
-        isOpen={isCreateSongModalOpen}
-        onClose={() => setIsCreateSongModalOpen(false)}
+        isOpen={activeModal === "create-song"}
+        onClose={onCloseModal}
         title={
           currentFolder
             ? t("explorer.modals.createSongInFolder", {
@@ -700,26 +686,37 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
           initialValues={{ folderId: currentFolderId }}
           folders={allFolders}
           onSubmit={onCreateSongSubmit}
-          onCancel={() => setIsCreateSongModalOpen(false)}
+          onCancel={onCloseModal}
         />
       </Modal>
 
       {/* CREATE SERVICE MODAL */}
       <Modal
-        isOpen={isCreateServiceModalOpen}
-        onClose={() => setIsCreateServiceModalOpen(false)}
+        isOpen={activeModal === "create-service"}
+        onClose={onCloseModal}
         title={t("explorer.modals.createServiceTitle")}
       >
         <ServiceForm
           onSubmit={onCreateServiceSubmit}
-          onCancel={() => setIsCreateServiceModalOpen(false)}
+          onCancel={onCloseModal}
         />
       </Modal>
 
+      {/* CREATE EVENT MODAL */}
+      {onCreateEventSubmit && (
+        <EventFormModal
+          isOpen={activeModal === "create-event"}
+          onClose={onCloseModal}
+          onSubmit={onCreateEventSubmit}
+          title={t("agenda.newEvent")}
+          submitLabel={t("agenda.createEvent")}
+        />
+      )}
+
       {/* CREATE FOLDER MODAL */}
       <Modal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        isOpen={activeModal === "create-folder"}
+        onClose={onCloseModal}
         title={
           currentFolder
             ? t("explorer.modals.createFolderInFolder", {
@@ -730,7 +727,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
       >
         <FolderForm
           onSubmit={onCreateFolderSubmit}
-          onCancel={() => setIsCreateModalOpen(false)}
+          onCancel={onCloseModal}
         />
       </Modal>
 
@@ -1016,8 +1013,8 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
 
       {/* BATCH MOVE MODAL */}
       <BatchMoveModal
-        isOpen={isBatchMoveOpen}
-        onClose={() => setIsBatchMoveOpen(false)}
+        isOpen={activeModal === "batch-move"}
+        onClose={onCloseModal}
         selectedFoldersCount={selectedFolderIds.size}
         selectedSongsCount={selectedSongIds.size}
         disabledFolderIds={disabledFolderIdsForBatchMove}
@@ -1027,8 +1024,8 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
 
       {/* BATCH DELETE MODAL */}
       <BatchDeleteModal
-        isOpen={isBatchDeleteOpen}
-        onClose={() => setIsBatchDeleteOpen(false)}
+        isOpen={activeModal === "batch-delete"}
+        onClose={onCloseModal}
         selectedFolders={selectedFolderObjects}
         selectedSongsCount={selectedSongIds.size}
         onConfirm={onBatchDeleteConfirm}
@@ -1036,16 +1033,16 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
 
       {/* BATCH TAG MODAL */}
       <BatchTagModal
-        isOpen={isBatchTagOpen}
-        onClose={() => setIsBatchTagOpen(false)}
+        isOpen={activeModal === "batch-tag"}
+        onClose={onCloseModal}
         selectedSongIds={Array.from(selectedSongIds)}
         onConfirm={onBatchTagConfirm}
       />
 
       {/* ADVANCED FILTER MODAL — Liqe query builder */}
       <AdvancedFilterPanel
-        isOpen={isFilterPanelOpen}
-        onClose={() => setIsFilterPanelOpen(false)}
+        isOpen={activeModal === "filter"}
+        onClose={onCloseModal}
         currentQuery={currentQuery}
         onApplyQuery={onApplyQuery}
         availableTags={availableTags}
@@ -1054,10 +1051,10 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
       />
 
       {/* CREATE COLLECTION MODAL */}
-      {onCreateCollectionSubmit && setIsCreateCollectionModalOpen && (
+      {onCreateCollectionSubmit && (
         <CreateCollectionModal
-          isOpen={isCreateCollectionModalOpen}
-          onClose={() => setIsCreateCollectionModalOpen(false)}
+          isOpen={activeModal === "create-collection"}
+          onClose={onCloseModal}
           onSave={onCreateCollectionSubmit}
         />
       )}
@@ -1072,23 +1069,25 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
             collections={allCollections}
             songTitle={addToCollectionTarget.title}
             onConfirm={onAddToCollectionConfirm}
-            onCreateNewCollection={onOpenCreateCollectionFromAdd}
+            onCreateNewCollection={
+              onOpenModal ? () => onOpenModal("create-collection") : onOpenCreateCollectionFromAdd
+            }
           />
         )}
 
       {/* ADD TO COLLECTION MODAL (BATCH SONGS) */}
-      {isBatchAddToCollectionOpen &&
-        setIsBatchAddToCollectionOpen &&
-        onAddToCollectionConfirm && (
-          <AddToCollectionModal
-            isOpen={isBatchAddToCollectionOpen}
-            onClose={() => setIsBatchAddToCollectionOpen(false)}
-            collections={allCollections}
-            songCount={selectedSongIds.size}
-            onConfirm={onAddToCollectionConfirm}
-            onCreateNewCollection={onOpenCreateCollectionFromAdd}
-          />
-        )}
+      {onAddToCollectionConfirm && (
+        <AddToCollectionModal
+          isOpen={activeModal === "batch-add-to-collection"}
+          onClose={onCloseModal}
+          collections={allCollections}
+          songCount={selectedSongIds.size}
+          onConfirm={onAddToCollectionConfirm}
+          onCreateNewCollection={
+            onOpenModal ? () => onOpenModal("create-collection") : onOpenCreateCollectionFromAdd
+          }
+        />
+      )}
     </>
   );
 };

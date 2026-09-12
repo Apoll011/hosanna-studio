@@ -27,8 +27,9 @@ import {
   CommandPaletteProvider,
   useCommandPalette,
 } from "../contexts/CommandPaletteContext";
-import { useRxDbSearch } from "../hooks/useRxDbSearch";
 import { ViewName } from "../layouts/view";
+import { useRxDbSearch } from "../hooks/useRxDbSearch";
+import { ActiveModal } from "./layout";
 import { CommandPaletteModal } from "./modals/CommandPaletteModal";
 
 export interface HosannaCommandPaletteProps {
@@ -44,11 +45,7 @@ export interface HosannaCommandPaletteProps {
   isSidebarCollapsed?: boolean;
   setIsSidebarCollapsed: (v: boolean) => void;
   setCurrentFolderId: (id: string | null) => void;
-  setIsCreateSongModalOpen: (v: boolean) => void;
-  setIsCifraImportOpen: (v: boolean) => void;
-  setIsCreateServiceModalOpen: (v: boolean) => void;
-  setIsCreateModalOpen: (v: boolean) => void;
-  setIsFilterPanelOpen: (v: boolean) => void;
+  openModal: (modal: ActiveModal) => void;
   handleViewModeChange: (mode: "grid" | "list") => void;
   handlePrintSong: (id: string) => void;
   setMoveSongTarget: (song: Song | null) => void;
@@ -96,11 +93,7 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
     isSidebarCollapsed,
     setIsSidebarCollapsed,
     setCurrentFolderId,
-    setIsCreateSongModalOpen,
-    setIsCifraImportOpen,
-    setIsCreateServiceModalOpen,
-    setIsCreateModalOpen,
-    setIsFilterPanelOpen,
+    openModal,
     handleViewModeChange,
     handlePrintSong,
     setMoveSongTarget,
@@ -172,7 +165,7 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
         keywords: "novo cantico musica adicionar song create add",
         section: t("commandPalette.sections.quickActions"),
         icon: <Plus className="w-4 h-4 text-sky-500" />,
-        perform: () => setIsCreateSongModalOpen(true),
+        perform: () => openModal("create-song"),
       },
       {
         id: "action-import-cifra",
@@ -181,7 +174,7 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
         keywords: "importar cifraclub cifra web url fetch",
         section: t("commandPalette.sections.quickActions"),
         icon: <Download className="w-4 h-4 text-sky-500" />,
-        perform: () => setIsCifraImportOpen(true),
+        perform: () => openModal("cifra-import"),
       },
       {
         id: "action-create-service",
@@ -190,7 +183,7 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
         keywords: "novo culto plano servico create service worship date",
         section: t("commandPalette.sections.quickActions"),
         icon: <Calendar className="w-4 h-4 text-emerald-500" />,
-        perform: () => setIsCreateServiceModalOpen(true),
+        perform: () => openModal("create-service"),
       },
       {
         id: "action-create-folder",
@@ -199,7 +192,7 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
         keywords: "nova pasta diretorio novapasta create folder directory",
         section: t("commandPalette.sections.quickActions"),
         icon: <FolderPlus className="w-4 h-4 text-amber-500" />,
-        perform: () => setIsCreateModalOpen(true),
+        perform: () => openModal("create-folder"),
       },
       {
         id: "action-create-agenda",
@@ -208,7 +201,7 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
         keywords: "novo evento agenda criar event schedule create add",
         section: t("commandPalette.sections.quickActions"),
         icon: <CalendarPlus className="w-4 h-4 text-violet-500" />,
-        perform: () => navigate(`${slugPrefix}/agenda?create=1`),
+        perform: () => openModal("create-event"),
       },
       {
         id: "action-upload-files",
@@ -278,7 +271,7 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
           keywords: "filtros filter pesquisar tom tag artista",
           section: t("commandPalette.sections.visualization"),
           icon: <Filter className="w-4 h-4 text-slate-500" />,
-          perform: () => setIsFilterPanelOpen(true),
+          perform: () => openModal("filter"),
         },
       );
     }
@@ -340,11 +333,7 @@ export function HosannaCommandPalette(props: HosannaCommandPaletteProps) {
     navigate,
     logout,
     setCurrentFolderId,
-    setIsCreateSongModalOpen,
-    setIsCifraImportOpen,
-    setIsCreateServiceModalOpen,
-    setIsCreateModalOpen,
-    setIsFilterPanelOpen,
+    openModal,
     setIsSidebarCollapsed,
     handleViewModeChange,
     handlePrintSong,

@@ -22,7 +22,9 @@ import {
   getFolderDescendantIds,
 } from "../components/explorer";
 import { HosannaCommandPalette } from "../components/HosannaCommandPalette";
+import { EventFormValue } from "../components/agenda/EventModals";
 import {
+  ActiveModal,
   AppSidebar,
   ContextMenuState,
   ExplorerAddressBar,
@@ -71,7 +73,7 @@ export const MainLayout: React.FC = () => {
     [updateSetting],
   );
 
-  const { upcomingEventCount } = useAgenda();
+  const { upcomingEventCount, addEvent } = useAgenda();
   const { printSong, printSongs, printFolder, printFolders, printBatch } =
     usePrint();
 
@@ -209,7 +211,14 @@ export const MainLayout: React.FC = () => {
     "title" | "artist" | "updatedAt" | "number"
   >("number");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+
+  // Unified Modal State
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const openModal = useCallback(
+    (modal: ActiveModal) => setActiveModal(modal),
+    [],
+  );
+  const closeModal = useCallback(() => setActiveModal(null), []);
 
   const handleSearchChange = useCallback(
     (val: string) => {
@@ -265,7 +274,7 @@ export const MainLayout: React.FC = () => {
         setSearchQuery("");
         setSelectedKey("");
         setSelectedTag("");
-        setIsFilterPanelOpen(false);
+        setActiveModal((curr) => (curr === "filter" ? null : curr));
       }
     }
 
@@ -727,19 +736,7 @@ export const MainLayout: React.FC = () => {
     return disabled;
   }, [selectedFolderIds, allFolders]);
 
-  // Modals & Context Menu State
-  const [isBatchMoveOpen, setIsBatchMoveOpen] = useState(false);
-  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
-  const [isBatchTagOpen, setIsBatchTagOpen] = useState(false);
-
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isCreateSongModalOpen, setIsCreateSongModalOpen] = useState(false);
-  const [isCreateServiceModalOpen, setIsCreateServiceModalOpen] =
-    useState(false);
-  const [isCreateCollectionModalOpen, setIsCreateCollectionModalOpen] =
-    useState(false);
-  const [isCifraImportOpen, setIsCifraImportOpen] = useState(false);
-
+  // Targets & Context Menu State
   const [renameTarget, setRenameTarget] = useState<Folder | null>(null);
   const [customizeTarget, setCustomizeTarget] = useState<Folder | null>(null);
   const [moveFolderTarget, setMoveFolderTarget] = useState<Folder | null>(null);
@@ -775,8 +772,6 @@ export const MainLayout: React.FC = () => {
     useCollections();
   const [addToCollectionTarget, setAddToCollectionTarget] =
     useState<Song | null>(null);
-  const [isBatchAddToCollectionOpen, setIsBatchAddToCollectionOpen] =
-    useState(false);
 
   const handleCreateCollectionSubmit = useCallback(
     async (data: {
@@ -787,9 +782,21 @@ export const MainLayout: React.FC = () => {
       image?: string | null;
     }) => {
       await createCollection(data);
-      setIsCreateCollectionModalOpen(false);
+      closeModal();
     },
-    [createCollection],
+    [createCollection, closeModal],
+  );
+
+  const handleCreateEventSubmit = useCallback(
+    async (value: EventFormValue) => {
+      try {
+        await addEvent(value);
+        closeModal();
+      } catch {
+        // Handled by useAgenda
+      }
+    },
+    [addEvent, closeModal],
   );
 
   const handleAddToCollectionConfirm = useCallback(
@@ -800,9 +807,9 @@ export const MainLayout: React.FC = () => {
       if (songIdsToAdd.length === 0) return;
       await addSongsToCollection(collectionId, songIdsToAdd);
       setAddToCollectionTarget(null);
-      setIsBatchAddToCollectionOpen(false);
+      closeModal();
     },
-    [addToCollectionTarget, selectedSongIds, addSongsToCollection],
+    [addToCollectionTarget, selectedSongIds, addSongsToCollection, closeModal],
   );
 
   // Auto-expand folder tree
@@ -923,7 +930,7 @@ export const MainLayout: React.FC = () => {
             if (song) setDeleteSongTarget(song);
           }
         } else {
-          setIsBatchDeleteOpen(true);
+          openModal("batch-delete");
         }
         return;
       }
@@ -956,13 +963,14 @@ export const MainLayout: React.FC = () => {
     handleSelectFolder,
     navigate,
     slugPrefix,
+    openModal,
   ]);
 
   // Folder Actions
   const handleCreateFolderSubmit = async (name: string) => {
     try {
       await createFolder({ name, parentId: currentFolderId });
-      setIsCreateModalOpen(false);
+      closeModal();
     } catch {
       // Toast notification is already handled by useFolders
     }
@@ -1044,7 +1052,7 @@ export const MainLayout: React.FC = () => {
         content: `{title: ${data.title}}\n{artist: ${data.artist}}\n\n[G] Exemplo de tom e cifra...`,
         tags: data.tags,
       });
-      setIsCreateSongModalOpen(false);
+      closeModal();
       navigate(`${slugPrefix}/songs/${song.id}`);
     } catch {
       // Error toast is already displayed by useSongMutations
@@ -1065,7 +1073,7 @@ export const MainLayout: React.FC = () => {
         tags: ["cifraclub"],
       });
       await Promise.all([songsQuery.refetch(), foldersQuery.refetch()]);
-      setIsCreateSongModalOpen(false);
+      closeModal();
       navigate(`${slugPrefix}/songs/${song.id}`);
     } catch {
       // Error toast is already displayed by useSongMutations
@@ -1084,7 +1092,7 @@ export const MainLayout: React.FC = () => {
         notes: data.notes,
         elements: [],
       });
-      setIsCreateServiceModalOpen(false);
+      closeModal();
       navigate(`${slugPrefix}/services/${newService.id}`);
     } catch {
       // Error toast is already displayed by useServices
@@ -1486,14 +1494,8 @@ export const MainLayout: React.FC = () => {
                   navigate(-1);
                 }
               }}
-              onOpenCreateCollection={() =>
-                setIsCreateCollectionModalOpen(true)
-              }
               navigate={navigate}
-              onOpenCreateSong={() => setIsCreateSongModalOpen(true)}
-              onOpenCifraImport={() => setIsCifraImportOpen(true)}
-              onOpenCreateService={() => setIsCreateServiceModalOpen(true)}
-              onOpenCreateFolder={() => setIsCreateModalOpen(true)}
+              onOpenModal={openModal}
             />
 
             <ExplorerToolbar
@@ -1509,9 +1511,7 @@ export const MainLayout: React.FC = () => {
               onViewModeChange={handleViewModeChange}
               density={density}
               onDensityChange={handleDensityChange}
-              onOpenFilterPanel={() => {
-                setIsFilterPanelOpen(true);
-              }}
+              onOpenFilterPanel={() => openModal("filter")}
             />
 
             {/* Main Content Area */}
@@ -1531,10 +1531,19 @@ export const MainLayout: React.FC = () => {
                   handleContextMenu,
                   getFolderPathString,
                   selectedFolderIds,
+                  setSelectedFolderIds,
                   selectedSongIds,
+                  setSelectedSongIds,
                   foldersQuery,
                   songsQuery,
-                  setIsCreateSongModalOpen,
+                  openModal,
+                  closeModal,
+                  activeModal,
+                  setMoveSongTarget,
+                  setDeleteSongTarget,
+                  clearSelection,
+                  setIsCreateSongModalOpen: (open: boolean) =>
+                    open ? openModal("create-song") : closeModal(),
                   fileInputRef,
                   sortBy,
                   sortOrder,
@@ -1639,7 +1648,7 @@ export const MainLayout: React.FC = () => {
             ]);
           }
         }}
-        onDelete={() => setIsBatchDeleteOpen(true)}
+        onDelete={() => openModal("batch-delete")}
         onCancel={clearSelection}
       />
 
@@ -1653,16 +1662,12 @@ export const MainLayout: React.FC = () => {
         navigate={navigate}
         fileInputRef={fileInputRef}
         onClose={() => setContextMenu(null)}
-        onOpenCreateFolder={() => setIsCreateModalOpen(true)}
-        onOpenCreateSong={() => setIsCreateSongModalOpen(true)}
+        onOpenModal={openModal}
         onSelectAll={selectAllInCurrentView}
         onRefreshView={() => {
           foldersQuery.refetch();
           songsQuery.refetch();
         }}
-        onOpenBatchTag={() => setIsBatchTagOpen(true)}
-        onOpenBatchMove={() => setIsBatchMoveOpen(true)}
-        onOpenBatchDelete={() => setIsBatchDeleteOpen(true)}
         onClearSelection={clearSelection}
         onSelectFolder={handleSelectFolder}
         onCustomizeFolder={setCustomizeTarget}
@@ -1678,10 +1683,9 @@ export const MainLayout: React.FC = () => {
         }}
         onTagSong={(s) => {
           setSelectedSongIds(new Set([s.id]));
-          setIsBatchTagOpen(true);
+          openModal("batch-tag");
         }}
         onAddToCollection={(s) => setAddToCollectionTarget(s)}
-        onBatchAddToCollection={() => setIsBatchAddToCollectionOpen(true)}
         onDeleteSong={setDeleteSongTarget}
         onPrintSong={(songId) => {
           const s = allSongs.find((x) => x.id === songId);
@@ -1720,20 +1724,16 @@ export const MainLayout: React.FC = () => {
       />
 
       <ExplorerModals
-        isCifraImportOpen={isCifraImportOpen}
-        setIsCifraImportOpen={setIsCifraImportOpen}
+        activeModal={activeModal}
+        onCloseModal={closeModal}
+        onOpenModal={openModal}
         onCifraClubSubmit={handleCifraClubSubmit}
-        isCreateSongModalOpen={isCreateSongModalOpen}
-        setIsCreateSongModalOpen={setIsCreateSongModalOpen}
         currentFolder={currentFolder}
         currentFolderId={currentFolderId}
         allFolders={allFolders}
         onCreateSongSubmit={handleCreateSongSubmit}
-        isCreateServiceModalOpen={isCreateServiceModalOpen}
-        setIsCreateServiceModalOpen={setIsCreateServiceModalOpen}
         onCreateServiceSubmit={handleCreateServiceSubmit}
-        isCreateModalOpen={isCreateModalOpen}
-        setIsCreateModalOpen={setIsCreateModalOpen}
+        onCreateEventSubmit={handleCreateEventSubmit}
         onCreateFolderSubmit={handleCreateFolderSubmit}
         renameTarget={renameTarget}
         setRenameTarget={setRenameTarget}
@@ -1775,36 +1775,21 @@ export const MainLayout: React.FC = () => {
         deleteSongTarget={deleteSongTarget}
         setDeleteSongTarget={setDeleteSongTarget}
         onDeleteSongSubmit={handleDeleteSongSubmit}
-        isBatchMoveOpen={isBatchMoveOpen}
-        setIsBatchMoveOpen={setIsBatchMoveOpen}
         selectedFolderIds={selectedFolderIds}
         selectedSongIds={selectedSongIds}
         disabledFolderIdsForBatchMove={disabledFolderIdsForBatchMove}
         onBatchMoveConfirm={handleBatchMoveConfirm}
-        isBatchDeleteOpen={isBatchDeleteOpen}
-        setIsBatchDeleteOpen={setIsBatchDeleteOpen}
         selectedFolderObjects={selectedFolderObjects}
         onBatchDeleteConfirm={handleBatchDeleteConfirm}
-        isBatchTagOpen={isBatchTagOpen}
-        setIsBatchTagOpen={setIsBatchTagOpen}
         onBatchTagConfirm={handleBatchTagConfirm}
-        isFilterPanelOpen={isFilterPanelOpen}
-        setIsFilterPanelOpen={setIsFilterPanelOpen}
         currentQuery={searchQuery}
         onApplyQuery={handleSearchChange}
         availableTags={availableTags}
-        isCreateCollectionModalOpen={isCreateCollectionModalOpen}
-        setIsCreateCollectionModalOpen={setIsCreateCollectionModalOpen}
         onCreateCollectionSubmit={handleCreateCollectionSubmit}
         addToCollectionTarget={addToCollectionTarget}
         setAddToCollectionTarget={setAddToCollectionTarget}
-        isBatchAddToCollectionOpen={isBatchAddToCollectionOpen}
-        setIsBatchAddToCollectionOpen={setIsBatchAddToCollectionOpen}
         allCollections={collections}
         onAddToCollectionConfirm={handleAddToCollectionConfirm}
-        onOpenCreateCollectionFromAdd={() =>
-          setIsCreateCollectionModalOpen(true)
-        }
       />
 
       {/* Marquee rubberband drag selection box */}
@@ -1891,11 +1876,7 @@ export const MainLayout: React.FC = () => {
       isSidebarCollapsed={isSidebarCollapsed}
       setIsSidebarCollapsed={setIsSidebarCollapsed}
       setCurrentFolderId={setCurrentFolderId}
-      setIsCreateSongModalOpen={setIsCreateSongModalOpen}
-      setIsCifraImportOpen={setIsCifraImportOpen}
-      setIsCreateServiceModalOpen={setIsCreateServiceModalOpen}
-      setIsCreateModalOpen={setIsCreateModalOpen}
-      setIsFilterPanelOpen={setIsFilterPanelOpen}
+      openModal={openModal}
       handleViewModeChange={handleViewModeChange}
       handlePrintSong={() => {}}
       setMoveSongTarget={setMoveSongTarget}

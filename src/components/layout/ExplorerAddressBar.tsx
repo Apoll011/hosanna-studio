@@ -29,6 +29,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { ActiveModal } from "./ExplorerModals";
 import React, { useEffect, useRef, useState } from "react";
 import { ViewName } from "../../layouts/view";
 import { authClient } from "../../lib/authClient";
@@ -54,11 +55,7 @@ interface ExplorerAddressBarProps {
   onSelectFolder: (id: string | null) => void;
   onNavigateBack: () => void;
   navigate: (path: string) => void;
-  onOpenCreateSong: () => void;
-  onOpenCifraImport: () => void;
-  onOpenCreateService: () => void;
-  onOpenCreateFolder: () => void;
-  onOpenCreateCollection: () => void;
+  onOpenModal: (modal: ActiveModal) => void;
 }
 
 export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
@@ -78,11 +75,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
   onSelectFolder,
   onNavigateBack,
   navigate,
-  onOpenCreateSong,
-  onOpenCifraImport,
-  onOpenCreateService,
-  onOpenCreateFolder,
-  onOpenCreateCollection,
+  onOpenModal,
 }) => {
   const { t, locale } = useI18n();
   const isDriveRoot = view === "explorer" && currentFolderId === null;
@@ -445,7 +438,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                   <button
                     onClick={() => {
                       setIsPlusMenuOpen(false);
-                      onOpenCreateSong();
+                      onOpenModal("create-song");
                     }}
                     className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
                   >
@@ -459,7 +452,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                   <button
                     onClick={() => {
                       setIsPlusMenuOpen(false);
-                      onOpenCifraImport();
+                      onOpenModal("cifra-import");
                     }}
                     className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
                   >
@@ -473,7 +466,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                   <button
                     onClick={() => {
                       setIsPlusMenuOpen(false);
-                      onOpenCreateService();
+                      onOpenModal("create-service");
                     }}
                     className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
                   >
@@ -487,7 +480,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                   <button
                     onClick={() => {
                       setIsPlusMenuOpen(false);
-                      onOpenCreateFolder();
+                      onOpenModal("create-folder");
                     }}
                     className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
                   >
@@ -501,7 +494,7 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                   <button
                     onClick={() => {
                       setIsPlusMenuOpen(false);
-                      onOpenCreateCollection();
+                      onOpenModal("create-collection");
                     }}
                     className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
                   >
@@ -511,19 +504,18 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
                     {t("addressBar.newCollection")}
                   </button>
                 )}
-                {collections_enabled && (
-                  <button
-                    onClick={() => {
-                      navigate(`${slugPrefix}/agenda?create=1`);
-                    }}
-                    className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-m3-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <CalendarPlus className="w-4 h-4 text-amber-500" />
-                    </div>
-                    {t("agenda.newEvent")}
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    setIsPlusMenuOpen(false);
+                    onOpenModal("create-event");
+                  }}
+                  className="w-full flex items-center gap-4 px-4 py-3 text-xs font-bold text-m3-text hover:bg-m3-hover rounded-2xl transition-all cursor-pointer text-left group"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-m3-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <CalendarPlus className="w-4 h-4 text-amber-500" />
+                  </div>
+                  {t("agenda.newEvent")}
+                </button>
               </div>
             )}
           </div>
