@@ -396,165 +396,166 @@ export const CollectionDetailPage: React.FC = () => {
             </div>
 
             <div className="divide-y divide-m3-border/30 text-[13px] font-bold">
-            {paginatedSongs.map((song, index) => {
-              const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
-              const keyMatch = song.content
-                ?.match(/\{key:\s*([^}]+)\}/i)?.[1]
-                ?.trim();
-              const isMenuOpen = activeSongMenuId === song.id;
-              const isHovered = hoveredSongId === song.id;
+              {paginatedSongs.map((song, index) => {
+                const globalIndex =
+                  (currentPage - 1) * itemsPerPage + index + 1;
+                const keyMatch = song.content
+                  ?.match(/\{key:\s*([^}]+)\}/i)?.[1]
+                  ?.trim();
+                const isMenuOpen = activeSongMenuId === song.id;
+                const isHovered = hoveredSongId === song.id;
 
-              return (
-                <div
-                  key={song.id}
-                  onMouseEnter={() => setHoveredSongId(song.id)}
-                  onMouseLeave={() => setHoveredSongId(null)}
-                  className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[2rem_1fr_auto_6.5rem] gap-3 items-center px-6 py-3.5 transition-all select-none cursor-pointer ${
-                    isHovered ? "bg-m3-hover/50 text-m3-text" : "text-m3-text"
-                  }`}
-                >
-                  {/* Index / Play icon on hover */}
-                  <span
-                    className="text-center"
-                    onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
-                  >
-                    {isHovered ? (
-                      <Music2 className="w-3.5 h-3.5 mx-auto text-m3-primary" />
-                    ) : (
-                      <span className="text-[11px] text-m3-secondary opacity-70 font-black uppercase tracking-tighter">
-                        {globalIndex}
-                      </span>
-                    )}
-                  </span>
-
-                  {/* Title + Artist */}
+                return (
                   <div
-                    className="flex flex-col min-w-0"
-                    onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
+                    key={song.id}
+                    onMouseEnter={() => setHoveredSongId(song.id)}
+                    onMouseLeave={() => setHoveredSongId(null)}
+                    className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[2rem_1fr_auto_6.5rem] gap-3 items-center px-6 py-3.5 transition-all select-none cursor-pointer ${
+                      isHovered ? "bg-m3-hover/50 text-m3-text" : "text-m3-text"
+                    }`}
                   >
-                    <span className="truncate font-bold group-hover:translate-x-1 transition-transform">
-                      {song.title}
+                    {/* Index / Play icon on hover */}
+                    <span
+                      className="text-center"
+                      onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
+                    >
+                      {isHovered ? (
+                        <Music2 className="w-3.5 h-3.5 mx-auto text-m3-primary" />
+                      ) : (
+                        <span className="text-[11px] text-m3-secondary opacity-70 font-black uppercase tracking-tighter">
+                          {globalIndex}
+                        </span>
+                      )}
                     </span>
-                    <span className="text-[10px] text-m3-secondary font-black uppercase tracking-widest opacity-60 mt-0.5 truncate">
-                      {song.artist || "—"}
-                    </span>
-                  </div>
 
-                  {/* Tags + Key (desktop) */}
-                  <div className="hidden sm:flex items-center gap-1.5 flex-wrap justify-end">
-                    {keyMatch && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
-                        {keyMatch}
+                    {/* Title + Artist */}
+                    <div
+                      className="flex flex-col min-w-0"
+                      onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
+                    >
+                      <span className="truncate font-bold group-hover:translate-x-1 transition-transform">
+                        {song.title}
                       </span>
-                    )}
-                    {song.tags?.slice(0, 2).map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                      >
-                        {tag}
+                      <span className="text-[10px] text-m3-secondary font-black uppercase tracking-widest opacity-60 mt-0.5 truncate">
+                        {song.artist || "—"}
                       </span>
-                    ))}
-                    {(song.tags?.length ?? 0) > 2 && (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                        +{(song.tags?.length ?? 0) - 2}
-                      </span>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Row actions */}
-                  <div
-                    className="flex items-center justify-end gap-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {isHovered && !isMenuOpen && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(`${slugPrefix}/songs/${song.id}`)
-                        }
-                        className="p-1.5 text-m3-secondary hover:text-m3-primary hover:bg-m3-primary/10 rounded-xl cursor-pointer transition-all"
-                        title={t("collectionsPage.viewSong")}
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    {isHovered && !isMenuOpen && (
-                      <button
-                        type="button"
-                        onClick={() => setSongToRemove(song)}
-                        className="p-1.5 text-m3-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-xl cursor-pointer transition-all"
-                        title={t("collectionsPage.removeFromCollection")}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    {/* Three-dot menu */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveSongMenuId(isMenuOpen ? null : song.id);
-                        }}
-                        className={`p-1.5 rounded-xl transition-all cursor-pointer ${
-                          isMenuOpen
-                            ? "bg-m3-primary/10 text-m3-primary"
-                            : isHovered
-                              ? "text-m3-secondary hover:text-m3-text hover:bg-m3-hover"
-                              : "text-transparent"
-                        }`}
-                        title={t("explorer.moreOptions")}
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-
-                      {isMenuOpen && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-2xl z-30 p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveSongMenuId(null);
-                              navigate(`${slugPrefix}/songs/${song.id}`);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
-                          >
-                            <Music2 className="w-3.5 h-3.5 text-sky-500" />
-                            {t("collectionsPage.viewSong")}
-                          </button>
-                          {song.tags && song.tags.length > 0 && (
-                            <div className="px-3 py-1.5 flex flex-wrap gap-1">
-                              {song.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                                >
-                                  <Tag className="w-2.5 h-2.5" />
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          <div className="h-px bg-slate-100 dark:bg-slate-800 mx-1" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveSongMenuId(null);
-                              setSongToRemove(song);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            {t("collectionsPage.removeFromCollection")}
-                          </button>
-                        </div>
+                    {/* Tags + Key (desktop) */}
+                    <div className="hidden sm:flex items-center gap-1.5 flex-wrap justify-end">
+                      {keyMatch && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+                          {keyMatch}
+                        </span>
+                      )}
+                      {song.tags?.slice(0, 2).map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {(song.tags?.length ?? 0) > 2 && (
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                          +{(song.tags?.length ?? 0) - 2}
+                        </span>
                       )}
                     </div>
+
+                    {/* Row actions */}
+                    <div
+                      className="flex items-center justify-end gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {isHovered && !isMenuOpen && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(`${slugPrefix}/songs/${song.id}`)
+                          }
+                          className="p-1.5 text-m3-secondary hover:text-m3-primary hover:bg-m3-primary/10 rounded-xl cursor-pointer transition-all"
+                          title={t("collectionsPage.viewSong")}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {isHovered && !isMenuOpen && (
+                        <button
+                          type="button"
+                          onClick={() => setSongToRemove(song)}
+                          className="p-1.5 text-m3-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-xl cursor-pointer transition-all"
+                          title={t("collectionsPage.removeFromCollection")}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {/* Three-dot menu */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveSongMenuId(isMenuOpen ? null : song.id);
+                          }}
+                          className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+                            isMenuOpen
+                              ? "bg-m3-primary/10 text-m3-primary"
+                              : isHovered
+                                ? "text-m3-secondary hover:text-m3-text hover:bg-m3-hover"
+                                : "text-transparent"
+                          }`}
+                          title={t("explorer.moreOptions")}
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+
+                        {isMenuOpen && (
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-2xl z-30 p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveSongMenuId(null);
+                                navigate(`${slugPrefix}/songs/${song.id}`);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
+                            >
+                              <Music2 className="w-3.5 h-3.5 text-sky-500" />
+                              {t("collectionsPage.viewSong")}
+                            </button>
+                            {song.tags && song.tags.length > 0 && (
+                              <div className="px-3 py-1.5 flex flex-wrap gap-1">
+                                {song.tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                                  >
+                                    <Tag className="w-2.5 h-2.5" />
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="h-px bg-slate-100 dark:bg-slate-800 mx-1" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveSongMenuId(null);
+                                setSongToRemove(song);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              {t("collectionsPage.removeFromCollection")}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
 
             {/* Pagination footer */}
@@ -562,7 +563,10 @@ export const CollectionDetailPage: React.FC = () => {
               <div className="px-4 py-3 bg-m3-sidebar/30 border-t border-m3-border flex items-center justify-between text-xs">
                 <span className="text-m3-secondary font-medium">
                   {t("collectionsPage.paginationInfo", {
-                    from: Math.min((currentPage - 1) * itemsPerPage + 1, totalSongs),
+                    from: Math.min(
+                      (currentPage - 1) * itemsPerPage + 1,
+                      totalSongs,
+                    ),
                     to: Math.min(currentPage * itemsPerPage, totalSongs),
                     total: totalSongs,
                   })}
@@ -589,7 +593,9 @@ export const CollectionDetailPage: React.FC = () => {
                       return (
                         <React.Fragment key={p}>
                           {showEllipsis && (
-                            <span className="px-1 text-m3-secondary opacity-50">…</span>
+                            <span className="px-1 text-m3-secondary opacity-50">
+                              …
+                            </span>
                           )}
                           <button
                             type="button"
@@ -608,7 +614,9 @@ export const CollectionDetailPage: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
                     disabled={currentPage >= totalPages}
                     className="p-1.5 rounded-lg text-m3-secondary hover:text-m3-text hover:bg-m3-hover disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >

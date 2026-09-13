@@ -6,14 +6,14 @@
 import { Button, Input } from "@/src/components/common";
 import { useI18n } from "@/src/lib/i18n";
 import {
-    Camera,
-    CheckCircle2,
-    Info,
-    KeyRound,
-    Lock,
-    PenLine,
-    Save,
-    Trash2,
+  Camera,
+  CheckCircle2,
+  Info,
+  KeyRound,
+  Lock,
+  PenLine,
+  Save,
+  Trash2,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";

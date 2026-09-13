@@ -11,11 +11,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import {
-  getDatabase,
-  resetReplication,
-  setupReplication,
-} from "../db";
+import { getDatabase, resetReplication, setupReplication } from "../db";
 import type { ReplicationManager } from "../db";
 import { SyncStatus } from "../types";
 import { useAuth } from "./AuthContext";
@@ -179,7 +175,10 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
         // If not authenticated, don't start — the CacheHydrationProvider
         // logout handler will clear collections; next auth change re-enters here.
       } catch (err) {
-        console.error("[SyncContext] Failed to initialize DB / Replication:", err);
+        console.error(
+          "[SyncContext] Failed to initialize DB / Replication:",
+          err,
+        );
         if (isMounted) setSyncStatus("error" as SyncStatus);
       }
     }

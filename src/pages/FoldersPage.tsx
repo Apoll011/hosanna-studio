@@ -344,7 +344,9 @@ export const FoldersPage: React.FC = () => {
                     density={density}
                     onClick={(e) => handleItemClick(e, folder.id, "folder")}
                     onDoubleClick={() => handleSelectFolder(folder.id)}
-                    onContextMenu={(e) => handleContextMenu(e, "folder", folder)}
+                    onContextMenu={(e) =>
+                      handleContextMenu(e, "folder", folder)
+                    }
                     onDragStart={(e) =>
                       handleItemDragStart(e, folder.id, "folder")
                     }

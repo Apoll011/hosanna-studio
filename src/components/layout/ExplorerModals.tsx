@@ -696,10 +696,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
         onClose={onCloseModal}
         title={t("explorer.modals.createServiceTitle")}
       >
-        <ServiceForm
-          onSubmit={onCreateServiceSubmit}
-          onCancel={onCloseModal}
-        />
+        <ServiceForm onSubmit={onCreateServiceSubmit} onCancel={onCloseModal} />
       </Modal>
 
       {/* CREATE EVENT MODAL */}
@@ -725,10 +722,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
             : t("explorer.modals.createFolderInRoot")
         }
       >
-        <FolderForm
-          onSubmit={onCreateFolderSubmit}
-          onCancel={onCloseModal}
-        />
+        <FolderForm onSubmit={onCreateFolderSubmit} onCancel={onCloseModal} />
       </Modal>
 
       {/* RENAME FOLDER MODAL */}
@@ -1070,7 +1064,9 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
             songTitle={addToCollectionTarget.title}
             onConfirm={onAddToCollectionConfirm}
             onCreateNewCollection={
-              onOpenModal ? () => onOpenModal("create-collection") : onOpenCreateCollectionFromAdd
+              onOpenModal
+                ? () => onOpenModal("create-collection")
+                : onOpenCreateCollectionFromAdd
             }
           />
         )}
@@ -1084,7 +1080,9 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
           songCount={selectedSongIds.size}
           onConfirm={onAddToCollectionConfirm}
           onCreateNewCollection={
-            onOpenModal ? () => onOpenModal("create-collection") : onOpenCreateCollectionFromAdd
+            onOpenModal
+              ? () => onOpenModal("create-collection")
+              : onOpenCreateCollectionFromAdd
           }
         />
       )}

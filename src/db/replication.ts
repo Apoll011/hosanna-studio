@@ -171,8 +171,11 @@ function diffFields<T extends SyncableDoc>(
     }
   }
 
-  return delta as { id: string; updatedAt: string; _deleted: boolean } &
-    Partial<T>;
+  return delta as {
+    id: string;
+    updatedAt: string;
+    _deleted: boolean;
+  } & Partial<T>;
 }
 
 /**
@@ -194,11 +197,12 @@ function buildAssumedMasterPayload<T extends SyncableDoc>(
 }
 
 interface ChangeRow<T> {
-  newDocumentState: { id: string; updatedAt: string; _deleted: boolean } &
-    Partial<T>;
-  assumedMasterState:
-    | ({ id: string; updatedAt: string } & Partial<T>)
-    | null;
+  newDocumentState: {
+    id: string;
+    updatedAt: string;
+    _deleted: boolean;
+  } & Partial<T>;
+  assumedMasterState: ({ id: string; updatedAt: string } & Partial<T>) | null;
 }
 
 async function pushWithConflictRetry<T extends SyncableDoc>(
@@ -236,10 +240,7 @@ async function pushWithConflictRetry<T extends SyncableDoc>(
 
       const canRetry =
         attempt < CONFLICT_RETRY_LIMIT &&
-        isSpuriousConflict(
-          row.assumedMasterState as T | undefined,
-          serverDoc,
-        );
+        isSpuriousConflict(row.assumedMasterState as T | undefined, serverDoc);
 
       if (canRetry) {
         // Retry with server doc as the new assumed baseline

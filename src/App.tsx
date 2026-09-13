@@ -17,9 +17,7 @@ import { AppRoutes } from "./routes/AppRoutes";
 // Reading localStorage here is safe — it happens synchronously during the
 // module evaluation, before any React rendering.
 configureApiClient(
-  localStorage.getItem("server_url") ||
-    import.meta.env.VITE_API_URL ||
-    "/api",
+  localStorage.getItem("server_url") || import.meta.env.VITE_API_URL || "/api",
 );
 
 function PageviewTracker() {
