@@ -22,7 +22,10 @@ import type {
 
 // ─── DB version ──────────────────────────────────────────────────────────────
 // Bump this number whenever store structure changes (new indexes etc.).
+// v3: Added `repl_checkpoints` object store for durable checkpoint persistence.
 // Old stores are left intact — no migrations needed per the spec.
+// Note: Checkpoints are stored in a SEPARATE dedicated IDB ("hosana_checkpoints")
+// so they survive even if the main data IDB is wiped. No version bump needed.
 const DB_NAME = "hosana_idb";
 const DB_VERSION = 2;
 

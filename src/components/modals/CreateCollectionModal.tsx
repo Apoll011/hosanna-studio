@@ -6,16 +6,19 @@
 import { Button, Input, Modal } from "@/src/components/common";
 import { useI18n } from "@/src/lib/i18n";
 import { Collection } from "@/src/types";
+import { compressImage } from "@/src/utils/settingsUtils";
 import {
   Check,
-  Image as ImageIcon,
+  ImageIcon,
   Loader2,
   Palette,
   Search,
   Sparkles,
+  Trash2,
+  UploadCloud,
   X,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FOLDER_COLORS,
   FOLDER_ICONS,
@@ -47,10 +50,13 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
   const [description, setDescription] = useState("");
   const [selectedColor, setSelectedColor] = useState("default");
   const [selectedIcon, setSelectedIcon] = useState("music");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -59,13 +65,13 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
         setDescription(collection.description || "");
         setSelectedColor(collection.color || "default");
         setSelectedIcon(collection.icon || "music");
-        setImageUrl(collection.image || "");
+        setImageBase64(collection.image || null);
       } else {
         setName("");
         setDescription("");
         setSelectedColor("default");
         setSelectedIcon("music");
-        setImageUrl("");
+        setImageBase64(null);
       }
       setSearchQuery("");
       setError("");
@@ -74,12 +80,10 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
 
   const filteredIcons = useMemo(() => {
     if (!searchQuery.trim()) return FOLDER_ICONS;
-
     const normalizedQuery = searchQuery
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
-
     return FOLDER_ICONS.filter((item) => {
       const normalizedName = item.name
         .toLowerCase()
@@ -89,9 +93,34 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
     });
   }, [searchQuery]);
 
+  const handleImageFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    try {
+      setIsCompressing(true);
+      const compressed = await compressImage(file, 800, 0.8);
+      setImageBase64(compressed);
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handleImageInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) await handleImageFile(file);
+    e.target.value = "";
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) await handleImageFile(file);
+  };
+
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-
     const trimmedName = name.trim();
     if (!trimmedName) {
       setError(
@@ -101,17 +130,15 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
       );
       return;
     }
-
     setIsSaving(true);
     setError("");
-
     try {
       await onSave({
         name: trimmedName,
         description: description.trim() ? description.trim() : null,
         color: selectedColor,
         icon: selectedIcon,
-        image: imageUrl.trim() ? imageUrl.trim() : null,
+        image: imageBase64 || null,
       });
       onClose();
     } catch (err: unknown) {
@@ -146,18 +173,24 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             : "New Collection"
       }
     >
-      <form
-        onSubmit={handleSave}
-        className="flex flex-col gap-4 max-h-[75vh] overflow-y-auto pr-1"
-      >
+      <form onSubmit={handleSave} className="flex flex-col gap-5 pr-0.5">
         {/* Live Preview Card */}
-        <div className="relative overflow-hidden flex items-center gap-4 p-3.5 rounded-2xl bg-linear-to-br from-slate-50 to-slate-100/70 dark:from-slate-800/70 dark:to-slate-900/80 border border-slate-200/80 dark:border-slate-700/60 shadow-inner">
-          <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-sm shrink-0 ${previewColorStyle.bgClass} ${previewColorStyle.borderClass} ${previewColorStyle.textClass}`}
-          >
-            <PreviewIcon className="w-7 h-7" />
-          </div>
-
+        <div className="relative overflow-hidden flex items-center gap-4 p-4 rounded-2xl bg-linear-to-br from-slate-50 to-slate-100/70 dark:from-slate-800/70 dark:to-slate-900/80 border border-slate-200/80 dark:border-slate-700/60 shadow-inner">
+          {imageBase64 ? (
+            <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 shadow-sm">
+              <img
+                src={imageBase64}
+                alt="cover"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-sm shrink-0 ${previewColorStyle.bgClass} ${previewColorStyle.borderClass} ${previewColorStyle.textClass}`}
+            >
+              <PreviewIcon className="w-7 h-7" />
+            </div>
+          )}
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
               {name ||
@@ -173,7 +206,7 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
         </div>
 
         {error && (
-          <div className="p-3 text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl">
+          <div className="px-3.5 py-2.5 text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl">
             {error}
           </div>
         )}
@@ -199,7 +232,7 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
           />
         </div>
 
-        {/* Collection Description */}
+        {/* Description */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
             {locale === "pt"
@@ -215,24 +248,85 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
                 ? "Músicas para momentos de louvor e adoração a Deus..."
                 : "Songs for praise and worship moments..."
             }
-            className="w-full px-3.5 py-2 text-xs rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all resize-none"
+            className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all resize-none"
           />
         </div>
 
-        {/* Banner Image URL (optional) */}
+        {/* Cover Image Upload */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
             <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
             <span>
               {locale === "pt"
-                ? "Imagem de Capa / URL (opcional)"
-                : "Cover Image URL (optional)"}
+                ? "Imagem de Capa (opcional)"
+                : "Cover Image (optional)"}
             </span>
           </label>
-          <Input
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://images.unsplash.com/..."
+
+          {imageBase64 ? (
+            <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 group h-28">
+              <img
+                src={imageBase64}
+                alt="cover preview"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  className="px-3 py-1.5 text-xs font-semibold bg-white/90 text-slate-800 rounded-lg hover:bg-white transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  {locale === "pt" ? "Trocar" : "Change"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageBase64(null)}
+                  className="px-3 py-1.5 text-xs font-semibold bg-rose-500/90 text-white rounded-lg hover:bg-rose-600 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {locale === "pt" ? "Remover" : "Remove"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onClick={() => imageInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              className={`flex flex-col items-center justify-center gap-2 h-24 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
+                isDragging
+                  ? "border-sky-500 bg-sky-50 dark:bg-sky-950/30"
+                  : "border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:border-sky-400 hover:bg-sky-50/60 dark:hover:bg-sky-950/20"
+              }`}
+            >
+              {isCompressing ? (
+                <Loader2 className="w-5 h-5 animate-spin text-sky-500" />
+              ) : (
+                <>
+                  <UploadCloud
+                    className={`w-5 h-5 ${isDragging ? "text-sky-500" : "text-slate-400"}`}
+                  />
+                  <span className="text-xs text-slate-400 dark:text-slate-500 text-center leading-relaxed">
+                    {locale === "pt"
+                      ? "Clique ou arraste uma imagem"
+                      : "Click or drag an image here"}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageInputChange}
+            className="hidden"
           />
         </div>
 
@@ -247,7 +341,6 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
               {previewColorStyle.name}
             </span>
           </div>
-
           <div className="flex flex-wrap items-center gap-2 p-1">
             {FOLDER_COLORS.map((c) => {
               const isSelected = selectedColor === c.id;
@@ -279,22 +372,22 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             })}
           </div>
         </div>
-
-        {/* Icon Selection */}
+        {/* Icon Selection with Search Header */}
         <div className="flex flex-col gap-2 min-h-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 shrink-0">
               <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-              <span>{locale === "pt" ? "Ícone" : "Icon"}</span>
+              <span>
+                {t("modals.iconCount", { count: filteredIcons.length })}
+              </span>
             </label>
 
+            {/* Quick Search */}
             <div className="relative w-36 sm:w-48">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder={
-                  locale === "pt" ? "Buscar ícone..." : "Search icon..."
-                }
+                placeholder={t("modals.searchIcons")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-7 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-sky-500 focus:border-sky-500 transition-all"
@@ -303,7 +396,7 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -311,34 +404,47 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             </div>
           </div>
 
-          <div className="relative max-h-40 overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 p-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
-            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
-              {filteredIcons.map((item) => {
-                const IconComp = item.icon;
-                const isSelected = selectedIcon === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelectedIcon(item.id)}
-                    title={item.name}
-                    aria-label={item.name}
-                    className={`group relative flex items-center justify-center aspect-square p-2 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-sky-500/10 border-sky-500 text-sky-600 dark:text-sky-400 ring-2 ring-sky-500/20 font-semibold shadow-2xs"
-                        : "bg-white dark:bg-slate-800/60 border-slate-200/70 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105"
-                    }`}
-                  >
-                    <IconComp className="w-5 h-5 transition-transform group-hover:scale-110" />
-                  </button>
-                );
-              })}
-            </div>
+          {/* Icons Grid with dedicated scroll containment */}
+          <div className="relative flex-1 min-h-35 max-h-55 sm:max-h-60 overflow-y-auto rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 p-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
+            {filteredIcons.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center py-8 text-center text-slate-400">
+                <Search className="w-6 h-6 mb-1 opacity-50" />
+                <p className="text-xs">
+                  {t("modals.noIconFound", { query: searchQuery })}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                {filteredIcons.map((item) => {
+                  const IconComp = item.icon;
+                  const isSelected = selectedIcon === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedIcon(item.id)}
+                      title={item.name}
+                      aria-label={item.name}
+                      className={`group relative flex flex-col items-center justify-center aspect-square p-2 rounded-xl border transition-all ${
+                        isSelected
+                          ? "bg-sky-500/10 border-sky-500 text-sky-600 dark:text-sky-400 ring-2 ring-sky-500/20 font-semibold shadow-2xs"
+                          : "bg-white dark:bg-slate-800/60 border-slate-200/70 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105"
+                      }`}
+                    >
+                      <IconComp className="w-5 h-5 transition-transform group-hover:scale-110" />
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate w-full text-center mt-1 leading-none opacity-80 group-hover:opacity-100">
+                        {item.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
           <Button
             type="button"
             variant="ghost"

@@ -4,15 +4,7 @@
  */
 
 import { OverflowTagList } from "@/src/components/OverflowTagList";
-import {
-  Badge,
-  Button,
-  ConfirmDialog,
-  EmptyState,
-  Input,
-  Modal,
-  Spinner,
-} from "@/src/components/common";
+import { Badge, Button, EmptyState, Spinner } from "@/src/components/common";
 import { MarqueeSelectionBox } from "@/src/components/explorer";
 import { useAppNavigate } from "@/src/hooks/useAppNavigate";
 import { useMarqueeSelection } from "@/src/hooks/useMarqueeSelection";
@@ -21,19 +13,13 @@ import { usePermissionValue } from "@/src/lib/permissions/client";
 import { Can } from "@/src/lib/permissions/components";
 import { Song } from "@/src/types";
 import {
-  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
   FileText,
-  Filter,
   FolderInput,
-  FolderTree,
-  HelpCircle,
   Music,
-  Plus,
-  Search,
   Tag,
   Trash2,
   X,
@@ -46,22 +32,13 @@ import React, {
   useState,
 } from "react";
 import { useOutletContext } from "react-router-dom";
-import { SongForm } from "../../components/forms/SongForm";
-import { BatchDeleteModal } from "../../components/modals/BatchDeleteModal";
-import { BatchMoveModal } from "../../components/modals/BatchMoveModal";
-import { BatchTagModal } from "../../components/modals/BatchTagModal";
-import { MoveSongModal } from "../../components/modals/MoveSongModal";
-import { SearchSyntaxModal } from "../../components/modals/SearchSyntaxModal";
 import { useAuth } from "../../contexts/AuthContext";
-import { useSync } from "../../contexts/SyncContext";
 import { useFolders } from "../../hooks/useFolders";
 import { usePersonalSettings } from "../../hooks/usePersonalSettings";
 import { useAllSongs, useSearchableSongs } from "../../hooks/useSongs";
-import { posthog } from "../../lib/posthog";
 import { filterSearchableSongsWithLiqe } from "../../utils";
 
 interface SongsPageProps {
-  hideHeader?: boolean;
   searchQuery?: string;
   sortBy?: "title" | "artist" | "updatedAt";
   sortOrder?: "asc" | "desc";
@@ -70,7 +47,6 @@ interface SongsPageProps {
 }
 
 export const SongsPage: React.FC<SongsPageProps> = ({
-  hideHeader,
   searchQuery: externalSearchQuery,
   sortBy: externalSortBy,
   sortOrder: externalSortOrder,
@@ -78,18 +54,14 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   selectedTag,
 }) => {
   const { navigate } = useAppNavigate();
-  const { t, tc, locale } = useI18n();
-  const { settings, updateSetting } = usePersonalSettings();
+  const { t, locale } = useI18n();
+  const { settings } = usePersonalSettings();
   const { organization } = useAuth();
-  const { showToast } = useSync();
   const slugPrefix = organization?.slug ? `/${organization.slug}` : "";
   const context = (useOutletContext<Record<string, unknown>>() || {}) as Record<
     string,
     unknown
   >;
-
-  const actualHideHeader =
-    hideHeader ?? (context.hideHeader as boolean | undefined);
 
   // Density from context with the unified personal-settings fallback
   const contextDensity = context.density as
@@ -97,10 +69,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
 
   const density = contextDensity ?? settings.explorerDensity;
   const isCompact = density === "compact";
-
-  const handleDensityChange = (d: "comfortable" | "compact") => {
-    updateSetting("explorerDensity", d);
-  };
 
   // Search & Filter props resolution
   const contextSearchQuery = context.searchQuery as string | undefined;
@@ -112,15 +80,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   const actualSelectedTag =
     selectedTag ?? (context.selectedTag as string | null) ?? "";
 
-  // Search, Filtering, Pagination, Sorting State
-  const [internalSearchQuery, setInternalSearchQuery] = useState("");
-  const [selectedFolder, setSelectedFolder] = useState<string>("");
-  const [internalSortBy, setInternalSortBy] = useState<
-    "title" | "artist" | "updatedAt" | "number"
-  >("title");
-  const [internalSortOrder, setInternalSortOrder] = useState<"asc" | "desc">(
-    "asc",
-  );
   const [page, setPage] = useState(1);
 
   const finalSearchQuery: string =
@@ -128,21 +87,21 @@ export const SongsPage: React.FC<SongsPageProps> = ({
       ? externalSearchQuery
       : contextSearchQuery !== undefined
         ? contextSearchQuery
-        : internalSearchQuery;
+        : "";
 
   const finalSortBy =
     externalSortBy !== undefined
       ? externalSortBy
       : contextSortBy !== undefined
         ? contextSortBy
-        : internalSortBy;
+        : "title";
 
   const finalSortOrder =
     externalSortOrder !== undefined
       ? externalSortOrder
       : contextSortOrder !== undefined
         ? contextSortOrder
-        : internalSortOrder;
+        : "asc";
 
   const { value: emptyStateAction } = usePermissionValue(
     "song.create",
@@ -153,10 +112,25 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   const [jumpPageInput, setJumpPageInput] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState<number>(50);
 
-  // Multi-Selection State
-  const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(
+  // Modals & Target delegates from layout context
+  const openModal = context.openModal as ((modal: string) => void) | undefined;
+  const setMoveSongTarget = context.setMoveSongTarget as
+    ((song: Song | null) => void) | undefined;
+  const setDeleteSongTarget = context.setDeleteSongTarget as
+    ((song: Song | null) => void) | undefined;
+
+  const contextSelectedSongIds = context.selectedSongIds as
+    Set<string> | undefined;
+  const contextSetSelectedSongIds = context.setSelectedSongIds as
+    React.Dispatch<React.SetStateAction<Set<string>>> | undefined;
+
+  const [localSelectedSongIds, setLocalSelectedSongIds] = useState<Set<string>>(
     new Set(),
   );
+  const selectedSongIds = contextSelectedSongIds ?? localSelectedSongIds;
+  const setSelectedSongIds =
+    contextSetSelectedSongIds ?? setLocalSelectedSongIds;
+
   const [lastClickedId, setLastClickedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -169,8 +143,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   } | null>(null);
 
   // Fetch full cached song & folder list
-  const { songsQuery, createSong, deleteSong, moveSong, updateBatchTags } =
-    useAllSongs();
+  const { songsQuery } = useAllSongs();
   const { foldersQuery } = useFolders();
 
   const folders = useMemo(
@@ -182,16 +155,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   );
 
   const { searchableSongs } = useSearchableSongs(folders);
-
-  // Modals state
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isSearchHelpOpen, setIsSearchHelpOpen] = useState(false);
-  const [moveTarget, setMoveTarget] = useState<Song | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Song | null>(null);
-  const [isBatchMoveOpen, setIsBatchMoveOpen] = useState(false);
-  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
-  const [isBatchTagOpen, setIsBatchTagOpen] = useState(false);
-
   const allSongs: Song[] = useMemo(
     () => (Array.isArray(songsQuery.data?.songs) ? songsQuery.data.songs : []),
     [songsQuery.data?.songs],
@@ -215,14 +178,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
       );
       const matchedIds = new Set(liqeMatches.map((s) => s.id));
       result = result.filter((song) => matchedIds.has(song.id));
-    }
-
-    if (selectedFolder) {
-      if (selectedFolder === "root") {
-        result = result.filter((song) => !song.folderId);
-      } else {
-        result = result.filter((song) => song.folderId === selectedFolder);
-      }
     }
 
     if (actualSelectedKey) {
@@ -267,7 +222,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
     allSongs,
     searchableSongs,
     finalSearchQuery,
-    selectedFolder,
     actualSelectedKey,
     actualSelectedTag,
     finalSortBy,
@@ -290,7 +244,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
     finalSortOrder,
     actualSelectedKey,
     actualSelectedTag,
-    selectedFolder,
     itemsPerPage,
   ]);
 
@@ -342,9 +295,9 @@ export const SongsPage: React.FC<SongsPageProps> = ({
         if (selectedSongIds.size === 1) {
           const songId = Array.from(selectedSongIds)[0];
           const song = allSongs.find((s) => s.id === songId);
-          if (song) setDeleteTarget(song);
+          if (song) setDeleteSongTarget?.(song);
         } else {
-          setIsBatchDeleteOpen(true);
+          openModal?.("batch-delete");
         }
       }
     };
@@ -418,245 +371,12 @@ export const SongsPage: React.FC<SongsPageProps> = ({
     [selectedSongIds],
   );
 
-  const handleCreateSongSubmit = useCallback(
-    async (data: {
-      title: string;
-      artist: string;
-      folderId: string | null;
-      tags: string[];
-    }) => {
-      try {
-        const newSong = await createSong({
-          title: data.title,
-          artist: data.artist,
-          folderId: data.folderId,
-          tags: data.tags,
-          content: `{title: ${data.title}}\n{artist: ${data.artist}}\n{key: G}\n\n[G]Enter lyrics and chords...`,
-        });
-        posthog.capture("song_created", {
-          has_tags: data.tags.length > 0,
-          has_folder: !!data.folderId,
-        });
-        setIsCreateModalOpen(false);
-        navigate(`${slugPrefix}/songs/${newSong.id}`);
-      } catch {
-        // Error toast is handled by useSongMutations
-      }
-    },
-    [createSong, navigate, slugPrefix],
-  );
-
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteTarget) return;
-    await deleteSong(deleteTarget.id);
-    posthog.capture("song_deleted", { count: 1 });
-    setSelectedSongIds((prev) => {
-      const next = new Set(prev);
-      next.delete(deleteTarget.id);
-      return next;
-    });
-    setDeleteTarget(null);
-  }, [deleteTarget, deleteSong]);
-
-  const handleBatchMoveConfirm = useCallback(
-    async (targetFolderId: string | null) => {
-      const songList = Array.from(selectedSongIds);
-      for (const sId of songList) {
-        const s = allSongs.find((x) => x.id === sId);
-        if (s) {
-          await moveSong({
-            id: sId,
-            folderId: targetFolderId,
-            updatedAt: s.updatedAt,
-          });
-        }
-      }
-      showToast(
-        t("songsPage.movedToast", { count: songList.length }),
-        "success",
-      );
-      setSelectedSongIds(new Set());
-      setIsBatchMoveOpen(false);
-    },
-    [selectedSongIds, allSongs, moveSong, showToast, t],
-  );
-
-  const handleBatchDeleteConfirm = useCallback(async () => {
-    const songList = Array.from(selectedSongIds);
-    for (const sId of songList) {
-      await deleteSong(sId);
-    }
-    posthog.capture("song_deleted", { count: songList.length });
-    showToast(
-      t("songsPage.deletedToast", { count: songList.length }),
-      "success",
-    );
-    setSelectedSongIds(new Set());
-    setIsBatchDeleteOpen(false);
-  }, [selectedSongIds, deleteSong, showToast, t]);
-
-  const handleBatchTagConfirm = useCallback(
-    async (tags: string[], mode: "append" | "replace" | "remove") => {
-      const songList = Array.from(selectedSongIds);
-      if (songList.length === 0) return;
-      await updateBatchTags({ songIds: songList, tags, mode });
-      setSelectedSongIds(new Set());
-      setIsBatchTagOpen(false);
-    },
-    [selectedSongIds, updateBatchTags],
-  );
-
   return (
     <div
       ref={containerRef}
       onMouseDown={handleWorkspaceMouseDown}
-      className={`flex-1 flex flex-col w-full mx-auto space-y-4 animate-in fade-in duration-300 overflow-y-auto h-full relative select-none ${
-        actualHideHeader ? "p-4 sm:p-6" : "p-4 sm:p-8 max-w-7xl"
-      }`}
+      className="flex-1 flex flex-col w-full mx-auto space-y-4 animate-in fade-in duration-300 overflow-y-auto h-full relative select-none p-4 sm:p-8 max-w-7xl"
     >
-      {/* Header Banner when Standalone */}
-      {!actualHideHeader && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-m3-text tracking-tighter flex items-center gap-3.5">
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-m3-primary/10 text-m3-primary flex items-center justify-center border border-m3-primary/20 shadow-xs">
-                <Music className="w-6 h-6 sm:w-7 sm:h-7" />
-              </div>
-              {t("songsPage.title")}
-            </h1>
-            <p className="text-xs text-m3-secondary font-bold uppercase tracking-widest mt-1.5 ml-14 sm:ml-16 opacity-60">
-              {tc("songsPage.subtitle", totalSongs, { count: totalSongs })}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <Button
-              variant="outline"
-              icon={<FolderTree className="w-4 h-4" />}
-              onClick={() => navigate(`${slugPrefix}/folders`)}
-              className="rounded-2xl py-3 px-4 sm:px-5 font-black uppercase tracking-wider text-[11px]"
-            >
-              {t("songsPage.explorer")}
-            </Button>
-
-            <Button
-              variant="primary"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={() => setIsCreateModalOpen(true)}
-              className="rounded-2xl py-3 px-4 sm:px-5 font-black uppercase tracking-wider text-[11px] shadow-lg shadow-m3-primary/20"
-            >
-              {t("songsPage.newSong")}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Standalone Toolbar (search, folder filter, sort, viewmode & density) */}
-      {!actualHideHeader && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 bg-m3-sidebar/30 border border-m3-border rounded-3xl shadow-xs transition-all">
-          <div className="flex-1 min-w-56 max-w-md relative">
-            <Input
-              placeholder={t("songsPage.searchPlaceholder")}
-              value={finalSearchQuery}
-              onChange={(e) => {
-                setInternalSearchQuery(e.target.value);
-                setPage(1);
-              }}
-              icon={<Search className="w-4 h-4 text-m3-secondary" />}
-              className="py-2 text-xs rounded-xl pr-16"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-              {finalSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInternalSearchQuery("");
-                    setPage(1);
-                  }}
-                  className="p-1 text-m3-secondary hover:text-m3-text hover:bg-m3-hover rounded-lg cursor-pointer transition-all"
-                  title={t("addressBar.clearSearch")}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsSearchHelpOpen(true)}
-                className="p-1 text-m3-secondary hover:text-m3-primary hover:bg-m3-primary/10 rounded-lg cursor-pointer transition-all"
-                title={
-                  locale === "pt"
-                    ? "Guia de sintaxe de pesquisa (Liqe / Lucene)"
-                    : "Search syntax guide (Liqe / Lucene)"
-                }
-              >
-                <HelpCircle className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Folder Filter */}
-            <div className="flex items-center gap-2 bg-m3-card border border-m3-border rounded-xl px-3 py-2 text-xs shadow-xs">
-              <Filter className="w-3.5 h-3.5 text-m3-primary opacity-70" />
-              <select
-                value={selectedFolder}
-                onChange={(e) => {
-                  setSelectedFolder(e.target.value);
-                  setPage(1);
-                }}
-                className="bg-transparent font-bold text-m3-text focus:outline-none cursor-pointer uppercase tracking-wider text-[10px]"
-              >
-                <option value="">{t("songsPage.allFolders")}</option>
-                <option value="root">{t("songsPage.root")}</option>
-                {folders.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort Filter */}
-            <div className="flex items-center gap-2 bg-m3-card border border-m3-border rounded-xl px-3 py-2 text-xs shadow-xs">
-              <ArrowUpDown className="w-3.5 h-3.5 text-m3-primary opacity-70" />
-              <select
-                value={`${finalSortBy}-${finalSortOrder}`}
-                onChange={(e) => {
-                  const [sb, so] = e.target.value.split("-") as [
-                    "title" | "artist" | "updatedAt",
-                    "asc" | "desc",
-                  ];
-                  setInternalSortBy(sb);
-                  setInternalSortOrder(so);
-                }}
-                className="bg-transparent font-bold text-m3-text focus:outline-none cursor-pointer uppercase tracking-wider text-[10px]"
-              >
-                <option value="title-asc">{t("toolbar.nameAsc")}</option>
-                <option value="title-desc">{t("toolbar.nameDesc")}</option>
-                <option value="artist-asc">{t("toolbar.artistAsc")}</option>
-                <option value="updatedAt-desc">{t("toolbar.dateDesc")}</option>
-              </select>
-            </div>
-
-            {/* Density Selector */}
-            <div className="flex items-center gap-1.5 bg-m3-card border border-m3-border rounded-xl px-2.5 py-1.5 text-xs shadow-xs">
-              <select
-                value={density}
-                onChange={(e) =>
-                  handleDensityChange(
-                    e.target.value as "comfortable" | "compact",
-                  )
-                }
-                className="bg-transparent font-bold text-m3-text focus:outline-none cursor-pointer text-[10px] uppercase tracking-wider"
-              >
-                <option value="comfortable">{t("toolbar.comfortable")}</option>
-                <option value="compact">{t("toolbar.compact")}</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Content Area: Grid / Table View */}
       <div className="bg-m3-card border border-m3-border rounded-3xl shadow-sm overflow-hidden flex flex-col flex-1 transition-all">
         {songsQuery.isLoading ? (
@@ -675,12 +395,12 @@ export const SongsPage: React.FC<SongsPageProps> = ({
               icon={<Music className="w-12 h-12 text-m3-primary opacity-40" />}
               title={t("songsPage.noResults")}
               description={
-                finalSearchQuery || selectedFolder
+                finalSearchQuery
                   ? t("songsPage.noResultsDesc")
                   : t("songsPage.emptyDesc")
               }
               actionLabel={emptyStateAction}
-              onAction={() => setIsCreateModalOpen(true)}
+              onAction={() => openModal?.("create-song")}
             />
           </div>
         ) : (
@@ -799,7 +519,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
                           <Can permission="song.update">
                             <button
                               type="button"
-                              onClick={() => setMoveTarget(song)}
+                              onClick={() => setMoveSongTarget?.(song)}
                               title={t("songsPage.move")}
                               className="p-1.5 text-m3-secondary hover:text-sky-500 hover:bg-sky-500/10 rounded-xl cursor-pointer transition-all"
                             >
@@ -809,7 +529,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
                           <Can permission="song.delete">
                             <button
                               type="button"
-                              onClick={() => setDeleteTarget(song)}
+                              onClick={() => setDeleteSongTarget?.(song)}
                               title={t("songsPage.delete")}
                               className="p-1.5 text-m3-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-xl cursor-pointer transition-all"
                             >
@@ -953,7 +673,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
               size="sm"
               variant="ghost"
               icon={<Tag className="w-4 h-4" />}
-              onClick={() => setIsBatchTagOpen(true)}
+              onClick={() => openModal?.("batch-tag")}
               className="text-white! dark:text-slate-900! hover:bg-white/10! dark:hover:bg-slate-900/10!"
             >
               {t("songsPage.tag")}
@@ -963,7 +683,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
               size="sm"
               variant="ghost"
               icon={<FolderInput className="w-4 h-4" />}
-              onClick={() => setIsBatchMoveOpen(true)}
+              onClick={() => openModal?.("batch-move")}
               className="text-white! dark:text-slate-900! hover:bg-white/10! dark:hover:bg-slate-900/10!"
             >
               {t("songsPage.move")}
@@ -975,7 +695,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
               size="sm"
               variant="ghost"
               icon={<Trash2 className="w-4 h-4" />}
-              onClick={() => setIsBatchDeleteOpen(true)}
+              onClick={() => openModal?.("batch-delete")}
               className="text-rose-400! hover:bg-rose-500/10!"
             >
               {t("songsPage.eliminate")}
@@ -1015,7 +735,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setIsBatchTagOpen(true);
+                    openModal?.("batch-tag");
                     setContextMenu(null);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
@@ -1029,7 +749,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setIsBatchMoveOpen(true);
+                    openModal?.("batch-move");
                     setContextMenu(null);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
@@ -1045,7 +765,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setIsBatchDeleteOpen(true);
+                    openModal?.("batch-delete");
                     setContextMenu(null);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold transition-colors text-left cursor-pointer"
@@ -1095,7 +815,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setMoveTarget(contextMenu.song);
+                    setMoveSongTarget?.(contextMenu.song);
                     setContextMenu(null);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
@@ -1108,7 +828,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
                   type="button"
                   onClick={() => {
                     setSelectedSongIds(new Set([contextMenu.song!.id]));
-                    setIsBatchTagOpen(true);
+                    openModal?.("batch-tag");
                     setContextMenu(null);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition-colors text-left cursor-pointer"
@@ -1123,7 +843,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setDeleteTarget(contextMenu.song);
+                    setDeleteSongTarget?.(contextMenu.song);
                     setContextMenu(null);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold transition-colors text-left cursor-pointer"
@@ -1139,87 +859,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
 
       {/* Marquee Selection Box */}
       <MarqueeSelectionBox box={selectionBox} />
-
-      {/* CREATE SONG MODAL */}
-      <Modal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title={t("songsPage.createModalTitle")}
-      >
-        <SongForm
-          folders={folders}
-          onSubmit={handleCreateSongSubmit}
-          onCancel={() => setIsCreateModalOpen(false)}
-        />
-      </Modal>
-
-      {/* MOVE SONG MODAL */}
-      <MoveSongModal
-        isOpen={!!moveTarget}
-        onClose={() => setMoveTarget(null)}
-        songTitle={moveTarget?.title}
-        initialFolderId={moveTarget?.folderId || null}
-        folders={folders}
-        onConfirm={async (targetFolderId) => {
-          if (!moveTarget) return;
-          await moveSong({
-            id: moveTarget.id,
-            folderId: targetFolderId,
-            updatedAt: moveTarget.updatedAt,
-          });
-          setMoveTarget(null);
-        }}
-      />
-
-      {/* BATCH MOVE MODAL */}
-      <BatchMoveModal
-        isOpen={isBatchMoveOpen}
-        onClose={() => setIsBatchMoveOpen(false)}
-        selectedFoldersCount={0}
-        selectedSongsCount={selectedSongIds.size}
-        disabledFolderIds={new Set()}
-        folders={folders}
-        onConfirm={handleBatchMoveConfirm}
-      />
-
-      {/* BATCH DELETE MODAL */}
-      <BatchDeleteModal
-        isOpen={isBatchDeleteOpen}
-        onClose={() => setIsBatchDeleteOpen(false)}
-        selectedFolders={[]}
-        selectedSongsCount={selectedSongIds.size}
-        onConfirm={handleBatchDeleteConfirm}
-      />
-
-      {/* BATCH TAG MODAL */}
-      <BatchTagModal
-        isOpen={isBatchTagOpen}
-        onClose={() => setIsBatchTagOpen(false)}
-        selectedSongIds={Array.from(selectedSongIds)}
-        onConfirm={handleBatchTagConfirm}
-      />
-
-      {/* DELETE CONFIRM DIALOG */}
-      <ConfirmDialog
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
-        title={t("songsPage.deleteTitle")}
-        message={t("songsPage.deleteMessage", {
-          name: deleteTarget?.title ?? "",
-        })}
-        confirmText={t("songsPage.deleteConfirm")}
-      />
-
-      {/* SEARCH SYNTAX MODAL */}
-      <SearchSyntaxModal
-        isOpen={isSearchHelpOpen}
-        onClose={() => setIsSearchHelpOpen(false)}
-        onApplyExample={(q) => {
-          setInternalSearchQuery(q);
-          setPage(1);
-        }}
-      />
     </div>
   );
 };

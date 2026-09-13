@@ -19,8 +19,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSync } from "../../contexts/SyncContext";
 import { authClient } from "../../lib/authClient";
+import { compressImage, getRoleBadge } from "../../utils/settingsUtils";
 import { ActiveSessionsSection } from "./ActiveSession";
-import { compressImage, getRoleBadge } from "./settingsUtils";
 import { SocialAccountsSection } from "./SocialAccounts";
 import { TwoFactorSection } from "./TwoFactor";
 

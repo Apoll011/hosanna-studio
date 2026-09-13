@@ -297,84 +297,88 @@ export const FoldersPage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse select-none">
-            <thead>
-              <tr className="bg-m3-sidebar/40 border-b border-m3-border text-[10px] font-black text-m3-secondary uppercase tracking-[0.2em]">
-                <th className={isCompact ? "py-2.5 px-4" : "py-4 px-6"}>
-                  {t("common.name")}
-                </th>
-                <th className={isCompact ? "py-2.5 px-4" : "py-4 px-6"}>
-                  {t("common.type")}
-                </th>
-                {isSearchingOrFiltering && (
-                  <th className={isCompact ? "py-2.5 px-4" : "py-4 px-6"}>
-                    {t("common.location")}
+        <div className="bg-m3-card border border-m3-border rounded-3xl shadow-sm overflow-hidden flex flex-col transition-all">
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse select-none">
+              <thead>
+                <tr className="bg-m3-sidebar/40 border-b border-m3-border text-[10px] font-black text-m3-secondary uppercase tracking-[0.2em]">
+                  <th className={isCompact ? "py-2.5 px-4" : "py-3.5 px-6"}>
+                    {t("common.name")}
                   </th>
-                )}
-                <th className={isCompact ? "py-2.5 px-4" : "py-4 px-6"}>
-                  {t("common.details")}
-                </th>
-                {personalSettings.showSongScore && (
-                  <th className={isCompact ? "py-2.5 px-4" : "py-4 px-6"}>
-                    Score
+                  <th className={isCompact ? "py-2.5 px-4" : "py-3.5 px-6"}>
+                    {t("common.type")}
                   </th>
-                )}
-                <th
-                  className={`${isCompact ? "py-2.5 px-4" : "py-4 px-6"} text-right`}
-                >
-                  {t("common.action")}
-                </th>
-              </tr>
-            </thead>
-            <tbody
-              className={`divide-y divide-m3-border/30 ${isCompact ? "text-xs" : "text-[13px]"} font-bold`}
-            >
-              {filteredSubfolders.map((folder) => (
-                <FolderTableRow
-                  key={folder.id}
-                  folder={folder}
-                  isSelected={selectedFolderIds.has(folder.id)}
-                  isSearchingOrFiltering={isSearchingOrFiltering}
-                  isDropTarget={dropTargetFolderId === folder.id}
-                  isDropDisabled={dragDisabledFolderIds.has(folder.id)}
-                  isInternalDragActive={isInternalDragActive}
-                  getFolderPathString={getFolderPathString}
-                  density={density}
-                  onClick={(e) => handleItemClick(e, folder.id, "folder")}
-                  onDoubleClick={() => handleSelectFolder(folder.id)}
-                  onContextMenu={(e) => handleContextMenu(e, "folder", folder)}
-                  onDragStart={(e) =>
-                    handleItemDragStart(e, folder.id, "folder")
-                  }
-                  onDragEnd={handleItemDragEnd}
-                  onDragOver={(e) => handleFolderDragOver(e, folder.id)}
-                  onDragLeave={(e) => handleFolderDragLeave(e, folder.id)}
-                  onDrop={(e) => handleFolderDrop(e, folder.id)}
-                />
-              ))}
+                  {isSearchingOrFiltering && (
+                    <th className={isCompact ? "py-2.5 px-4" : "py-3.5 px-6"}>
+                      {t("common.location")}
+                    </th>
+                  )}
+                  <th className={isCompact ? "py-2.5 px-4" : "py-3.5 px-6"}>
+                    {t("common.details")}
+                  </th>
+                  {personalSettings.showSongScore && (
+                    <th className={isCompact ? "py-2.5 px-4" : "py-3.5 px-6"}>
+                      Score
+                    </th>
+                  )}
+                  <th
+                    className={`${isCompact ? "py-2.5 px-4" : "py-3.5 px-6"} text-right`}
+                  >
+                    {t("common.action")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                className={`divide-y divide-m3-border/30 ${isCompact ? "text-xs" : "text-[13px]"} font-bold`}
+              >
+                {filteredSubfolders.map((folder) => (
+                  <FolderTableRow
+                    key={folder.id}
+                    folder={folder}
+                    isSelected={selectedFolderIds.has(folder.id)}
+                    isSearchingOrFiltering={isSearchingOrFiltering}
+                    isDropTarget={dropTargetFolderId === folder.id}
+                    isDropDisabled={dragDisabledFolderIds.has(folder.id)}
+                    isInternalDragActive={isInternalDragActive}
+                    getFolderPathString={getFolderPathString}
+                    density={density}
+                    onClick={(e) => handleItemClick(e, folder.id, "folder")}
+                    onDoubleClick={() => handleSelectFolder(folder.id)}
+                    onContextMenu={(e) =>
+                      handleContextMenu(e, "folder", folder)
+                    }
+                    onDragStart={(e) =>
+                      handleItemDragStart(e, folder.id, "folder")
+                    }
+                    onDragEnd={handleItemDragEnd}
+                    onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+                    onDragLeave={(e) => handleFolderDragLeave(e, folder.id)}
+                    onDrop={(e) => handleFolderDrop(e, folder.id)}
+                  />
+                ))}
 
-              {filteredFiles.map((song) => (
-                <SongTableRow
-                  key={song.id}
-                  song={song}
-                  isSelected={selectedSongIds.has(song.id)}
-                  isSearchingOrFiltering={isSearchingOrFiltering}
-                  getFolderPathString={getFolderPathString}
-                  density={density}
-                  showSongScore={personalSettings.showSongScore}
-                  songScoreLayout={personalSettings.songScoreLayout}
-                  onClick={(e) => handleItemClick(e, song.id, "song")}
-                  onDoubleClick={() =>
-                    navigate(`${slugPrefix}/songs/${song.id}`)
-                  }
-                  onContextMenu={(e) => handleContextMenu(e, "song", song)}
-                  onDragStart={(e) => handleItemDragStart(e, song.id, "song")}
-                  onDragEnd={handleItemDragEnd}
-                />
-              ))}
-            </tbody>
-          </table>
+                {filteredFiles.map((song) => (
+                  <SongTableRow
+                    key={song.id}
+                    song={song}
+                    isSelected={selectedSongIds.has(song.id)}
+                    isSearchingOrFiltering={isSearchingOrFiltering}
+                    getFolderPathString={getFolderPathString}
+                    density={density}
+                    showSongScore={personalSettings.showSongScore}
+                    songScoreLayout={personalSettings.songScoreLayout}
+                    onClick={(e) => handleItemClick(e, song.id, "song")}
+                    onDoubleClick={() =>
+                      navigate(`${slugPrefix}/songs/${song.id}`)
+                    }
+                    onContextMenu={(e) => handleContextMenu(e, "song", song)}
+                    onDragStart={(e) => handleItemDragStart(e, song.id, "song")}
+                    onDragEnd={handleItemDragEnd}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

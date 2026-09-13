@@ -21,8 +21,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSync } from "../../contexts/SyncContext";
 import { authClient } from "../../lib/authClient";
+import { getRoleBadge } from "../../utils/settingsUtils";
 import { MemberProfilePage } from "./MemberProfilePage";
-import { getRoleBadge } from "./settingsUtils";
 
 interface OrgMember {
   id: string;

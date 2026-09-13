@@ -35,8 +35,8 @@ import {
   OrgPrintSettings,
 } from "../../hooks/useOrgSettings";
 import { authClient } from "../../lib/authClient";
+import { compressImage } from "../../utils/settingsUtils";
 import { PrintingSettingsCard } from "./PrintingSettingsCard";
-import { compressImage } from "./settingsUtils";
 
 export interface WorkspaceTabProps {
   active: boolean;

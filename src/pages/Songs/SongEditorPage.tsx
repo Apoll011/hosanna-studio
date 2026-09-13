@@ -200,15 +200,6 @@ export const SongEditorPage: React.FC = () => {
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-m3-sidebar/10">
       <div className="h-14 bg-m3-sidebar border-b border-m3-border flex items-center justify-between px-4 shrink-0 gap-4">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="p-1 -ml-2"
-            title={t("common.back")}
-          >
-            <ArrowLeft className="w-4 h-4 text-m3-secondary" />
-          </Button>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold text-m3-text flex items-center gap-1.5">

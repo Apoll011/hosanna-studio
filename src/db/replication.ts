@@ -6,9 +6,9 @@
  * communicates between the server and the local store is rewritten here.
  *
  * Replication strategy:
- *  1. Push FIRST: POST /replication/<collection>/push with all locally
- *     changed/deleted docs since last checkpoint. This ensures local deletes
- *     and edits appear on the server before we pull the authoritative state.
+ *  1. Push FIRST: POST /replication/<collection>/push with locally
+ *     changed/deleted docs since last checkpoint. Sends only changed fields
+ *     in both newDocumentState and assumedMasterState (id + updatedAt + delta).
  *  2. Pull: GET /replication/<collection>/pull with the last checkpoint.
  *     Documents are merged into the local store using _mergeFromServer(),
  *     which preserves local-only fields and re-runs computed fields.
@@ -17,13 +17,28 @@
  *     spurious conflicts (volatile-field drift only) are auto-retried;
  *     real content conflicts surface as server docs.
  *  4. FK ordering: services always pushed/pulled before agendaEvents.
+ *
+ * Checkpoint resilience:
+ *  - Checkpoints are saved in BOTH localStorage AND a dedicated IndexedDB store
+ *    ("repl_checkpoints"). On startup the IDB copy is preferred (it survives
+ *    Safari ITP / quota eviction that can wipe localStorage). If IDB is empty
+ *    but localStorage has a value, it is migrated to IDB. This dual-write
+ *    strategy means that even if IDB is accidentally wiped (e.g. during a
+ *    browser-initiated storage clear) the localStorage copy can reseed it.
+ *
+ * IDB-wipe resilience:
+ *  - On startup we detect whether IDB appears empty after being previously
+ *    populated (via a "population-epoch" flag in localStorage). If all stores
+ *    read back 0 rows but the epoch flag says they were populated before, we
+ *    trigger an immediate full pull (checkpoint = null) for every collection so
+ *    the data is restored before the user sees the UI.
  */
 
 import { getApiClient } from "@/src/api";
 import type { HosanaDatabase } from "./database";
 import { notify, subscribeLocalChange } from "./engine/bus";
 import { HosanaCollection } from "./engine/collection";
-import { idbDelete } from "./engine/idb";
+import { idbDelete, idbGet, idbPut, openIDB } from "./engine/idb";
 
 // ─── Public types (unchanged interface) ──────────────────────────────────────
 
@@ -79,7 +94,7 @@ function makeStatusSubject(): StatusSubject {
       return { unsubscribe: () => listeners.delete(fn) };
     },
     next(s) {
-      for (const fn of listeners) fn(s);
+      for (const fn of Array.from(listeners)) fn(s);
     },
   };
 }
@@ -123,9 +138,71 @@ function isSpuriousConflict<T extends SyncableDoc>(
   return deepEqual(omitVolatile(assumedMasterState), omitVolatile(serverDoc));
 }
 
+// ─── Push payload helpers ─────────────────────────────────────────────────────
+
+/**
+ * Compute the set of fields that differ between `current` and `previous`.
+ * Always includes `id` and `updatedAt` so the server can identify the doc
+ * and perform conflict detection. If there is no previous state (new doc)
+ * we return the full document.
+ *
+ * For the `assumedMasterState` (what the client believes the server last sent)
+ * we also strip volatile fields so the diff is meaningful.
+ */
+function diffFields<T extends SyncableDoc>(
+  current: T & { _deleted: boolean },
+  previous: (T & { _deleted: boolean }) | null,
+): { id: string; updatedAt: string; _deleted: boolean } & Partial<T> {
+  // Always send full doc when there is no baseline
+  if (!previous) {
+    return { ...current };
+  }
+
+  const delta: Record<string, unknown> = {
+    id: current.id,
+    updatedAt: current.updatedAt,
+    _deleted: current._deleted,
+  };
+
+  for (const key of Object.keys(current) as (keyof T)[]) {
+    if (key === "id" || key === "updatedAt" || key === "_deleted") continue;
+    if (!deepEqual(current[key], previous[key])) {
+      delta[key as string] = current[key];
+    }
+  }
+
+  return delta as {
+    id: string;
+    updatedAt: string;
+    _deleted: boolean;
+  } & Partial<T>;
+}
+
+/**
+ * Build the assumedMasterState payload for a change row.
+ * We send only id, updatedAt, and the fields that the server last sent
+ * (i.e. the baseline the client is diffing from). Volatile fields are omitted.
+ */
+function buildAssumedMasterPayload<T extends SyncableDoc>(
+  assumed: (T & { _deleted: boolean }) | null,
+): ({ id: string; updatedAt: string } & Partial<T>) | null {
+  if (!assumed) return null;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(assumed) as (keyof typeof assumed)[]) {
+    if (VOLATILE_FIELDS.includes(key as (typeof VOLATILE_FIELDS)[number]))
+      continue;
+    out[key as string] = assumed[key];
+  }
+  return out as { id: string; updatedAt: string } & Partial<T>;
+}
+
 interface ChangeRow<T> {
-  newDocumentState: T & { _deleted: boolean };
-  assumedMasterState: (T & { _deleted: boolean }) | null;
+  newDocumentState: {
+    id: string;
+    updatedAt: string;
+    _deleted: boolean;
+  } & Partial<T>;
+  assumedMasterState: ({ id: string; updatedAt: string } & Partial<T>) | null;
 }
 
 async function pushWithConflictRetry<T extends SyncableDoc>(
@@ -137,24 +214,11 @@ async function pushWithConflictRetry<T extends SyncableDoc>(
   const realConflicts: (T & { _deleted: boolean })[] = [];
 
   for (let attempt = 0; attempt <= CONFLICT_RETRY_LIMIT; attempt++) {
-    const formattedChanges = pending.map((row) => ({
-      newDocumentState: {
-        ...row.newDocumentState,
-        _deleted: !!row.newDocumentState._deleted,
-      },
-      assumedMasterState: row.assumedMasterState
-        ? {
-            ...row.assumedMasterState,
-            _deleted: !!row.assumedMasterState._deleted,
-          }
-        : null,
-    }));
-
     const res = await client.request<{ conflicts?: T[] } | T[]>(
       `/replication/${collectionName}/push`,
       {
         method: "POST",
-        body: JSON.stringify({ changeRows: formattedChanges }),
+        body: JSON.stringify({ changeRows: pending }),
       },
     );
 
@@ -176,12 +240,16 @@ async function pushWithConflictRetry<T extends SyncableDoc>(
 
       const canRetry =
         attempt < CONFLICT_RETRY_LIMIT &&
-        isSpuriousConflict(row.assumedMasterState ?? undefined, serverDoc);
+        isSpuriousConflict(row.assumedMasterState as T | undefined, serverDoc);
 
       if (canRetry) {
+        // Retry with server doc as the new assumed baseline
         retryRows.push({
-          newDocumentState: row.newDocumentState,
-          assumedMasterState: serverDoc,
+          newDocumentState: diffFields(
+            row.newDocumentState as T & { _deleted: boolean },
+            serverDoc,
+          ),
+          assumedMasterState: buildAssumedMasterPayload<T>(serverDoc),
         });
       } else {
         realConflicts.push(serverDoc);
@@ -195,50 +263,160 @@ async function pushWithConflictRetry<T extends SyncableDoc>(
   return realConflicts;
 }
 
-// ─── Checkpoint persistence ───────────────────────────────────────────────────
+// ─── Checkpoint persistence (dual-write: IDB + localStorage) ─────────────────
 
 const CP_KEY = "hosana_repl_checkpoint";
+const EPOCH_KEY = "hosana_repl_epoch"; // incremented whenever IDB is confirmed populated
 
-function loadCheckpoint(collectionName: CollectionName): Checkpoint | null {
-  try {
-    const raw = localStorage.getItem(`${CP_KEY}_${collectionName}`);
-    return raw ? (JSON.parse(raw) as Checkpoint) : null;
-  } catch {
-    return null;
-  }
+/** IDB database instance for checkpoints (separate from the main data IDB) */
+let _cpDb: IDBDatabase | null = null;
+const CP_IDB_NAME = "hosana_checkpoints";
+const CP_IDB_VERSION = 1;
+const CP_STORE = "checkpoints";
+
+/**
+ * Open (or return the cached) checkpoint IDB database.
+ * This is a tiny dedicated IDB so checkpoints survive even if the main
+ * data IDB is wiped by the browser.
+ */
+async function getCheckpointDb(): Promise<IDBDatabase> {
+  if (_cpDb) return _cpDb;
+  _cpDb = await openIDB(CP_IDB_NAME, CP_IDB_VERSION, (db, oldVersion) => {
+    if (oldVersion < 1) {
+      db.createObjectStore(CP_STORE, { keyPath: "collection" });
+    }
+  });
+  return _cpDb;
 }
 
-function saveCheckpoint(collectionName: CollectionName, cp: Checkpoint): void {
+async function loadCheckpoint(
+  collectionName: CollectionName,
+): Promise<Checkpoint | null> {
+  // Try IDB first (more durable)
+  try {
+    const db = await getCheckpointDb();
+    const row = await idbGet<{ collection: string; cp: Checkpoint }>(
+      db,
+      CP_STORE,
+      collectionName,
+    );
+    if (row?.cp) return row.cp;
+  } catch {
+    // IDB unavailable — fall through to localStorage
+  }
+
+  // Fall back to localStorage (may have been written by an older version)
+  try {
+    const raw = localStorage.getItem(`${CP_KEY}_${collectionName}`);
+    if (raw) {
+      const cp = JSON.parse(raw) as Checkpoint;
+      // Migrate to IDB so future reads are durable
+      void saveCheckpoint(collectionName, cp);
+      return cp;
+    }
+  } catch {
+    // localStorage unavailable or corrupted
+  }
+
+  return null;
+}
+
+async function saveCheckpoint(
+  collectionName: CollectionName,
+  cp: Checkpoint,
+): Promise<void> {
+  // Write to IDB (primary)
+  try {
+    const db = await getCheckpointDb();
+    await idbPut(db, CP_STORE, { collection: collectionName, cp });
+  } catch {
+    // IDB write failed — non-fatal, localStorage is the backup
+  }
+
+  // Write to localStorage (backup / legacy compat)
   try {
     localStorage.setItem(`${CP_KEY}_${collectionName}`, JSON.stringify(cp));
   } catch {
-    // storage quota exceeded — non-fatal
+    // Storage quota exceeded — non-fatal
   }
+}
+
+// ─── IDB-wipe detection ───────────────────────────────────────────────────────
+
+/**
+ * Increment (or initialise) the "population epoch" counter in localStorage.
+ * Called once after the main IDB is confirmed to have data (or right after a
+ * successful full pull that seeds it). The counter lets us detect a wipe:
+ * if the epoch is > 0 but all IDB stores are empty, data was erased.
+ */
+function bumpPopulationEpoch(): void {
+  try {
+    const n = parseInt(localStorage.getItem(EPOCH_KEY) ?? "0", 10) || 0;
+    localStorage.setItem(EPOCH_KEY, String(n + 1));
+  } catch {
+    // non-fatal
+  }
+}
+
+function getPopulationEpoch(): number {
+  try {
+    return parseInt(localStorage.getItem(EPOCH_KEY) ?? "0", 10) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+// ─── Server-state cache for push diffs ───────────────────────────────────────
+//
+// To compute accurate change diffs we need to know what the server last sent
+// for each doc. We keep a lightweight in-memory map of {id → server snapshot}
+// per collection that is populated during pull and used during push.
+//
+// This cache lives for the lifetime of the replication manager instance (i.e.
+// until logout / page reload). On a fresh reload the pull phase will repopulate
+// it before the next push.
+
+type ServerCache = Map<string, SyncableDoc & { _deleted: boolean }>;
+const serverStateCache = new Map<CollectionName, ServerCache>();
+
+function getServerCache(collectionName: CollectionName): ServerCache {
+  let cache = serverStateCache.get(collectionName);
+  if (!cache) {
+    cache = new Map();
+    serverStateCache.set(collectionName, cache);
+  }
+  return cache;
 }
 
 // ─── Per-collection replication ───────────────────────────────────────────────
 
 type AnyCollection = HosanaCollection<SyncableDoc & Record<string, unknown>>;
 
+/**
+ * Replicate one collection (push then pull).
+ *
+ * @param forceFullPull  When true, ignore the checkpoint and pull from the
+ *                       beginning — used after an IDB-wipe is detected.
+ */
 async function replicateCollection<
   T extends SyncableDoc & Record<string, unknown>,
 >(
   collection: AnyCollection,
   collectionName: CollectionName,
   client: ReturnType<typeof getApiClient>,
+  forceFullPull = false,
 ): Promise<void> {
-  const checkpoint = loadCheckpoint(collectionName);
+  const checkpoint = await loadCheckpoint(collectionName);
+  const serverCache = getServerCache(collectionName);
+
+  // ─ Push FIRST ──────────────────────────────────────────────────────────────
+  // Every local write stamps `updatedAt` to now — see collection.ts `_put(doc,
+  // "local")` — so this single checkpoint filter reliably catches every local
+  // change since the last sync, including isDeleted/_deleted flips.
   const checkpointTs = checkpoint
     ? new Date(checkpoint.updatedAt).toISOString()
     : null;
 
-  // ─ Push FIRST ──────────────────────────────────────────────────────────────
-  // Every local write (insert/upsert/patch) stamps `updatedAt` to now — see
-  // collection.ts `_put(doc, "local")` — so this single checkpoint filter
-  // reliably catches every local change since the last sync, including
-  // isDeleted/_deleted flips. (Previously there was a second, unfiltered scan
-  // over every doc ever soft-deleted, which re-pushed all of them on every
-  // cycle forever — that was the "sends everything" bug.)
   const allDocs = (collection as unknown as HosanaCollection<T>).getAllRaw();
 
   const toPush = checkpointTs
@@ -248,15 +426,24 @@ async function replicateCollection<
     : allDocs;
 
   if (toPush.length > 0) {
-    const changeRows: ChangeRow<T>[] = toPush.map((doc) => ({
-      newDocumentState: {
+    const changeRows: ChangeRow<T>[] = toPush.map((doc) => {
+      const newState = {
         ...doc,
         _deleted: !!(
           doc._deleted || (doc as Record<string, unknown>)["isDeleted"]
         ),
-      } as T & { _deleted: boolean },
-      assumedMasterState: null,
-    }));
+      } as T & { _deleted: boolean };
+
+      // Use cached server state (from last pull) as the assumed baseline
+      const cached =
+        (serverCache.get(doc.id) as (T & { _deleted: boolean }) | undefined) ??
+        null;
+
+      return {
+        newDocumentState: diffFields(newState, cached),
+        assumedMasterState: buildAssumedMasterPayload<T>(cached),
+      };
+    });
 
     const conflicts = await pushWithConflictRetry<T>(
       client,
@@ -267,17 +454,18 @@ async function replicateCollection<
     // Merge any real conflicts back immediately (server wins on content)
     if (conflicts.length > 0) {
       await Promise.all(
-        conflicts.map((serverDoc) =>
-          (collection as unknown as HosanaCollection<T>)._mergeFromServer(
+        conflicts.map(async (serverDoc) => {
+          serverCache.set(serverDoc.id, serverDoc);
+          await (collection as unknown as HosanaCollection<T>)._mergeFromServer(
             serverDoc,
-          ),
-        ),
+          );
+        }),
       );
     }
   }
 
   // ─ Pull ────────────────────────────────────────────────────────────────────
-  let pullCheckpoint = checkpoint;
+  let pullCheckpoint = forceFullPull ? null : checkpoint;
   const BATCH = 100;
 
   while (true) {
@@ -295,14 +483,14 @@ async function replicateCollection<
     const docs = (res.documents || []).map((d) => ({
       ...d,
       _deleted: !!d._deleted,
-    })) as T[];
+    })) as (T & { _deleted: boolean })[];
 
     if (docs.length > 0) {
-      // Process all docs in parallel for speed
       await Promise.all(
         docs.map(async (doc) => {
           if (doc._deleted) {
             // Hard-deleted on server — remove from local store immediately
+            serverCache.delete(doc.id);
             (collection as unknown as HosanaCollection<T>)._storeDelete(doc.id);
             await idbDelete(
               (collection as unknown as HosanaCollection<T>)._db,
@@ -314,6 +502,8 @@ async function replicateCollection<
               doc.id,
             );
           } else {
+            // Cache the server state so push diffs are accurate
+            serverCache.set(doc.id, doc);
             await (
               collection as unknown as HosanaCollection<T>
             )._mergeFromServer(doc);
@@ -324,7 +514,7 @@ async function replicateCollection<
 
     if (res.checkpoint) {
       pullCheckpoint = res.checkpoint;
-      saveCheckpoint(collectionName, pullCheckpoint);
+      await saveCheckpoint(collectionName, pullCheckpoint);
     }
 
     // Stop when server returns fewer than batchSize (last page)
@@ -342,6 +532,8 @@ export function resetReplication(): void {
     replicationManagerInstance.stop();
     replicationManagerInstance = null;
   }
+  // Clear server-state caches on logout so they don't bleed between sessions
+  serverStateCache.clear();
 }
 
 export function setupReplication(db: HosanaDatabase): ReplicationManager {
@@ -380,7 +572,23 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
     }
   };
 
-  const doSync = async () => {
+  /**
+   * Detect whether the IDB appears to have been wiped since the last session.
+   * If the population epoch is > 0 (data was there before) but all collections
+   * are empty now, we assume a spurious wipe and force a full pull.
+   */
+  const detectIdbWipe = (): boolean => {
+    if (getPopulationEpoch() === 0) return false; // first-ever run
+    const totalDocs =
+      db.songs.getAllRaw().length +
+      db.folders.getAllRaw().length +
+      db.collections.getAllRaw().length +
+      db.services.getAllRaw().length +
+      db.agendaEvents.getAllRaw().length;
+    return totalDocs === 0;
+  };
+
+  const doSync = async (forceFullPull = false) => {
     // If already running, queue a follow-up sync instead of overlapping
     if (syncInProgress) {
       syncQueued = true;
@@ -396,35 +604,52 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
     updateStatus("syncing");
     const client = getApiClient();
 
+    // Detect IDB wipe on the very first sync of this session
+    const idbWiped = forceFullPull || detectIdbWipe();
+    if (idbWiped) {
+      console.warn(
+        "[hosana-repl] IDB appears empty after previously being populated — " +
+          "forcing full pull to restore data.",
+      );
+    }
+
     try {
       // services first (FK ordering for agendaEvents)
       await replicateCollection(
         db.services as unknown as AnyCollection,
         "services",
         client,
+        idbWiped,
       );
       await Promise.all([
         replicateCollection(
           db.songs as unknown as AnyCollection,
           "songs",
           client,
+          idbWiped,
         ),
         replicateCollection(
           db.folders as unknown as AnyCollection,
           "folders",
           client,
+          idbWiped,
         ),
         replicateCollection(
           db.collections as unknown as AnyCollection,
           "collections",
           client,
+          idbWiped,
         ),
       ]);
       await replicateCollection(
         db.agendaEvents as unknown as AnyCollection,
         "agendaEvents",
         client,
+        idbWiped,
       );
+
+      // Mark IDB as populated so future sessions can detect a wipe
+      bumpPopulationEpoch();
 
       updateStatus("synced");
     } catch (err) {
@@ -444,10 +669,10 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
     if (running) return;
     running = true;
 
-    // Initial sync
+    // Initial sync (with wipe detection)
     void doSync();
 
-    // Periodic background sync every 15 s (was 30 s)
+    // Periodic background sync every 15 s
     interval = setInterval(() => void doSync(), 15_000);
 
     onlineListener = () => void doSync();

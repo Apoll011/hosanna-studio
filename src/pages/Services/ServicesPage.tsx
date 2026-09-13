@@ -27,7 +27,6 @@ import React, {
   useState,
 } from "react";
 import { useOutletContext } from "react-router-dom";
-import { usePrint } from "../../contexts/PrintContext";
 import {
   BatchActionFloatingBar,
   MarqueeSelectionBox,
@@ -36,12 +35,12 @@ import {
 } from "../../components/explorer";
 import { ServiceForm } from "../../components/forms/ServiceForm";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePrint } from "../../contexts/PrintContext";
 import { useMarqueeSelection } from "../../hooks/useMarqueeSelection";
 import { useServices } from "../../hooks/useServices";
 import { posthog } from "../../lib/posthog";
 
 interface ServicesPageProps {
-  hideHeader?: boolean;
   searchQuery?: string;
 }
 
@@ -49,7 +48,6 @@ type ServiceSortBy = "date" | "name";
 type SortOrder = "asc" | "desc";
 
 export const ServicesPage: React.FC<ServicesPageProps> = ({
-  hideHeader,
   searchQuery: externalSearchQuery,
 }) => {
   const { navigate } = useAppNavigate();
@@ -60,7 +58,6 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
     string,
     unknown
   >;
-  const actualHideHeader = hideHeader ?? context.hideHeader;
   const viewMode = context.viewMode ?? "grid";
   const density =
     (context.density as "comfortable" | "compact") ?? "comfortable";
@@ -472,7 +469,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
   if (hasNoItemsToShow && !actualSearchQuery) {
     return (
       <div
-        className={`flex-1 flex flex-col w-full mx-auto animate-in fade-in duration-500 overflow-y-auto h-full ${actualHideHeader ? "p-6" : "p-4 sm:p-8 max-w-7xl"}`}
+        className="flex-1 flex flex-col w-full mx-auto animate-in fade-in duration-500 overflow-y-auto h-full p-4 sm:p-8 max-w-7xl"
         onContextMenu={(e) => e.preventDefault()}
       >
         <EmptyState
@@ -499,7 +496,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
   // ─── Main Render ──────────────────────────────────────────────────────────
   return (
     <div
-      className={`flex-1 flex flex-col w-full mx-auto space-y-6 animate-in fade-in duration-300 overflow-y-auto h-full relative select-none ${actualHideHeader ? "p-6" : "p-4 sm:p-8 max-w-7xl"}`}
+      className="flex-1 flex flex-col w-full mx-auto space-y-6 animate-in fade-in duration-300 overflow-y-auto h-full relative select-none p-4 sm:p-8 max-w-7xl"
       onMouseDown={handleWorkspaceMouseDown}
       onContextMenu={(e) => e.preventDefault()}
       ref={containerRef}

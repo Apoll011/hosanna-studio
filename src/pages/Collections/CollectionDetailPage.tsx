@@ -23,11 +23,9 @@ import {
   Edit2,
   ExternalLink,
   FolderKanban,
-  ListMusic,
   MoreHorizontal,
   Music2,
   Plus,
-  Search,
   Tag,
   Trash2,
   X,
@@ -67,9 +65,6 @@ export const CollectionDetailPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // Local search (within collection)
-  const [localSearch, setLocalSearch] = useState("");
-
   // Modals & menus
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddSongsModalOpen, setIsAddSongsModalOpen] = useState(false);
@@ -97,7 +92,7 @@ export const CollectionDetailPage: React.FC = () => {
   // Reset page when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, localSearch]);
+  }, [searchQuery]);
 
   // Songs in this collection (union of both sides of the relationship)
   const songsInCollection = useMemo(() => {
@@ -123,17 +118,8 @@ export const CollectionDetailPage: React.FC = () => {
           s.tags?.some((tag) => tag.toLowerCase().includes(gq)),
       );
     }
-    const lq = localSearch.trim().toLowerCase();
-    if (lq) {
-      result = result.filter(
-        (s) =>
-          s.title.toLowerCase().includes(lq) ||
-          s.artist.toLowerCase().includes(lq) ||
-          s.tags?.some((tag) => tag.toLowerCase().includes(lq)),
-      );
-    }
     return result;
-  }, [songsInCollection, searchQuery, localSearch]);
+  }, [songsInCollection, searchQuery]);
 
   // Pagination
   const totalSongs = filteredSongs.length;
@@ -211,7 +197,7 @@ export const CollectionDetailPage: React.FC = () => {
   const IconComp = getFolderIconComponent(collection.icon);
   const colorStyle = getFolderColorStyle(collection.color);
   const songCount = songsInCollection.length;
-  const isFiltering = localSearch.trim() !== "" || searchQuery.trim() !== "";
+  const isFiltering = searchQuery.trim() !== "";
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-white dark:bg-m3-bg">
@@ -236,16 +222,41 @@ export const CollectionDetailPage: React.FC = () => {
           />
         )}
         {/* Scrim */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/65 via-black/20 to-transparent" />
 
-        {/* Back */}
-        <button
-          onClick={() => navigate(`${slugPrefix}/collections`)}
-          className="absolute top-4 left-4 z-10 p-2.5 rounded-2xl bg-black/30 hover:bg-black/55 text-white backdrop-blur-sm transition-all cursor-pointer shadow-md"
-          title={t("collectionsPage.backToCollections")}
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
+        {/* Collection identity */}
+        <div className="relative z-10 flex items-end gap-4 px-6 sm:px-8 pb-6 pt-16">
+          <div
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-white shadow-2xl shrink-0 border-2 border-white/20"
+            style={{ backgroundColor: colorStyle.colorHex }}
+          >
+            <IconComp className="w-8 h-8 sm:w-10 sm:h-10" />
+          </div>
+          <div className="flex flex-col min-w-0 pb-0.5">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/55 mb-0.5">
+              Collection
+            </p>
+            <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md truncate leading-tight">
+              {collection.name}
+            </h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-xs font-medium text-white/70">
+                {t(
+                  `collectionsPage.songCount.${songCount === 1 ? "one" : "other"}`,
+                  { count: songCount },
+                )}
+              </span>
+              {collection.description && (
+                <>
+                  <span className="text-white/30">·</span>
+                  <span className="text-xs text-white/60 line-clamp-1">
+                    {collection.description}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Top-right actions */}
         <div
@@ -309,82 +320,8 @@ export const CollectionDetailPage: React.FC = () => {
             )}
           </div>
         </div>
-
-        {/* Collection identity */}
-        <div className="relative z-10 flex items-end gap-4 px-6 sm:px-8 pb-6 pt-16">
-          <div
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-white shadow-2xl shrink-0 border-2 border-white/20"
-            style={{ backgroundColor: colorStyle.colorHex }}
-          >
-            <IconComp className="w-8 h-8 sm:w-10 sm:h-10" />
-          </div>
-          <div className="flex flex-col min-w-0 pb-0.5">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/55 mb-0.5">
-              Collection
-            </p>
-            <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md truncate leading-tight">
-              {collection.name}
-            </h1>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-xs font-medium text-white/70">
-                {t(
-                  `collectionsPage.songCount.${songCount === 1 ? "one" : "other"}`,
-                  { count: songCount },
-                )}
-              </span>
-              {collection.description && (
-                <>
-                  <span className="text-white/30">·</span>
-                  <span className="text-xs text-white/60 line-clamp-1">
-                    {collection.description}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* ── TOOLBAR ──────────────────────────────────────────────────────────── */}
-      <div className="px-6 sm:px-8 py-3 border-b border-m3-border/60 flex items-center gap-3 bg-white/90 dark:bg-m3-bg/90 backdrop-blur-sm sticky top-0 z-20">
-        {/* Local search */}
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder={t("collectionsPage.searchSongPlaceholder")}
-            className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-m3-primary/30 focus:border-m3-primary/50 transition-all"
-          />
-          {localSearch && (
-            <button
-              onClick={() => setLocalSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-
-        {/* Stats pill */}
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 ml-auto shrink-0">
-          <ListMusic className="w-3.5 h-3.5" />
-          {isFiltering ? (
-            <span>
-              {totalSongs}
-              <span className="text-slate-300 dark:text-slate-600">
-                {" "}
-                / {songCount}
-              </span>
-            </span>
-          ) : (
-            <span>{songCount}</span>
-          )}
-        </div>
-      </div>
-
-      {/* ── SONGS LIST ───────────────────────────────────────────────────────── */}
       <div className="flex-1 px-4 sm:px-6 py-4">
         {paginatedSongs.length === 0 ? (
           /* Empty / No-results state */
@@ -409,7 +346,7 @@ export const CollectionDetailPage: React.FC = () => {
                 {songsInCollection.length === 0
                   ? t("collectionsPage.emptyDesc")
                   : t("collectionsPage.noSearchResultsDesc", {
-                      query: localSearch || searchQuery,
+                      query: searchQuery,
                     })}
               </p>
             </div>
@@ -429,248 +366,256 @@ export const CollectionDetailPage: React.FC = () => {
           </div>
         ) : (
           /* Song table */
-          <div className="rounded-2xl border border-m3-border/70 bg-white dark:bg-m3-card overflow-hidden shadow-sm">
+          <div className="bg-m3-card border border-m3-border rounded-3xl shadow-sm overflow-hidden flex flex-col transition-all">
             {/* Column headers */}
-            <div className="grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[2rem_1fr_auto_6.5rem] gap-3 items-center px-4 py-2.5 border-b border-m3-border/50 bg-slate-50/80 dark:bg-slate-800/40">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">
+            <div className="grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[2rem_1fr_auto_6.5rem] gap-3 items-center px-6 py-3.5 border-b border-m3-border bg-m3-sidebar/40">
+              <span className="text-[10px] font-black text-m3-secondary uppercase tracking-[0.2em] text-center">
                 #
               </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Title
+              <span className="text-[10px] font-black text-m3-secondary uppercase tracking-[0.2em]">
+                {t("songsPage.titlePath")}
               </span>
-              <span className="hidden sm:block text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">
-                Tags
+              <span className="hidden sm:block text-[10px] font-black text-m3-secondary uppercase tracking-[0.2em] text-right">
+                {t("songsPage.tags")}
               </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">
-                &nbsp;
+              <span className="text-[10px] font-black text-m3-secondary uppercase tracking-[0.2em] text-right">
+                {t("songsPage.actions")}
               </span>
             </div>
 
-            {paginatedSongs.map((song, index) => {
-              const globalIndex = (currentPage - 1) * itemsPerPage + index + 1;
-              const keyMatch = song.content
-                ?.match(/\{key:\s*([^}]+)\}/i)?.[1]
-                ?.trim();
-              const isMenuOpen = activeSongMenuId === song.id;
-              const isHovered = hoveredSongId === song.id;
+            <div className="divide-y divide-m3-border/30 text-[13px] font-bold">
+              {paginatedSongs.map((song, index) => {
+                const globalIndex =
+                  (currentPage - 1) * itemsPerPage + index + 1;
+                const keyMatch = song.content
+                  ?.match(/\{key:\s*([^}]+)\}/i)?.[1]
+                  ?.trim();
+                const isMenuOpen = activeSongMenuId === song.id;
+                const isHovered = hoveredSongId === song.id;
 
-              return (
-                <div
-                  key={song.id}
-                  onMouseEnter={() => setHoveredSongId(song.id)}
-                  onMouseLeave={() => setHoveredSongId(null)}
-                  className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[2rem_1fr_auto_6.5rem] gap-3 items-center px-4 py-3 border-b border-m3-border/30 last:border-b-0 transition-colors select-none ${
-                    isHovered ? "bg-slate-50 dark:bg-slate-800/50" : ""
-                  }`}
-                >
-                  {/* Index / Play icon on hover */}
-                  <span
-                    className="text-center cursor-pointer"
-                    onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
-                  >
-                    {isHovered ? (
-                      <Music2 className="w-3.5 h-3.5 mx-auto text-m3-primary" />
-                    ) : (
-                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                        {globalIndex}
-                      </span>
-                    )}
-                  </span>
-
-                  {/* Title + Artist */}
+                return (
                   <div
-                    className="flex flex-col min-w-0 cursor-pointer"
-                    onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
+                    key={song.id}
+                    onMouseEnter={() => setHoveredSongId(song.id)}
+                    onMouseLeave={() => setHoveredSongId(null)}
+                    className={`grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[2rem_1fr_auto_6.5rem] gap-3 items-center px-6 py-3.5 transition-all select-none cursor-pointer ${
+                      isHovered ? "bg-m3-hover/50 text-m3-text" : "text-m3-text"
+                    }`}
                   >
-                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                      {song.title}
+                    {/* Index / Play icon on hover */}
+                    <span
+                      className="text-center"
+                      onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
+                    >
+                      {isHovered ? (
+                        <Music2 className="w-3.5 h-3.5 mx-auto text-m3-primary" />
+                      ) : (
+                        <span className="text-[11px] text-m3-secondary opacity-70 font-black uppercase tracking-tighter">
+                          {globalIndex}
+                        </span>
+                      )}
                     </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      {song.artist || "—"}
-                    </span>
-                  </div>
 
-                  {/* Tags + Key (desktop) */}
-                  <div className="hidden sm:flex items-center gap-1.5 flex-wrap justify-end">
-                    {keyMatch && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
-                        {keyMatch}
+                    {/* Title + Artist */}
+                    <div
+                      className="flex flex-col min-w-0"
+                      onClick={() => navigate(`${slugPrefix}/songs/${song.id}`)}
+                    >
+                      <span className="truncate font-bold group-hover:translate-x-1 transition-transform">
+                        {song.title}
                       </span>
-                    )}
-                    {song.tags?.slice(0, 2).map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                      >
-                        {tag}
+                      <span className="text-[10px] text-m3-secondary font-black uppercase tracking-widest opacity-60 mt-0.5 truncate">
+                        {song.artist || "—"}
                       </span>
-                    ))}
-                    {(song.tags?.length ?? 0) > 2 && (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                        +{(song.tags?.length ?? 0) - 2}
-                      </span>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Row actions */}
-                  <div
-                    className="flex items-center justify-end gap-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {isHovered && !isMenuOpen && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(`${slugPrefix}/songs/${song.id}`)
-                        }
-                        className="p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors cursor-pointer"
-                        title={t("collectionsPage.viewSong")}
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    {isHovered && !isMenuOpen && (
-                      <button
-                        type="button"
-                        onClick={() => setSongToRemove(song)}
-                        className="p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                        title={t("collectionsPage.removeFromCollection")}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    {/* Three-dot menu */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveSongMenuId(isMenuOpen ? null : song.id);
-                        }}
-                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                          isMenuOpen
-                            ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
-                            : isHovered
-                              ? "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                              : "text-transparent"
-                        }`}
-                        title={t("explorer.moreOptions")}
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-
-                      {isMenuOpen && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-2xl z-30 p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveSongMenuId(null);
-                              navigate(`${slugPrefix}/songs/${song.id}`);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
-                          >
-                            <Music2 className="w-3.5 h-3.5 text-sky-500" />
-                            {t("collectionsPage.viewSong")}
-                          </button>
-                          {song.tags && song.tags.length > 0 && (
-                            <div className="px-3 py-1.5 flex flex-wrap gap-1">
-                              {song.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                                >
-                                  <Tag className="w-2.5 h-2.5" />
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          <div className="h-px bg-slate-100 dark:bg-slate-800 mx-1" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveSongMenuId(null);
-                              setSongToRemove(song);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            {t("collectionsPage.removeFromCollection")}
-                          </button>
-                        </div>
+                    {/* Tags + Key (desktop) */}
+                    <div className="hidden sm:flex items-center gap-1.5 flex-wrap justify-end">
+                      {keyMatch && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+                          {keyMatch}
+                        </span>
+                      )}
+                      {song.tags?.slice(0, 2).map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {(song.tags?.length ?? 0) > 2 && (
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                          +{(song.tags?.length ?? 0) - 2}
+                        </span>
                       )}
                     </div>
+
+                    {/* Row actions */}
+                    <div
+                      className="flex items-center justify-end gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {isHovered && !isMenuOpen && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(`${slugPrefix}/songs/${song.id}`)
+                          }
+                          className="p-1.5 text-m3-secondary hover:text-m3-primary hover:bg-m3-primary/10 rounded-xl cursor-pointer transition-all"
+                          title={t("collectionsPage.viewSong")}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {isHovered && !isMenuOpen && (
+                        <button
+                          type="button"
+                          onClick={() => setSongToRemove(song)}
+                          className="p-1.5 text-m3-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-xl cursor-pointer transition-all"
+                          title={t("collectionsPage.removeFromCollection")}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {/* Three-dot menu */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveSongMenuId(isMenuOpen ? null : song.id);
+                          }}
+                          className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+                            isMenuOpen
+                              ? "bg-m3-primary/10 text-m3-primary"
+                              : isHovered
+                                ? "text-m3-secondary hover:text-m3-text hover:bg-m3-hover"
+                                : "text-transparent"
+                          }`}
+                          title={t("explorer.moreOptions")}
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+
+                        {isMenuOpen && (
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-2xl z-30 p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveSongMenuId(null);
+                                navigate(`${slugPrefix}/songs/${song.id}`);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
+                            >
+                              <Music2 className="w-3.5 h-3.5 text-sky-500" />
+                              {t("collectionsPage.viewSong")}
+                            </button>
+                            {song.tags && song.tags.length > 0 && (
+                              <div className="px-3 py-1.5 flex flex-wrap gap-1">
+                                {song.tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                                  >
+                                    <Tag className="w-2.5 h-2.5" />
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="h-px bg-slate-100 dark:bg-slate-800 mx-1" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveSongMenuId(null);
+                                setSongToRemove(song);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              {t("collectionsPage.removeFromCollection")}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination footer */}
+            {totalPages > 1 && (
+              <div className="px-4 py-3 bg-m3-sidebar/30 border-t border-m3-border flex items-center justify-between text-xs">
+                <span className="text-m3-secondary font-medium">
+                  {t("collectionsPage.paginationInfo", {
+                    from: Math.min(
+                      (currentPage - 1) * itemsPerPage + 1,
+                      totalSongs,
+                    ),
+                    to: Math.min(currentPage * itemsPerPage, totalSongs),
+                    total: totalSongs,
+                  })}
+                </span>
+                <div className="flex items-center gap-1 bg-m3-card border border-m3-border rounded-xl p-1 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage <= 1}
+                    className="p-1.5 rounded-lg text-m3-secondary hover:text-m3-text hover:bg-m3-hover disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => {
+                      if (totalPages <= 7) return true;
+                      if (p === 1 || p === totalPages) return true;
+                      return Math.abs(p - currentPage) <= 1;
+                    })
+                    .map((p, idx, arr) => {
+                      const prev = arr[idx - 1];
+                      const showEllipsis = prev && p - prev > 1;
+                      return (
+                        <React.Fragment key={p}>
+                          {showEllipsis && (
+                            <span className="px-1 text-m3-secondary opacity-50">
+                              …
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setCurrentPage(p)}
+                            className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                              currentPage === p
+                                ? "bg-m3-primary text-white shadow-sm"
+                                : "hover:bg-m3-hover text-m3-text"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage >= totalPages}
+                    className="p-1.5 rounded-lg text-m3-secondary hover:text-m3-text hover:bg-m3-hover disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* ── PAGINATION ───────────────────────────────────────────────────────── */}
-      {totalPages > 1 && (
-        <div className="px-6 sm:px-8 py-3 border-t border-m3-border/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 bg-white/90 dark:bg-m3-bg/90 backdrop-blur-sm">
-          <span>
-            {t("collectionsPage.paginationInfo", {
-              from: Math.min((currentPage - 1) * itemsPerPage + 1, totalSongs),
-              to: Math.min(currentPage * itemsPerPage, totalSongs),
-              total: totalSongs,
-            })}
-          </span>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage <= 1}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => {
-                if (totalPages <= 7) return true;
-                if (p === 1 || p === totalPages) return true;
-                return Math.abs(p - currentPage) <= 1;
-              })
-              .map((p, idx, arr) => {
-                const prev = arr[idx - 1];
-                const showEllipsis = prev && p - prev > 1;
-                return (
-                  <React.Fragment key={p}>
-                    {showEllipsis && (
-                      <span className="px-1 text-slate-300 dark:text-slate-600">
-                        …
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(p)}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                        currentPage === p
-                          ? "bg-m3-primary text-white shadow-sm"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  </React.Fragment>
-                );
-              })}
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage >= totalPages}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── MODALS ───────────────────────────────────────────────────────────── */}
       <CreateCollectionModal
