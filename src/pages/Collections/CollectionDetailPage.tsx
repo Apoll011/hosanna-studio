@@ -65,9 +65,6 @@ export const CollectionDetailPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // Local search (within collection)
-  const [localSearch, setLocalSearch] = useState("");
-
   // Modals & menus
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddSongsModalOpen, setIsAddSongsModalOpen] = useState(false);
@@ -95,7 +92,7 @@ export const CollectionDetailPage: React.FC = () => {
   // Reset page when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, localSearch]);
+  }, [searchQuery]);
 
   // Songs in this collection (union of both sides of the relationship)
   const songsInCollection = useMemo(() => {
@@ -121,17 +118,8 @@ export const CollectionDetailPage: React.FC = () => {
           s.tags?.some((tag) => tag.toLowerCase().includes(gq)),
       );
     }
-    const lq = localSearch.trim().toLowerCase();
-    if (lq) {
-      result = result.filter(
-        (s) =>
-          s.title.toLowerCase().includes(lq) ||
-          s.artist.toLowerCase().includes(lq) ||
-          s.tags?.some((tag) => tag.toLowerCase().includes(lq)),
-      );
-    }
     return result;
-  }, [songsInCollection, searchQuery, localSearch]);
+  }, [songsInCollection, searchQuery]);
 
   // Pagination
   const totalSongs = filteredSongs.length;
@@ -209,7 +197,7 @@ export const CollectionDetailPage: React.FC = () => {
   const IconComp = getFolderIconComponent(collection.icon);
   const colorStyle = getFolderColorStyle(collection.color);
   const songCount = songsInCollection.length;
-  const isFiltering = localSearch.trim() !== "" || searchQuery.trim() !== "";
+  const isFiltering = searchQuery.trim() !== "";
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-white dark:bg-m3-bg">
@@ -358,7 +346,7 @@ export const CollectionDetailPage: React.FC = () => {
                 {songsInCollection.length === 0
                   ? t("collectionsPage.emptyDesc")
                   : t("collectionsPage.noSearchResultsDesc", {
-                      query: localSearch || searchQuery,
+                      query: searchQuery,
                     })}
               </p>
             </div>

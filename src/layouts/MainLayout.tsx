@@ -166,12 +166,6 @@ export const MainLayout: React.FC = () => {
   // Folder & Navigation State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
-  const navigateBackToDrive = useCallback(() => {
-    if (view !== "explorer") {
-      navigate(`${slugPrefix}/folders`);
-    }
-  }, [view, navigate, slugPrefix]);
-
   const handleSelectFolder = useCallback(
     (folderId: string | null) => {
       setCurrentFolderId(folderId);

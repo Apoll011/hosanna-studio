@@ -33,7 +33,6 @@ import React, {
 } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { useSync } from "../../contexts/SyncContext";
 import { useFolders } from "../../hooks/useFolders";
 import { usePersonalSettings } from "../../hooks/usePersonalSettings";
 import { useAllSongs, useSearchableSongs } from "../../hooks/useSongs";
@@ -55,10 +54,9 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   selectedTag,
 }) => {
   const { navigate } = useAppNavigate();
-  const { t, tc, locale } = useI18n();
+  const { t, locale } = useI18n();
   const { settings, updateSetting } = usePersonalSettings();
   const { organization } = useAuth();
-  const { showToast } = useSync();
   const slugPrefix = organization?.slug ? `/${organization.slug}` : "";
   const context = (useOutletContext<Record<string, unknown>>() || {}) as Record<
     string,
@@ -72,10 +70,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   const density = contextDensity ?? settings.explorerDensity;
   const isCompact = density === "compact";
 
-  const handleDensityChange = (d: "comfortable" | "compact") => {
-    updateSetting("explorerDensity", d);
-  };
-
   // Search & Filter props resolution
   const contextSearchQuery = context.searchQuery as string | undefined;
   const contextSortBy = context.sortBy as
@@ -86,8 +80,6 @@ export const SongsPage: React.FC<SongsPageProps> = ({
   const actualSelectedTag =
     selectedTag ?? (context.selectedTag as string | null) ?? "";
 
-  // Search, Filtering, Pagination, Sorting State
-  const [internalSearchQuery, setInternalSearchQuery] = useState("");
   const [page, setPage] = useState(1);
 
   const finalSearchQuery: string =
@@ -95,7 +87,7 @@ export const SongsPage: React.FC<SongsPageProps> = ({
       ? externalSearchQuery
       : contextSearchQuery !== undefined
         ? contextSearchQuery
-        : internalSearchQuery;
+        : "";
 
   const finalSortBy =
     externalSortBy !== undefined
