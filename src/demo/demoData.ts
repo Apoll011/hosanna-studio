@@ -11,6 +11,7 @@
 
 import type {
   AgendaEventDocType,
+  CollectionDocType,
   FolderDocType,
   ServiceDocType,
   SongDocType,
@@ -119,6 +120,11 @@ const LOCALE_DATA = {
         artist: "Ana Paula Valadão",
         tags: ["adoração", "contemporâneo"],
       },
+    ],
+    collections: [
+      "Favoritos da Igreja",
+      "Setlist do Culto",
+      "Louvores de Oração",
     ],
     services: [
       "Culto Dominical",
@@ -233,6 +239,7 @@ const LOCALE_DATA = {
         tags: ["worship", "contemporary"],
       },
     ],
+    collections: ["Church Favorites", "Weekend Setlist", "Prayer Worship"],
     services: [
       "Sunday Service",
       "Morning Service",
@@ -353,6 +360,11 @@ const LOCALE_DATA = {
         artist: "Ana Paula Valadão",
         tags: ["adoración", "contemporáneo"],
       },
+    ],
+    collections: [
+      "Favoritos de la Iglesia",
+      "Lista del Culto",
+      "Alabanza de Oración",
     ],
     services: [
       "Culto Dominical",
@@ -815,6 +827,7 @@ const DEMO_MEMBER_ID_BY_NAME: Record<string, string> = {
 export interface DemoData {
   folders: Folder[];
   songs: Song[];
+  collections: CollectionDocType[];
   services: Service[];
   agendaEvents: AgendaEvent[];
 }
@@ -854,6 +867,11 @@ export function generateDemoData(locale: string): DemoData {
   // -------------------------------------------------------------------------
   const songIds = L.songs.map(() => crypto.randomUUID());
   const folderAssignment = [null, null, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3];
+  const collectionSongIndexes = [
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    [0, 5, 12],
+  ];
   const songs: SongDocType[] = L.songs.map((s, i) => {
     let content: string;
     if (i === 0) {
@@ -884,6 +902,45 @@ export function generateDemoData(locale: string): DemoData {
       purgeAt: null,
     };
   });
+
+  const collectionIdsBySong = new Map<string, Set<string>>();
+  const collections: CollectionDocType[] = L.collections.map((name, i) => {
+    const collectionId = crypto.randomUUID();
+    const songIdsForCollection = collectionSongIndexes[i].map(
+      (idx) => songIds[idx],
+    );
+
+    for (const songId of songIdsForCollection) {
+      const nextCollectionIds =
+        collectionIdsBySong.get(songId) ?? new Set<string>();
+      nextCollectionIds.add(collectionId);
+      collectionIdsBySong.set(songId, nextCollectionIds);
+    }
+
+    return {
+      id: collectionId,
+      name,
+      description:
+        i === 0
+          ? "Featured songs for worship"
+          : i === 1
+            ? "Songs planned for the weekend service"
+            : "Songs for prayer and reflection",
+      color: ["violet", "amber", "sky"][i % 3],
+      icon: ["star", "music", "heart"][i % 3],
+      songCount: songIdsForCollection.length,
+      songIds: songIdsForCollection,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      _deleted: false,
+      isDeleted: false,
+      purgeAt: null,
+    };
+  });
+
+  for (const song of songs) {
+    song.collectionIds = Array.from(collectionIdsBySong.get(song.id) ?? []);
+  }
 
   // -------------------------------------------------------------------------
   // Services — relative to today's Sundays
@@ -1136,5 +1193,5 @@ export function generateDemoData(locale: string): DemoData {
     },
   ];
 
-  return { folders, songs, services, agendaEvents };
+  return { folders, songs, collections, services, agendaEvents };
 }

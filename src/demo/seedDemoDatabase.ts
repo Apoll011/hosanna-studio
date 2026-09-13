@@ -22,30 +22,24 @@ export async function seedDemoDatabase(
 ): Promise<void> {
   if (isDemoSeeded()) return;
 
-  const { folders, songs, services, agendaEvents } = generateDemoData(locale);
+  const { folders, songs, collections, services, agendaEvents } =
+    generateDemoData(locale);
+
+  const upsertDoc = <T extends { id: string }>(
+    collection: { upsert: (doc: T) => Promise<unknown> },
+    doc: T,
+  ) =>
+    collection.upsert(doc).catch(() => {
+      /* already exists — ignore */
+    });
 
   // Bulk-insert each collection, skipping docs that already exist.
   await Promise.all([
-    ...folders.map((doc) =>
-      db.folders.upsert(doc as any).catch(() => {
-        /* already exists — ignore */
-      }),
-    ),
-    ...songs.map((doc) =>
-      db.songs.upsert(doc as any).catch(() => {
-        /* already exists — ignore */
-      }),
-    ),
-    ...services.map((doc) =>
-      db.services.upsert(doc as any).catch(() => {
-        /* already exists — ignore */
-      }),
-    ),
-    ...agendaEvents.map((doc) => {
-      return db.agendaEvents.upsert(doc as any).catch(() => {
-        /* already exists — ignore */
-      });
-    }),
+    ...folders.map((doc) => upsertDoc(db.folders, doc)),
+    ...songs.map((doc) => upsertDoc(db.songs, doc)),
+    ...collections.map((doc) => upsertDoc(db.collections, doc)),
+    ...services.map((doc) => upsertDoc(db.services, doc)),
+    ...agendaEvents.map((doc) => upsertDoc(db.agendaEvents, doc)),
   ]);
 
   markDemoSeeded();
