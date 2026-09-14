@@ -5,6 +5,7 @@
 
 import {
   AgendaEvent,
+  Collection,
   Folder,
   ResponsibilityCategory,
   Service,
@@ -24,6 +25,7 @@ export interface PrintOptions {
   showMetadata: boolean;
   includeServiceSongs: boolean;
   includeFolderSongs: boolean;
+  includeCollectionSongs?: boolean;
   pageBreakBetweenItems: boolean;
   customFooter: string;
 }
@@ -31,6 +33,7 @@ export interface PrintOptions {
 export type PrintItem =
   | { type: "song"; data: Song }
   | { type: "folder"; data: Folder; songs?: Song[] }
+  | { type: "collection"; data: Collection; songs?: Song[] }
   | { type: "service"; data: Service; songs?: Song[] }
   | { type: "event"; data: AgendaEvent; categories?: ResponsibilityCategory[] };
 
