@@ -6,6 +6,7 @@
 import { useI18n } from "@/src/lib/i18n";
 import React from "react";
 import { PrintItem, PrintOptions } from "../types";
+import { CollectionPrintView } from "./CollectionPrintView";
 import { EventPrintView } from "./EventPrintView";
 import { FolderPrintView } from "./FolderPrintView";
 import { ServicePrintView } from "./ServicePrintView";
@@ -89,6 +90,9 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({
                   } else if (item.type === "folder") {
                     typeLabel = t("print.batch.types.folder");
                     label = item.data.name;
+                  } else if (item.type === "collection") {
+                    typeLabel = t("print.batch.types.collection");
+                    label = item.data.name;
                   } else if (item.type === "service") {
                     typeLabel = t("print.batch.types.service");
                     label = item.data.name;
@@ -146,6 +150,18 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({
             {item.type === "folder" && (
               <FolderPrintView
                 folder={item.data}
+                songs={item.songs}
+                options={options}
+                churchName={churchName}
+                churchLogo={churchLogo}
+                churchShortName={churchShortName}
+                accentColor={accentColor}
+              />
+            )}
+
+            {item.type === "collection" && (
+              <CollectionPrintView
+                collection={item.data}
                 songs={item.songs}
                 options={options}
                 churchName={churchName}

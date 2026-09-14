@@ -1777,6 +1777,16 @@ export const pt = {
       artistCol: "Artista / Autor",
       keyCol: "Tom",
     },
+    collection: {
+      index: "Índice de Cânticos",
+      empty: "Esta coleção não contém cânticos.",
+      badge: "Coleção",
+      songbookSubtitle: "Cancioneiro • {count} cântico(s)",
+      numberCol: "#",
+      titleCol: "Título",
+      artistCol: "Artista / Autor",
+      keyCol: "Tom",
+    },
     service: {
       badge: "Ordem de Culto",
       notes: "Notas do Culto:",
@@ -1827,6 +1837,7 @@ export const pt = {
       types: {
         song: "Cântico",
         folder: "Pasta",
+        collection: "Coleção",
         service: "Culto",
         event: "Evento",
       },
@@ -1838,6 +1849,7 @@ export const pt = {
       print: "Imprimir",
       printService: "Imprimir Plano de Culto",
       printSong: "Imprimir Cântico",
+      printCollection: "Imprimir Coleção",
       printEvent: "Imprimir Evento",
       printEventTitle: "Imprimir Escala do Evento",
       printDay: "Imprimir Dia ({count})",
