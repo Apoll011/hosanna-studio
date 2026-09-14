@@ -3,8 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Collection } from "@/src/types";
+import { Collection, Song } from "@/src/types";
 import { useCallback, useEffect, useState } from "react";
+import { PrintOptions } from "../components/print/types";
+import { usePrint } from "../contexts/PrintContext";
 import { useSync } from "../contexts/SyncContext";
 import {
   getDatabase,
@@ -450,6 +452,72 @@ export function useCollections() {
     [showToast],
   );
 
+  const {
+    printCollection: openPrintCollection,
+    printCollections: openPrintCollections,
+  } = usePrint();
+
+  const getCollectionSongs = useCallback(
+    async (collectionId: string): Promise<Song[]> => {
+      try {
+        const db = await getDatabase();
+        const collectionDoc = await db.collections.findOne(collectionId).exec();
+        if (!collectionDoc) return [];
+        const songIdSet = new Set(collectionDoc.songIds || []);
+        const allSongsDocs = await db.songs
+          .find({
+            selector: {
+              isDeleted: { $ne: true },
+            },
+          })
+          .exec();
+        return allSongsDocs
+          .map((d) => d.toJSON() as Song)
+          .filter(
+            (s) =>
+              songIdSet.has(s.id) ||
+              (Array.isArray(s.collectionIds) &&
+                s.collectionIds.includes(collectionId)),
+          );
+      } catch (err) {
+        console.error("Failed to load songs for collection", err);
+        return [];
+      }
+    },
+    [],
+  );
+
+  const printCollection = useCallback(
+    async (
+      collection: Collection,
+      songs?: Song[],
+      options?: Partial<PrintOptions>,
+    ) => {
+      let resolvedSongs = songs;
+      if (!resolvedSongs) {
+        resolvedSongs = await getCollectionSongs(collection.id);
+      }
+      openPrintCollection(collection, resolvedSongs, options);
+    },
+    [getCollectionSongs, openPrintCollection],
+  );
+
+  const printCollections = useCallback(
+    async (
+      collectionsToPrint: Collection[],
+      options?: Partial<PrintOptions>,
+    ) => {
+      const collectionsWithSongs = await Promise.all(
+        collectionsToPrint.map(async (c) => ({
+          collection: c,
+          songs: await getCollectionSongs(c.id),
+        })),
+      );
+      openPrintCollections(collectionsWithSongs, undefined, options);
+    },
+    [getCollectionSongs, openPrintCollections],
+  );
+
   return {
     collections,
     isLoading,
@@ -463,10 +531,14 @@ export function useCollections() {
     restoreCollection,
     addSongsToCollection,
     removeSongsFromCollection,
+    getCollectionSongs,
+    printCollection,
+    printCollections,
   };
 }
 
 export function useCollection(id: string | null) {
+  const { printCollection: openPrintCollection } = usePrint();
   const [collection, setCollection] = useState<Collection | null>(() =>
     id ? (cachedSingleCollections.get(id) ?? null) : null,
   );
@@ -516,9 +588,43 @@ export function useCollection(id: string | null) {
     };
   }, [id]);
 
+  const printCollection = useCallback(
+    async (songs?: Song[], options?: Partial<PrintOptions>) => {
+      if (!collection) return;
+      let resolvedSongs = songs;
+      if (!resolvedSongs) {
+        try {
+          const db = await getDatabase();
+          const songIdSet = new Set(collection.songIds || []);
+          const allSongsDocs = await db.songs
+            .find({
+              selector: {
+                isDeleted: { $ne: true },
+              },
+            })
+            .exec();
+          resolvedSongs = allSongsDocs
+            .map((d) => d.toJSON() as Song)
+            .filter(
+              (s) =>
+                songIdSet.has(s.id) ||
+                (Array.isArray(s.collectionIds) &&
+                  s.collectionIds.includes(collection.id)),
+            );
+        } catch (err) {
+          console.error("Failed to load songs for collection print", err);
+          resolvedSongs = [];
+        }
+      }
+      openPrintCollection(collection, resolvedSongs, options);
+    },
+    [collection, openPrintCollection],
+  );
+
   return {
     data: collection,
     isLoading,
     isPending: isLoading,
+    printCollection,
   };
 }
