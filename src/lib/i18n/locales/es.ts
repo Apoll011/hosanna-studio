@@ -1784,6 +1784,16 @@ export const es: typeof pt = {
       artistCol: "Artista / Autor",
       keyCol: "Tono",
     },
+    collection: {
+      index: "Índice de Cánticos",
+      empty: "Esta colección no contiene cánticos.",
+      badge: "Colección",
+      songbookSubtitle: "Cancionero • {count} cántico(s)",
+      numberCol: "#",
+      titleCol: "Título",
+      artistCol: "Artista / Autor",
+      keyCol: "Tono",
+    },
     service: {
       badge: "Orden de Culto",
       notes: "Notas del Culto:",
@@ -1834,6 +1844,7 @@ export const es: typeof pt = {
       types: {
         song: "Cántico",
         folder: "Carpeta",
+        collection: "Colección",
         service: "Culto",
         event: "Evento",
       },
@@ -1845,6 +1856,7 @@ export const es: typeof pt = {
       print: "Imprimir",
       printService: "Imprimir Orden de Culto",
       printSong: "Imprimir Cántico",
+      printCollection: "Imprimir Colección",
       printEvent: "Imprimir Evento",
       printEventTitle: "Imprimir Escala del Evento",
       printDay: "Imprimir Día ({count})",

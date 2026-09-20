@@ -1759,6 +1759,16 @@ export const en: typeof pt = {
       artistCol: "Artist / Author",
       keyCol: "Key",
     },
+    collection: {
+      index: "Song Index",
+      empty: "This collection contains no songs.",
+      badge: "Collection",
+      songbookSubtitle: "Songbook • {count} song(s)",
+      numberCol: "#",
+      titleCol: "Title",
+      artistCol: "Artist / Author",
+      keyCol: "Key",
+    },
     service: {
       badge: "Order of Service",
       notes: "Service Notes:",
@@ -1809,6 +1819,7 @@ export const en: typeof pt = {
       types: {
         song: "Song",
         folder: "Folder",
+        collection: "Collection",
         service: "Service",
         event: "Event",
       },
@@ -1820,6 +1831,7 @@ export const en: typeof pt = {
       print: "Print",
       printService: "Print Service Order",
       printSong: "Print Song",
+      printCollection: "Print Collection",
       printEvent: "Print Event",
       printEventTitle: "Print Event Roster",
       printDay: "Print Day ({count})",

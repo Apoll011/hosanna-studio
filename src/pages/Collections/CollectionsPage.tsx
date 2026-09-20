@@ -15,7 +15,14 @@ import {
   getFolderColorStyle,
   getFolderIconComponent,
 } from "@/src/utils/folderCustomization";
-import { Edit2, LibraryBig, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import {
+  Edit2,
+  LibraryBig,
+  MoreHorizontal,
+  Plus,
+  Printer,
+  Trash2,
+} from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
@@ -38,6 +45,7 @@ export const CollectionsPage: React.FC = () => {
     createCollection,
     updateCollection,
     deleteCollection,
+    printCollection,
   } = useCollections();
 
   // Modals state
@@ -245,6 +253,18 @@ export const CollectionsPage: React.FC = () => {
                             >
                               <Edit2 className="w-3.5 h-3.5 text-sky-500" />
                               {t("collectionsPage.edit")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                void printCollection(collection);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer text-left"
+                            >
+                              <Printer className="w-3.5 h-3.5 text-slate-500" />
+                              {t("print.buttons.printCollection")}
                             </button>
                             <button
                               type="button"

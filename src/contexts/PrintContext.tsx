@@ -11,6 +11,7 @@ import {
 } from "@/src/components/print/types";
 import {
   AgendaEvent,
+  Collection,
   Folder,
   ResponsibilityCategory,
   Service,
@@ -35,6 +36,16 @@ export interface PrintContextValue {
   ) => void;
   printFolders: (
     foldersWithSongs: Array<{ folder: Folder; songs?: Song[] }>,
+    title?: string,
+    options?: Partial<PrintOptions>,
+  ) => void;
+  printCollection: (
+    collection: Collection,
+    songs?: Song[],
+    options?: Partial<PrintOptions>,
+  ) => void;
+  printCollections: (
+    collectionsWithSongs: Array<{ collection: Collection; songs?: Song[] }>,
     title?: string,
     options?: Partial<PrintOptions>,
   ) => void;
@@ -136,6 +147,40 @@ export const PrintProvider: React.FC<{ children: React.ReactNode }> = ({
     [openPrintModal],
   );
 
+  const printCollection = useCallback(
+    (
+      collection: Collection,
+      songs?: Song[],
+      options?: Partial<PrintOptions>,
+    ) => {
+      openPrintModal({
+        title: `Coleção: ${collection.name}`,
+        items: [{ type: "collection", data: collection, songs }],
+        options,
+      });
+    },
+    [openPrintModal],
+  );
+
+  const printCollections = useCallback(
+    (
+      collectionsWithSongs: Array<{ collection: Collection; songs?: Song[] }>,
+      title?: string,
+      options?: Partial<PrintOptions>,
+    ) => {
+      openPrintModal({
+        title: title || `Coleções (${collectionsWithSongs.length})`,
+        items: collectionsWithSongs.map((c) => ({
+          type: "collection",
+          data: c.collection,
+          songs: c.songs,
+        })),
+        options,
+      });
+    },
+    [openPrintModal],
+  );
+
   const printService = useCallback(
     (service: Service, songs?: Song[], options?: Partial<PrintOptions>) => {
       openPrintModal({
@@ -222,6 +267,8 @@ export const PrintProvider: React.FC<{ children: React.ReactNode }> = ({
         printSongs,
         printFolder,
         printFolders,
+        printCollection,
+        printCollections,
         printService,
         printServices,
         printEvent,

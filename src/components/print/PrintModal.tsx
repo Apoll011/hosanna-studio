@@ -79,6 +79,10 @@ export const PrintModal: React.FC<PrintModalProps> = ({
       payload?.options?.includeFolderSongs ??
       defaultOptions.includeFolderSongs ??
       true,
+    includeCollectionSongs:
+      payload?.options?.includeCollectionSongs ??
+      defaultOptions.includeCollectionSongs ??
+      true,
     pageBreakBetweenItems:
       payload?.options?.pageBreakBetweenItems ??
       savedPrintSettings.pageBreakBetweenItems ??
@@ -128,6 +132,9 @@ export const PrintModal: React.FC<PrintModalProps> = ({
           payload.options?.includeServiceSongs ?? prev.includeServiceSongs,
         includeFolderSongs:
           payload.options?.includeFolderSongs ?? prev.includeFolderSongs,
+        includeCollectionSongs:
+          payload.options?.includeCollectionSongs ??
+          prev.includeCollectionSongs,
         pageBreakBetweenItems:
           payload.options?.pageBreakBetweenItems ??
           savedPrintSettings.pageBreakBetweenItems ??
@@ -155,11 +162,13 @@ export const PrintModal: React.FC<PrintModalProps> = ({
     (i) =>
       i.type === "song" ||
       (i.type === "folder" && (i.songs?.length ?? 0) > 0) ||
+      (i.type === "collection" && (i.songs?.length ?? 0) > 0) ||
       (i.type === "service" && (i.songs?.length ?? 0) > 0),
   );
 
   const hasFolderOrService = payload.items.some(
-    (i) => i.type === "folder" || i.type === "service",
+    (i) =>
+      i.type === "folder" || i.type === "collection" || i.type === "service",
   );
 
   const handlePrint = () => {
@@ -327,7 +336,7 @@ export const PrintModal: React.FC<PrintModalProps> = ({
               <span>{t("print.churchHeader")}</span>
             </label>
 
-            {/* Include Songs toggle (when printing folder or service) */}
+            {/* Include Songs toggle (when printing folder, collection, or service) */}
             {hasFolderOrService && hasSongs && (
               <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-700 dark:text-slate-300 font-medium">
                 <input
@@ -335,6 +344,7 @@ export const PrintModal: React.FC<PrintModalProps> = ({
                   checked={
                     options.includeServiceSongs &&
                     options.includeFolderSongs &&
+                    (options.includeCollectionSongs ?? true) &&
                     hasSongs
                   }
                   onChange={(e) =>
@@ -342,6 +352,7 @@ export const PrintModal: React.FC<PrintModalProps> = ({
                       ...prev,
                       includeServiceSongs: e.target.checked,
                       includeFolderSongs: e.target.checked,
+                      includeCollectionSongs: e.target.checked,
                     }))
                   }
                   className="rounded text-sky-600 focus:ring-sky-500 w-3.5 h-3.5"
