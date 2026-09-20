@@ -15,7 +15,14 @@ import {
   getFolderColorStyle,
   getFolderIconComponent,
 } from "@/src/utils/folderCustomization";
-import { Edit2, LibraryBig, MoreHorizontal, Plus, Printer, Trash2 } from "lucide-react";
+import {
+  Edit2,
+  LibraryBig,
+  MoreHorizontal,
+  Plus,
+  Printer,
+  Trash2,
+} from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 

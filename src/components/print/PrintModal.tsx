@@ -133,7 +133,8 @@ export const PrintModal: React.FC<PrintModalProps> = ({
         includeFolderSongs:
           payload.options?.includeFolderSongs ?? prev.includeFolderSongs,
         includeCollectionSongs:
-          payload.options?.includeCollectionSongs ?? prev.includeCollectionSongs,
+          payload.options?.includeCollectionSongs ??
+          prev.includeCollectionSongs,
         pageBreakBetweenItems:
           payload.options?.pageBreakBetweenItems ??
           savedPrintSettings.pageBreakBetweenItems ??
@@ -167,9 +168,7 @@ export const PrintModal: React.FC<PrintModalProps> = ({
 
   const hasFolderOrService = payload.items.some(
     (i) =>
-      i.type === "folder" ||
-      i.type === "collection" ||
-      i.type === "service",
+      i.type === "folder" || i.type === "collection" || i.type === "service",
   );
 
   const handlePrint = () => {

@@ -32,7 +32,8 @@ export const CollectionPrintView: React.FC<CollectionPrintViewProps> = ({
   accentColor,
 }) => {
   const { t } = useI18n();
-  const { templateFamily, includeFolderSongs, includeCollectionSongs } = options;
+  const { templateFamily, includeFolderSongs, includeCollectionSongs } =
+    options;
   const shouldIncludeSongs = includeCollectionSongs ?? includeFolderSongs;
 
   return (
@@ -93,8 +94,12 @@ export const CollectionPrintView: React.FC<CollectionPrintViewProps> = ({
                     <th className="py-2 px-2 w-12 text-center">
                       {t("print.collection.numberCol")}
                     </th>
-                    <th className="py-2 px-2">{t("print.collection.titleCol")}</th>
-                    <th className="py-2 px-2">{t("print.collection.artistCol")}</th>
+                    <th className="py-2 px-2">
+                      {t("print.collection.titleCol")}
+                    </th>
+                    <th className="py-2 px-2">
+                      {t("print.collection.artistCol")}
+                    </th>
                     <th className="py-2 px-2 w-20 text-center">
                       {t("print.collection.keyCol")}
                     </th>
