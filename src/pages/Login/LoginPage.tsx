@@ -187,6 +187,7 @@ export const LoginPage: React.FC = () => {
           <Button
             type="submit"
             isLoading={isLoading}
+            disabled={!captchaToken}
             className="h-10 sm:h-11 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-all shadow-none hover:shadow-xs active:scale-[0.98] border-0"
           >
             {t("auth.login.loginBtn")}
