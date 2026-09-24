@@ -409,15 +409,18 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
 
   const handleArchiveToggle = async (service: Service) => {
     const nextArchived = !service.archived;
-    await updateService({
-      id: service.id,
-      data: {
-        name: service.name,
-        archived: nextArchived,
-        updatedAt: service.updatedAt,
-      },
-    });
-    posthog.capture("service_archived", { archived: nextArchived });
+    try {
+      await updateService({
+        id: service.id,
+        data: {
+          archived: nextArchived,
+          updatedAt: service.updatedAt,
+        },
+      });
+      posthog.capture("service_archived", { archived: nextArchived });
+    } catch {
+      // Toast notification is already handled by useServices
+    }
     setArchiveTarget(null);
     setContextMenu(null);
   };
@@ -438,7 +441,6 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({
         return updateService({
           id,
           data: {
-            name: service.name,
             archived: !service.archived,
             updatedAt: service.updatedAt,
           },
