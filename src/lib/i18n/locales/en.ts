@@ -1526,6 +1526,12 @@ export const en: typeof pt = {
   },
 
   auth: {
+    captcha: {
+      pending:
+        "Waiting for security verification. Please try again in a moment.",
+      failed:
+        "Security verification failed. Please reload the page and try again.",
+    },
     login: {
       title: "Sign In",
       subtitle: "Access your Hosanna Studio account",

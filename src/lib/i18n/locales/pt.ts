@@ -1543,6 +1543,12 @@ export const pt = {
   },
 
   auth: {
+    captcha: {
+      pending:
+        "A aguardar a verificação de segurança. Tente novamente dentro de instantes.",
+      failed:
+        "A verificação de segurança falhou. Recarregue a página e tente novamente.",
+    },
     login: {
       title: "Iniciar Sessão",
       subtitle: "Aceda à sua conta do Hosanna Studio",
