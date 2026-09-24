@@ -16,7 +16,10 @@ import LoginLayout from "./Layout";
 import { GoogleTextField } from "./components/GoogleTextField";
 import { PasswordStrengthMeter } from "./components/PasswordStrengthMeter";
 import { SocialAuthButtons } from "./components/SocialAuthButtons";
-import { TurnstileWidget } from "./components/TurnstileWidget";
+import {
+  TurnstileWidget,
+  type TurnstileHandle,
+} from "./components/TurnstileWidget";
 
 export const RegisterPage: React.FC = () => {
   const { refetch } = useAuth();
@@ -28,7 +31,7 @@ export const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
-  const captchaRef = useRef<{ reset: () => void }>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -58,7 +61,8 @@ export const RegisterPage: React.FC = () => {
       return;
     }
     if (!captchaToken) {
-      setErrorMsg("Please complete CAPTCHA.");
+      setErrorMsg(t("auth.captcha.pending"));
+      captchaRef.current?.show();
       return;
     }
 
@@ -180,7 +184,17 @@ export const RegisterPage: React.FC = () => {
 
         {password.length > 0 && <PasswordStrengthMeter password={password} />}
 
-        <TurnstileWidget ref={captchaRef} onVerify={setCaptchaToken} />
+        <TurnstileWidget
+          ref={captchaRef}
+          onVerify={(token) => {
+            setCaptchaToken(token);
+            setErrorMsg((msg) =>
+              msg === t("auth.captcha.pending") ? "" : msg,
+            );
+          }}
+          onExpire={() => setCaptchaToken("")}
+          onError={() => setErrorMsg(t("auth.captcha.failed"))}
+        />
 
         {/* Actions bar: Sign In instead on left, Next/Submit button on right */}
         <div className="flex items-center justify-between gap-3 pt-2">

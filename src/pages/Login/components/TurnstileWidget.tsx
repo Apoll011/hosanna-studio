@@ -15,6 +15,11 @@ import { useTheme } from "../../../contexts/ThemeContext";
 const TURNSTILE_SITE_KEY =
   import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
 
+export interface TurnstileHandle {
+  reset: () => void;
+  show: () => void;
+}
+
 interface TurnstileWidgetProps {
   onVerify: (token: string) => void;
   onExpire?: () => void;
@@ -36,7 +41,7 @@ declare global {
 }
 
 export const TurnstileWidget = forwardRef<
-  { reset: () => void },
+  TurnstileHandle,
   TurnstileWidgetProps
 >(({ onVerify, onExpire, onError }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,6 +116,8 @@ export const TurnstileWidget = forwardRef<
         window.turnstile.reset(widgetIdRef.current);
       }
     },
+    // Reveal the widget so the user can see the verification in progress
+    show: () => setRequiresInteraction(true),
   }));
 
   return (

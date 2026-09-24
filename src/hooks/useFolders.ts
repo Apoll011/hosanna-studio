@@ -218,7 +218,7 @@ export function useFolders() {
         await validateFolderRules(
           db,
           { id, parentId: parentId ?? null },
-          { existingId: id },
+          { existingId: id, partial: true },
         );
 
         const doc = await db.folders.findOne(id).exec();

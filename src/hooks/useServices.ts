@@ -116,7 +116,7 @@ export function useServices(includeArchived: boolean = false) {
     async ({ id, data }: { id: string; data: Partial<Service> }) => {
       setIsUpdating(true);
       try {
-        validateServiceRules(data);
+        validateServiceRules(data, { partial: true });
         const db = await getDatabase();
         const doc = await db.services.findOne(id).exec();
         const now = new Date().toISOString();

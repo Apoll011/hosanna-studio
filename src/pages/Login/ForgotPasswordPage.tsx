@@ -12,7 +12,10 @@ import React, { useRef, useState } from "react";
 import { authClient } from "../../lib/authClient";
 import LoginLayout from "./Layout";
 import { GoogleTextField } from "./components/GoogleTextField";
-import { TurnstileWidget } from "./components/TurnstileWidget";
+import {
+  TurnstileWidget,
+  type TurnstileHandle,
+} from "./components/TurnstileWidget";
 
 export const ForgotPasswordPage: React.FC = () => {
   const { navigate } = useAppNavigate();
@@ -23,7 +26,7 @@ export const ForgotPasswordPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
-  const captchaRef = useRef<{ reset: () => void }>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
