@@ -17,7 +17,10 @@ import { posthog } from "../../lib/posthog";
 import LoginLayout from "./Layout";
 import { GoogleTextField } from "./components/GoogleTextField";
 import { SocialAuthButtons } from "./components/SocialAuthButtons";
-import { TurnstileWidget } from "./components/TurnstileWidget";
+import {
+  TurnstileWidget,
+  type TurnstileHandle,
+} from "./components/TurnstileWidget";
 
 export const LoginPage: React.FC = () => {
   const { navigate } = useAppNavigate();
@@ -34,7 +37,7 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
-  const captchaRef = useRef<{ reset: () => void }>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +47,7 @@ export const LoginPage: React.FC = () => {
     }
     if (!captchaToken) {
       setErrorMsg(t("auth.captcha.pending"));
+      captchaRef.current?.show();
       return;
     }
     setErrorMsg("");
@@ -161,7 +165,12 @@ export const LoginPage: React.FC = () => {
 
         <TurnstileWidget
           ref={captchaRef}
-          onVerify={setCaptchaToken}
+          onVerify={(token) => {
+            setCaptchaToken(token);
+            setErrorMsg((msg) =>
+              msg === t("auth.captcha.pending") ? "" : msg,
+            );
+          }}
           onExpire={() => setCaptchaToken("")}
           onError={() => setErrorMsg(t("auth.captcha.failed"))}
         />
@@ -178,7 +187,6 @@ export const LoginPage: React.FC = () => {
           <Button
             type="submit"
             isLoading={isLoading}
-            disabled={!captchaToken}
             className="h-10 sm:h-11 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-all shadow-none hover:shadow-xs active:scale-[0.98] border-0"
           >
             {t("auth.login.loginBtn")}
