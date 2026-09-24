@@ -199,11 +199,13 @@ export async function validateSongRules(
 export async function validateFolderRules(
   db: HosanaDatabase,
   folder: { id?: string; name?: string; parentId?: string | null },
-  options: { existingId?: string } = {},
+  options: { existingId?: string; partial?: boolean } = {},
 ): Promise<void> {
-  const name = (folder.name || "").trim();
-  if (!name) {
-    throw new RequiredFieldError("name", "Folder name is required.");
+  if (!options.partial || folder.name !== undefined) {
+    const name = (folder.name || "").trim();
+    if (!name) {
+      throw new RequiredFieldError("name", "Folder name is required.");
+    }
   }
 
   const folderId = options.existingId || folder.id;
@@ -374,13 +376,19 @@ export async function validateSongMove(
  * Validates a service against Prisma schema rules:
  * 1. Required fields: name (non-empty)
  * 2. Valid date
+ *
+ * With `partial`, only fields present on the payload are checked, so patches
+ * like `{ archived }` don't have to resend the title.
  */
 export function validateServiceRules(
   service: Partial<ServiceDocType> & { name?: string; date?: string | Date },
+  { partial = false }: { partial?: boolean } = {},
 ): void {
-  const name = (service.name || "").trim();
-  if (!name) {
-    throw new RequiredFieldError("name", "Service title is required.");
+  if (!partial || service.name !== undefined) {
+    const name = (service.name || "").trim();
+    if (!name) {
+      throw new RequiredFieldError("name", "Service title is required.");
+    }
   }
 
   if (service.date) {
