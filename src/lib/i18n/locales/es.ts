@@ -1550,6 +1550,12 @@ export const es: typeof pt = {
   },
 
   auth: {
+    captcha: {
+      pending:
+        "Esperando la verificación de seguridad. Inténtalo de nuevo en un momento.",
+      failed:
+        "La verificación de seguridad falló. Recarga la página e inténtalo de nuevo.",
+    },
     login: {
       title: "Iniciar Sesión",
       subtitle: "Acceda a su cuenta de Hosanna Studio",
