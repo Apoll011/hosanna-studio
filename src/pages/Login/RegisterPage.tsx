@@ -16,7 +16,10 @@ import LoginLayout from "./Layout";
 import { GoogleTextField } from "./components/GoogleTextField";
 import { PasswordStrengthMeter } from "./components/PasswordStrengthMeter";
 import { SocialAuthButtons } from "./components/SocialAuthButtons";
-import { TurnstileWidget } from "./components/TurnstileWidget";
+import {
+  TurnstileWidget,
+  type TurnstileHandle,
+} from "./components/TurnstileWidget";
 
 export const RegisterPage: React.FC = () => {
   const { refetch } = useAuth();
@@ -28,7 +31,7 @@ export const RegisterPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
-  const captchaRef = useRef<{ reset: () => void }>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -59,6 +62,7 @@ export const RegisterPage: React.FC = () => {
     }
     if (!captchaToken) {
       setErrorMsg(t("auth.captcha.pending"));
+      captchaRef.current?.show();
       return;
     }
 
@@ -182,7 +186,12 @@ export const RegisterPage: React.FC = () => {
 
         <TurnstileWidget
           ref={captchaRef}
-          onVerify={setCaptchaToken}
+          onVerify={(token) => {
+            setCaptchaToken(token);
+            setErrorMsg((msg) =>
+              msg === t("auth.captcha.pending") ? "" : msg,
+            );
+          }}
           onExpire={() => setCaptchaToken("")}
           onError={() => setErrorMsg(t("auth.captcha.failed"))}
         />
@@ -199,7 +208,6 @@ export const RegisterPage: React.FC = () => {
           <Button
             type="submit"
             isLoading={isLoading}
-            disabled={!captchaToken}
             className="h-10 sm:h-11 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-all shadow-none hover:shadow-xs active:scale-[0.98] border-0"
           >
             {t("auth.register.registerBtn")}

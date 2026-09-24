@@ -14,7 +14,10 @@ import { authClient } from "../../lib/authClient";
 import LoginLayout from "./Layout";
 import { GoogleTextField } from "./components/GoogleTextField";
 import { PasswordStrengthMeter } from "./components/PasswordStrengthMeter";
-import { TurnstileWidget } from "./components/TurnstileWidget";
+import {
+  TurnstileWidget,
+  type TurnstileHandle,
+} from "./components/TurnstileWidget";
 
 export const RegisterOrganizationPage: React.FC = () => {
   const { navigate } = useAppNavigate();
@@ -37,7 +40,7 @@ export const RegisterOrganizationPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
-  const captchaRef = useRef<{ reset: () => void }>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
 
   // Status State
   const [isLoading, setIsLoading] = useState(false);
