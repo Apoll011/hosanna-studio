@@ -58,7 +58,7 @@ export const RegisterPage: React.FC = () => {
       return;
     }
     if (!captchaToken) {
-      setErrorMsg("Please complete CAPTCHA.");
+      setErrorMsg(t("auth.captcha.pending"));
       return;
     }
 
@@ -180,7 +180,12 @@ export const RegisterPage: React.FC = () => {
 
         {password.length > 0 && <PasswordStrengthMeter password={password} />}
 
-        <TurnstileWidget ref={captchaRef} onVerify={setCaptchaToken} />
+        <TurnstileWidget
+          ref={captchaRef}
+          onVerify={setCaptchaToken}
+          onExpire={() => setCaptchaToken("")}
+          onError={() => setErrorMsg(t("auth.captcha.failed"))}
+        />
 
         {/* Actions bar: Sign In instead on left, Next/Submit button on right */}
         <div className="flex items-center justify-between gap-3 pt-2">
@@ -194,6 +199,7 @@ export const RegisterPage: React.FC = () => {
           <Button
             type="submit"
             isLoading={isLoading}
+            disabled={!captchaToken}
             className="h-10 sm:h-11 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-all shadow-none hover:shadow-xs active:scale-[0.98] border-0"
           >
             {t("auth.register.registerBtn")}
