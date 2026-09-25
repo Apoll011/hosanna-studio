@@ -10,6 +10,7 @@ import {
   ReminderSettings,
   Responsibility,
 } from "@/src/types";
+import { mergeAssigneeNotificationState } from "@/src/utils/agendaNotify";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSync } from "../contexts/SyncContext";
@@ -375,10 +376,33 @@ export function useAgenda() {
     [showToast, t],
   );
 
-  const updateReminder = useCallback(
-    (eventId: string, reminder: ReminderSettings) =>
-      updateEvent(eventId, { reminder }),
-    [updateEvent],
+  /**
+   * Persist a responsibilities array computed OUTSIDE this hook (e.g. flipping
+   * `notified` after a successful push). Silent on purpose: the caller already
+   * shows its own feedback, and a second "saved" toast would be noise.
+   */
+  const setResponsibilities = useCallback(
+    async (
+      eventId: string,
+      responsibilities: Responsibility[],
+    ): Promise<void> => {
+      try {
+        const db = await getDatabase();
+        const doc = await db.agendaEvents.findOne(eventId).exec();
+        if (!doc) return;
+        await doc.patch({
+          responsibilities,
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err: unknown) {
+        if (err && typeof err === "object" && "message" in err) {
+          const msg = (err as Error).message;
+          showToast(msg || t("hooks.agenda.saveError", { error: "" }), "error");
+        }
+        throw err;
+      }
+    },
+    [showToast, t],
   );
 
   const addResponsibility = useCallback(
@@ -388,7 +412,15 @@ export function useAgenda() {
       assignees: Assignee[] = [],
     ): Promise<string> => {
       const id = newId("resp");
-      const responsibility: Responsibility = { id, categoryId, assignees };
+      // Every assignee on a brand-new responsibility starts pending, so the
+      // next "notify" press reaches them exactly once.
+      const responsibility: Responsibility = {
+        id,
+        categoryId,
+        assignees: assignees.map((a) =>
+          a.notified === undefined ? { ...a, notified: false } : a,
+        ),
+      };
       try {
         const db = await getDatabase();
         const doc = await db.agendaEvents.findOne(eventId).exec();
@@ -422,9 +454,21 @@ export function useAgenda() {
         const db = await getDatabase();
         const doc = await db.agendaEvents.findOne(eventId).exec();
         if (!doc) return;
+        const previous =
+          doc.responsibilities.find((r) => r.id === respId)?.assignees ?? [];
         await doc.patch({
           responsibilities: doc.responsibilities.map((r) =>
-            r.id === respId ? { ...r, assignees } : r,
+            r.id === respId
+              ? {
+                  ...r,
+                  // Stayers keep their notification state; anyone newly
+                  // assigned starts at `notified: false` again.
+                  assignees: mergeAssigneeNotificationState(
+                    previous,
+                    assignees,
+                  ),
+                }
+              : r,
           ),
           updatedAt: new Date().toISOString(),
         });
@@ -478,7 +522,7 @@ export function useAgenda() {
     updateEvent,
     deleteEvent,
     restoreEvent,
-    updateReminder,
+    setResponsibilities,
     addResponsibility,
     updateResponsibilityAssignees,
     removeResponsibility,

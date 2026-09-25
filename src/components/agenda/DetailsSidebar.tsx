@@ -6,74 +6,43 @@
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useAppNavigate } from "@/src/hooks/useAppNavigate";
 import { useServices } from "@/src/hooks/useServices";
-import { TranslateFn, TranslationKey, useI18n } from "@/src/lib/i18n";
+import { useI18n } from "@/src/lib/i18n";
 import { AgendaEvent } from "@/src/types";
-import { Bell, ExternalLink, Link2, Pencil } from "lucide-react";
+import { formatLongDate, formatShortDate } from "@/src/utils/agendaDate";
+import { Bell, ExternalLink, Link2, Pencil, Send } from "lucide-react";
 import React from "react";
+import { Button } from "../common";
 import { serviceTotalMinutes } from "./ServiceLinkField";
 
 interface DetailsSidebarProps {
   event: AgendaEvent | undefined;
   onEdit: () => void;
-  onToggleReminder: () => void;
-  onEditReminder: () => void;
+  /** Whether the user may send notifications (`notification.sent`). */
+  canNotify: boolean;
+  /** Users still awaiting an assignment notification (already grouped). */
+  unnotifiedCount: number;
+  /** Unsent date/location changes tracked for the selected event. */
+  pendingDate: boolean;
+  pendingLocation: boolean;
+  isNotifying: boolean;
+  onNotifyAssignments: () => void;
+  onNotifyUpdate: () => void;
 }
-
-const WEEKDAY_KEYS: TranslationKey[] = [
-  "agenda.weekdaysFull.sunday",
-  "agenda.weekdaysFull.monday",
-  "agenda.weekdaysFull.tuesday",
-  "agenda.weekdaysFull.wednesday",
-  "agenda.weekdaysFull.thursday",
-  "agenda.weekdaysFull.friday",
-  "agenda.weekdaysFull.saturday",
-];
-const MONTH_KEYS: TranslationKey[] = [
-  "agenda.months.january",
-  "agenda.months.february",
-  "agenda.months.march",
-  "agenda.months.april",
-  "agenda.months.may",
-  "agenda.months.june",
-  "agenda.months.july",
-  "agenda.months.august",
-  "agenda.months.september",
-  "agenda.months.october",
-  "agenda.months.november",
-  "agenda.months.december",
-];
-
-function formatLongDate(iso: string, t: TranslateFn): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return t("agenda.dateLong", {
-    weekday: t(WEEKDAY_KEYS[date.getDay()]),
-    day: d,
-    month: t(MONTH_KEYS[m - 1]),
-    year: y,
-  });
-}
-
-function formatShortDate(iso: string, t: TranslateFn): string {
-  const [y, m, d] = (iso || "").split("T")[0].split("-").map(Number);
-  if (!y || !m || !d) return iso || "";
-  return t("agenda.dateShort", {
-    day: String(d).padStart(2, "0"),
-    month: String(m).padStart(2, "0"),
-    year: y,
-  });
-}
-
 export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
   event,
   onEdit,
-  onToggleReminder,
-  onEditReminder,
+  canNotify,
+  unnotifiedCount,
+  pendingDate,
+  pendingLocation,
+  isNotifying,
+  onNotifyAssignments,
+  onNotifyUpdate,
 }) => {
   const { servicesQuery } = useServices();
   const { organization } = useAuth();
   const { navigate } = useAppNavigate();
-  const { t } = useI18n();
+  const { t, tc } = useI18n();
   const slugPrefix = organization?.slug ? `/${organization.slug}` : "";
 
   const linkedService = event?.linkedServiceId
@@ -194,42 +163,75 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-m3-border rounded-2xl p-5 shadow-xs">
-        <h3 className="text-[11px] font-black uppercase tracking-widest text-m3-secondary opacity-70 mb-3 flex items-center gap-1.5">
-          <Bell className="w-3.5 h-3.5" />
-          {t("agenda.notifications")}
-        </h3>
+      {canNotify && (
+        <div className="bg-white dark:bg-slate-900 border border-m3-border rounded-2xl p-5 shadow-xs">
+          <h3 className="text-[11px] font-black uppercase tracking-widest text-m3-secondary opacity-70 mb-3 flex items-center gap-1.5">
+            <Bell className="w-3.5 h-3.5" />
+            {t("agenda.notifications")}
+          </h3>
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-              {t("agenda.reminderForAssignees")}
-            </p>
-            <button
-              onClick={onEditReminder}
-              className="text-xs font-bold text-[#0284c7] hover:underline cursor-pointer mt-0.5"
-            >
-              {event.reminder.label}
-            </button>
+          <div className="space-y-3">
+            {/* Assignments — only people not yet notified */}
+            <div>
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                {t("agenda.notify.assignSection")}
+              </p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
+                {unnotifiedCount > 0
+                  ? tc("agenda.notify.pending", unnotifiedCount)
+                  : t("agenda.notify.allNotified")}
+              </p>
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full mt-2"
+                disabled={unnotifiedCount === 0 || isNotifying}
+                isLoading={isNotifying}
+                onClick={onNotifyAssignments}
+                icon={<Bell className="w-3.5 h-3.5" />}
+              >
+                {t("agenda.notify.assignBtn")}
+              </Button>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
+                {t("agenda.notify.assignHint")}
+              </p>
+            </div>
+
+            {/* Date / location changes — explicit, aggregated when both */}
+            <div className="pt-3 border-t border-m3-border/40">
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                {t("agenda.notify.updateSection")}
+              </p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">
+                {pendingDate && pendingLocation
+                  ? t("agenda.notify.bothHint")
+                  : pendingDate
+                    ? t("agenda.notify.datePending")
+                    : pendingLocation
+                      ? t("agenda.notify.locationPending")
+                      : t("agenda.notify.noPendingChanges")}
+              </p>
+              {(pendingDate || pendingLocation) && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="w-full mt-2"
+                  disabled={isNotifying}
+                  isLoading={isNotifying}
+                  onClick={onNotifyUpdate}
+                  icon={<Send className="w-3.5 h-3.5" />}
+                >
+                  {pendingDate && pendingLocation
+                    ? t("agenda.notify.bothBtn")
+                    : pendingDate
+                      ? t("agenda.notify.dateBtn")
+                      : t("agenda.notify.locationBtn")}
+                </Button>
+              )}
+            </div>
           </div>
-          <button
-            onClick={onToggleReminder}
-            role="switch"
-            aria-checked={event.reminder.enabled}
-            className={`w-10 h-6 rounded-full relative shrink-0 transition-colors cursor-pointer ${
-              event.reminder.enabled
-                ? "bg-[#0284c7]"
-                : "bg-slate-200 dark:bg-slate-700"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                event.reminder.enabled ? "-translate-x-0.5" : "-translate-x-4.5"
-              }`}
-            />
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

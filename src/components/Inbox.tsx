@@ -224,6 +224,13 @@ export const InboxPanel: React.FC<InboxPanelProps> = ({
 
   const getIcon = (type: string) => {
     switch (type) {
+      case "assignment_created":
+      case "assignment_removed":
+        return <Users className="w-4 h-4 text-emerald-500" />;
+      case "service_date_changed":
+      case "service_location_changed":
+      case "service_updated":
+        return <Building2 className="w-4 h-4 text-sky-500" />;
       case "organization":
         return <Building2 className="w-4 h-4 text-sky-500" />;
       case "team":

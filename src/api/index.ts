@@ -7,6 +7,10 @@ export {
   type CreateNotificationResult,
   type NotificationChannel,
   type NotificationFcmMessage,
+  type NotificationRecipientInput,
+  type NotificationType,
+  type SendNotificationsInput,
+  type SendNotificationsResult,
 } from "./notifications";
 export { configureApiClient, getApiClient } from "./http";
 export { servicesApi } from "./services";

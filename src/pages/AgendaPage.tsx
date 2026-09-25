@@ -8,13 +8,16 @@ import { DetailsSidebar } from "@/src/components/agenda/DetailsSidebar";
 import {
   AddResponsibilityModal,
   EditAssigneesModal,
-  EditReminderModal,
   EventFormModal,
   EventFormValue,
 } from "@/src/components/agenda/EventModals";
 import { MiniCalendar, toIso } from "@/src/components/agenda/MiniCalendar";
+import { RemoveAssignmentModal } from "@/src/components/agenda/RemoveAssignmentModal";
 import { ResponsibilitiesPanel } from "@/src/components/agenda/ResponsibilitiesPanel";
+import { useAgendaNotifications } from "@/src/hooks/useAgendaNotifications";
 import { useI18n } from "@/src/lib/i18n";
+import type { Assignee } from "@/src/types";
+import { assigneeKey, groupAssignees } from "@/src/utils/agendaNotify";
 import { AlertTriangle, CalendarPlus, Printer } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -22,6 +25,17 @@ import { Modal } from "../components/common";
 import { Button } from "../components/common/Button";
 import { usePrint } from "../contexts/PrintContext";
 import { useAgenda } from "../hooks/useAgenda";
+
+/** A removal waiting for the confirm-with-notify-toggle dialog. */
+type PendingRemoval =
+  | { kind: "responsibility"; eventId: string; respId: string }
+  | {
+      kind: "assignees";
+      eventId: string;
+      respId: string;
+      next: Assignee[];
+      removed: Assignee[];
+    };
 
 export const AgendaPage: React.FC = () => {
   const { t } = useI18n();
@@ -36,7 +50,10 @@ export const AgendaPage: React.FC = () => {
   const [isNewEventOpen, setIsNewEventOpen] = useState(false);
   const [isEditEventOpen, setIsEditEventOpen] = useState(false);
   const [isAddResponsibilityOpen, setIsAddResponsibilityOpen] = useState(false);
-  const [isReminderOpen, setIsReminderOpen] = useState(false);
+  const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval | null>(
+    null,
+  );
+  const [isRemoving, setIsRemoving] = useState(false);
   const [editingAssigneesFor, setEditingAssigneesFor] = useState<string | null>(
     null,
   );
@@ -104,6 +121,80 @@ export const AgendaPage: React.FC = () => {
     for (const c of store.categories) map[c.id] = c;
     return map;
   }, [store.categories]);
+
+  // Studio-side notification flows (assignments / date / location).
+  const notifications = useAgendaNotifications({
+    event: selectedEvent,
+    store,
+    categoriesById,
+  });
+
+  // What the pending removal dialog is about to delete (null → hidden).
+  const removalInfo = useMemo(() => {
+    if (!pendingRemoval) return null;
+    const target = store.events.find((e) => e.id === pendingRemoval.eventId);
+    const responsibility = target?.responsibilities.find(
+      (r) => r.id === pendingRemoval.respId,
+    );
+    const label = responsibility
+      ? (categoriesById[responsibility.categoryId]?.label ??
+        t("agenda.responsibility"))
+      : t("agenda.responsibility");
+    return pendingRemoval.kind === "responsibility"
+      ? {
+          title: t("agenda.removeResponsibility"),
+          summary: label,
+          count: responsibility?.assignees.length ?? 0,
+        }
+      : {
+          title: t("agenda.notify.removeAssigneesTitle"),
+          summary: pendingRemoval.removed.map((a) => a.name).join(", "),
+          count: pendingRemoval.removed.length,
+        };
+  }, [pendingRemoval, store.events, categoriesById, t]);
+
+  const handleConfirmRemoval = async (notifyUser: boolean) => {
+    if (!pendingRemoval || !removalInfo) return;
+    const { eventId, respId } = pendingRemoval;
+    const target = store.events.find((e) => e.id === eventId);
+    const responsibility = target?.responsibilities.find(
+      (r) => r.id === respId,
+    );
+    const label = responsibility
+      ? (categoriesById[responsibility.categoryId]?.label ??
+        t("agenda.responsibility"))
+      : t("agenda.responsibility");
+
+    setIsRemoving(true);
+    try {
+      if (pendingRemoval.kind === "responsibility") {
+        const affected = responsibility
+          ? groupAssignees(responsibility.assignees, label)
+          : [];
+        // Remove first — never leave an assignment behind after promising a
+        // cancellation notice.
+        await store.removeResponsibility(eventId, respId);
+        if (notifyUser && affected.length > 0) {
+          await notifications.notifyRemoval(affected);
+        }
+      } else {
+        const affected = groupAssignees(pendingRemoval.removed, label);
+        await store.updateResponsibilityAssignees(
+          eventId,
+          respId,
+          pendingRemoval.next,
+        );
+        if (notifyUser && affected.length > 0) {
+          await notifications.notifyRemoval(affected);
+        }
+      }
+    } catch {
+      // error toast already shown by the store
+    } finally {
+      setIsRemoving(false);
+      setPendingRemoval(null);
+    }
+  };
 
   // The responsibility being edited, plus the event it lives in (needed to
   // persist assignee changes since responsibilities are embedded in events).
@@ -234,7 +325,11 @@ export const AgendaPage: React.FC = () => {
             onEditAssignees={(respId) => setEditingAssigneesFor(respId)}
             onRemoveResponsibility={(respId) => {
               if (selectedEvent) {
-                store.removeResponsibility(selectedEvent.id, respId);
+                setPendingRemoval({
+                  kind: "responsibility",
+                  eventId: selectedEvent.id,
+                  respId,
+                });
               }
             }}
           />
@@ -242,14 +337,13 @@ export const AgendaPage: React.FC = () => {
           <DetailsSidebar
             event={selectedEvent}
             onEdit={() => setIsEditEventOpen(true)}
-            onToggleReminder={() => {
-              if (!selectedEvent) return;
-              store.updateReminder(selectedEvent.id, {
-                ...selectedEvent.reminder,
-                enabled: !selectedEvent.reminder.enabled,
-              });
-            }}
-            onEditReminder={() => setIsReminderOpen(true)}
+            canNotify={notifications.canNotify}
+            unnotifiedCount={notifications.unnotifiedCount}
+            pendingDate={notifications.pendingDate}
+            pendingLocation={notifications.pendingLocation}
+            isNotifying={notifications.isNotifying}
+            onNotifyAssignments={() => void notifications.notifyAssignments()}
+            onNotifyUpdate={() => void notifications.notifyUpdate()}
           />
         </div>
       </div>
@@ -272,6 +366,25 @@ export const AgendaPage: React.FC = () => {
           onClose={() => setIsEditEventOpen(false)}
           onSubmit={(value) => {
             store.updateEvent(selectedEvent.id, value);
+            // The edit is saved first; notifying stays an explicit action.
+            // Track what changed so the "notify" buttons know what to send
+            // (date+location together → one aggregated update).
+            const changes: { date?: boolean; location?: boolean } = {};
+            if (
+              value.date !== selectedEvent.date ||
+              value.time !== selectedEvent.time
+            ) {
+              changes.date = true;
+            }
+            if (
+              (value.location ?? "").trim() !==
+              (selectedEvent.location ?? "").trim()
+            ) {
+              changes.location = true;
+            }
+            if (changes.date || changes.location) {
+              notifications.markChanged(selectedEvent.id, changes);
+            }
             setSelectedDate(value.date);
             setIsEditEventOpen(false);
           }}
@@ -325,6 +438,23 @@ export const AgendaPage: React.FC = () => {
           assignees={editingAssigneesResp.responsibility.assignees}
           manualSuggestions={store.manualAssignees}
           onSubmit={async (assignees) => {
+            const previous = editingAssigneesResp.responsibility.assignees;
+            const removed = previous.filter(
+              (p) => !assignees.some((a) => assigneeKey(a) === assigneeKey(p)),
+            );
+            if (removed.length > 0) {
+              // Removals go through the confirm flow with the optional
+              // "notify about the cancellation" toggle.
+              setEditingAssigneesFor(null);
+              setPendingRemoval({
+                kind: "assignees",
+                eventId: editingAssigneesResp.eventId,
+                respId: editingAssigneesResp.responsibility.id,
+                next: assignees,
+                removed,
+              });
+              return;
+            }
             try {
               // Await the save so a failure keeps the modal open.
               await store.updateResponsibilityAssignees(
@@ -340,20 +470,16 @@ export const AgendaPage: React.FC = () => {
         />
       )}
 
-      {/* Edit reminder */}
-      {selectedEvent && (
-        <EditReminderModal
-          isOpen={isReminderOpen}
-          onClose={() => setIsReminderOpen(false)}
-          initialLabel={selectedEvent.reminder.label}
-          onSubmit={(label) => {
-            store.updateReminder(selectedEvent.id, {
-              ...selectedEvent.reminder,
-              label,
-              enabled: true,
-            });
-            setIsReminderOpen(false);
-          }}
+      {/* Remove assignment(s) — optional cancellation notice */}
+      {pendingRemoval && removalInfo && (
+        <RemoveAssignmentModal
+          isOpen
+          onClose={() => setPendingRemoval(null)}
+          title={removalInfo.title}
+          summary={removalInfo.summary}
+          affectedCount={removalInfo.count}
+          isBusy={isRemoving}
+          onConfirm={handleConfirmRemoval}
         />
       )}
 

@@ -178,6 +178,20 @@ export interface Assignee {
   name: string;
   memberId?: string;
   avatarUrl?: string | null;
+  /**
+   * Notification state of THIS assignment entry, kept in the extensible
+   * responsibility JSON (no dedicated column/table per responsibility type):
+   *
+   *   { "responsibility": "music", "assignees": [{ "userId": "…", "notified": false }] }
+   *
+   * - `false`/`undefined` → still pending: the next "notify assignments" press
+   *   includes this entry.
+   * - `true` → already delivered; never re-sent, until a NEW responsibility is
+   *   assigned to the same person (that new entry starts at `false` again).
+   * - Removing the assignee removes its notification state with it, so a stale
+   *   entry can never trigger a notification later.
+   */
+  notified?: boolean;
 }
 
 export interface Responsibility {

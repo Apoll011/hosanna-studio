@@ -8,7 +8,6 @@ import { useServices } from "@/src/hooks/useServices";
 import { TranslateFn, useI18n } from "@/src/lib/i18n";
 import { Assignee, ResponsibilityCategory } from "@/src/types";
 import {
-  BellRing,
   Calendar,
   CheckCircle2,
   Circle,
@@ -25,7 +24,6 @@ import {
   Tag,
   Trash2,
   Users,
-  X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { AssigneeTagInput } from "./AssigneeTagInput";
@@ -652,122 +650,6 @@ export const EditAssigneesModal: React.FC<EditAssigneesModalProps> = ({
             variant="primary"
             type="button"
             onClick={() => onSubmit(value)}
-          >
-            {t("common.save")}
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/* Edit the reminder for an event                                     */
-/* ------------------------------------------------------------------ */
-
-interface EditReminderModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  initialLabel: string;
-  onSubmit: (label: string) => void;
-}
-
-export const EditReminderModal: React.FC<EditReminderModalProps> = ({
-  isOpen,
-  onClose,
-  initialLabel,
-  onSubmit,
-}) => {
-  const { t } = useI18n();
-  const [label, setLabel] = useState(initialLabel);
-
-  const reminderPresets = [
-    t("agenda.reminderPresets.dayOfEvent"),
-    t("agenda.reminderPresets.oneHourBefore"),
-    t("agenda.reminderPresets.threeHoursBefore"),
-    t("agenda.reminderPresets.oneDayBefore"),
-    t("agenda.reminderPresets.twoDaysBefore"),
-    t("agenda.reminderPresets.oneWeekBefore"),
-  ];
-
-  useEffect(() => {
-    if (isOpen) setLabel(initialLabel);
-  }, [isOpen, initialLabel]);
-
-  if (!isOpen) return null;
-
-  const trimmed = label.trim();
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t("agenda.editReminder")}>
-      <div className="space-y-5 pt-2">
-        <section className="space-y-2.5">
-          <SectionHeader
-            icon={<BellRing className="w-3.5 h-3.5" />}
-            title={t("agenda.whenToNotify")}
-            hint={t("agenda.reminderHint")}
-          />
-          <div className="flex flex-wrap gap-1.5">
-            {reminderPresets.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setLabel(p)}
-                className={`px-3 h-8 rounded-lg text-[11px] font-bold transition-colors cursor-pointer border ${
-                  label === p
-                    ? "bg-[#0284c7] text-white border-[#0284c7]"
-                    : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-[#0284c7]/40"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative">
-            <BellRing className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            <input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder={t("agenda.reminderPlaceholder")}
-              maxLength={80}
-              className={`${fieldInputClass} pr-9`}
-            />
-            {label.length > 0 && (
-              <button
-                type="button"
-                aria-label={t("agenda.clearReminder")}
-                onClick={() => setLabel("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </section>
-
-        {/* ── Preview ────────────────────────────────────────────────── */}
-        <div
-          className={`flex items-center gap-2.5 px-3.5 h-11 rounded-xl border text-sm font-semibold ${
-            trimmed
-              ? "border-[#0284c7]/30 bg-[#0284c7]/6 text-[#0284c7]"
-              : "border-dashed border-slate-200 dark:border-slate-800 text-slate-400"
-          }`}
-        >
-          <BellRing className="w-4 h-4 shrink-0" />
-          <span className="truncate">
-            {trimmed || t("agenda.noReminderSet")}
-          </span>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2 border-t border-m3-border/40">
-          <Button variant="outline" type="button" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            variant="primary"
-            type="button"
-            onClick={() => onSubmit(label)}
           >
             {t("common.save")}
           </Button>
