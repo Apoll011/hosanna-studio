@@ -7,9 +7,12 @@ export const statement = {
   song: ["create", "access", "update", "delete", "import"],
   service: ["create", "access", "update", "delete"],
   folder: ["create", "update", "access", "delete"],
+  collection: ["create", "update", "access", "delete"],
+  agenda: ["create", "access", "update", "delete"],
   settings: ["manage"],
   export: ["pdf"],
   backup: ["import", "export"],
+  notification: ["sent"],
 } as const;
 
 export const ac = createAccessControl(statement);
