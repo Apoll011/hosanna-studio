@@ -229,6 +229,7 @@ export const es: typeof pt = {
         preview: "Vista previa",
         previewEmpty: "El título de la notificación aparecerá aquí.",
         now: "ahora",
+        appName: "Hosanna Studio",
       },
       delivery: {
         title: "Canal de entrega",
@@ -238,11 +239,10 @@ export const es: typeof pt = {
         push: "Push",
         pushDesc: "Alerta Firebase en los dispositivos registrados",
         both: "Ambos",
+        bothDesc: "Buzón + alerta Firebase",
         pushTitle: "Contenido del push",
         pushHint:
-          "Sustituye el texto que recibe el dispositivo. Déjelo vacío para reutilizar el mensaje de arriba.",
-        pushTitleLabel: "Título del push",
-        pushBodyLabel: "Cuerpo del push",
+          "El push usa el mismo título y descripción del mensaje de arriba; el enlace se adjunta automáticamente como link.",
         dataLabel: "Datos extra",
         addRow: "Añadir campo",
         keyPlaceholder: "clave",

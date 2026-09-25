@@ -14,6 +14,7 @@ import { useCan } from "@/src/lib/permissions/client";
 import type { AppRole } from "@/src/lib/permissions/roles";
 import { getAvatarGradient, getInitials } from "@/src/utils";
 import {
+  Bell,
   Building2,
   CreditCard,
   Info,
@@ -214,9 +215,9 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
   const [href, setHref] = useState("");
 
   // ── Delivery ─────────────────────────────────────────────────────────────
+  // The push banner always mirrors the message title/description, so there
+  // are no separate FCM title/body fields — only extra data pairs.
   const [channel, setChannel] = useState<NotificationChannel>("inbox");
-  const [pushTitle, setPushTitle] = useState("");
-  const [pushBody, setPushBody] = useState("");
   const [dataRows, setDataRows] = useState<DataRow[]>([]);
 
   const [isSending, setIsSending] = useState(false);
@@ -224,6 +225,9 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
   const isOrgTarget = target === "org";
   // Push is a single-device channel: it only exists for a picked user.
   const showPushFields = !isOrgTarget && channel !== "inbox";
+  // The type only decorates the in-app bell item, so it's pointless (and
+  // hidden) when sending a device push only.
+  const showTypeField = channel !== "push";
 
   /* ── Member loading (only needed when targeting a single user) ─────────── */
   const loadMembers = useCallback(async () => {
@@ -319,13 +323,22 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
   }, [members, query]);
 
   const finalType = typePreset === "custom" ? customType.trim() : typePreset;
+  // The server always requires a type, even when the picker is hidden for a
+  // push-only send — fall back to "info" so the form stays submittable.
+  const effectiveType =
+    finalType.length > 0 ? finalType : showTypeField ? "" : "info";
 
   const canSubmit =
     Boolean(organization) &&
     title.trim().length > 0 &&
     title.trim().length <= 255 &&
-    finalType.length > 0 &&
+    effectiveType.length > 0 &&
     (isOrgTarget || Boolean(recipient));
+
+  /* ── Preview visibility ────────────────────────────────────────────────── */
+  const showInboxPreview =
+    isOrgTarget || channel === "inbox" || channel === "both";
+  const showPushPreview = !isOrgTarget && channel !== "inbox";
 
   /* ── Actions ───────────────────────────────────────────────────────────── */
   const toggleRole = (role: AppRole) =>
@@ -350,8 +363,6 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
     setTitle("");
     setDescription("");
     setHref("");
-    setPushTitle("");
-    setPushBody("");
     setDataRows([]);
   };
 
@@ -362,7 +373,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
     setIsSending(true);
     try {
       const payload: CreateNotificationInput = {
-        type: finalType,
+        type: effectiveType,
         title: title.trim(),
       };
       if (description.trim()) payload.description = description.trim();
@@ -379,17 +390,18 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
         payload.channel = channel;
 
         if (channel !== "inbox") {
+          // Title/body are intentionally omitted: the server reuses the
+          // notification's title & description for the push banner.
           const data: Record<string, string> = {};
           dataRows.forEach((row) => {
             const key = row.key.trim();
             if (key) data[key] = row.value;
           });
+          // Mirror the deep link into the push payload as `link` so the
+          // device can open it directly from the banner.
+          if (href.trim()) data.link = href.trim();
 
-          const fcm: CreateNotificationInput["fcm"] = {};
-          if (pushTitle.trim()) fcm.title = pushTitle.trim();
-          if (pushBody.trim()) fcm.body = pushBody.trim();
-          if (Object.keys(data).length > 0) fcm.data = data;
-          if (Object.keys(fcm).length > 0) payload.fcm = fcm;
+          if (Object.keys(data).length > 0) payload.fcm = { data };
         }
       }
 
@@ -704,153 +716,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
         </div>
       </Section>
 
-      {/* ── 2. MESSAGE ──────────────────────────────────────────────────── */}
-      <Section
-        icon={<Sparkles className="w-5 h-5" />}
-        title={t("settings.notifications.content.title")}
-        desc={t("settings.notifications.content.desc")}
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-3 space-y-4">
-            {/* Type */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
-                {t("settings.notifications.content.typeLabel")}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {TYPE_PRESETS.map((preset) => {
-                  const isActive = typePreset === preset.value;
-                  return (
-                    <button
-                      key={preset.value}
-                      type="button"
-                      onClick={() => setTypePreset(preset.value)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
-                        isActive
-                          ? "bg-m3-primary text-white border-m3-primary shadow-sm shadow-m3-primary/20"
-                          : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-m3-primary/50"
-                      }`}
-                    >
-                      {preset.icon}
-                      {t(
-                        `settings.notifications.content.types.${preset.value}` as "settings.notifications.content.types.info",
-                      )}
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => setTypePreset("custom")}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
-                    typePreset === "custom"
-                      ? "bg-m3-primary text-white border-m3-primary shadow-sm shadow-m3-primary/20"
-                      : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-m3-primary/50"
-                  }`}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  {t("settings.notifications.content.types.custom")}
-                </button>
-              </div>
-              {typePreset === "custom" && (
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    value={customType}
-                    maxLength={128}
-                    onChange={(e) => setCustomType(e.target.value)}
-                    placeholder={t(
-                      "settings.notifications.content.customTypePlaceholder",
-                    )}
-                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-m3-primary transition-colors"
-                  />
-                </div>
-              )}
-            </div>
-
-            <Input
-              label={t("settings.notifications.content.titleLabel")}
-              placeholder={t("settings.notifications.content.titlePlaceholder")}
-              value={title}
-              maxLength={255}
-              required
-              onChange={(e) => setTitle(e.target.value)}
-            />
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold text-m3-text/60 uppercase tracking-wider ml-1">
-                {t("settings.notifications.content.descriptionLabel")}
-              </label>
-              <textarea
-                value={description}
-                maxLength={1000}
-                rows={3}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={t(
-                  "settings.notifications.content.descriptionPlaceholder",
-                )}
-                className="w-full rounded-xl border border-m3-border hover:border-m3-primary/30 focus:border-m3-primary bg-m3-card text-m3-text text-sm px-4 py-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-m3-primary/20 resize-y"
-              />
-            </div>
-
-            <Input
-              label={t("settings.notifications.content.linkLabel")}
-              placeholder={t("settings.notifications.content.linkPlaceholder")}
-              helperText={t("settings.notifications.content.linkHint")}
-              value={href}
-              maxLength={2048}
-              icon={<Link2 className="w-4 h-4" />}
-              onChange={(e) => setHref(e.target.value)}
-            />
-          </div>
-
-          {/* Live preview */}
-          <div className="lg:col-span-2">
-            <p className="text-[11px] font-bold text-m3-text/60 uppercase tracking-wider ml-1 mb-2">
-              {t("settings.notifications.content.preview")}
-            </p>
-            <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
-              <div className="flex gap-3 items-start">
-                <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 shadow-xs shrink-0 mt-0.5">
-                  {previewIcon}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2 mb-0.5">
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                      {title.trim() ||
-                        t("settings.notifications.content.previewEmpty")}
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-m3-primary shrink-0" />
-                  </div>
-                  {description.trim() && (
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                      {description.trim()}
-                    </p>
-                  )}
-                  <span className="text-[10px] text-slate-400 mt-1.5 block">
-                    {t("settings.notifications.content.now")}
-                  </span>
-                </div>
-              </div>
-              {href.trim() && (
-                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1.5 text-[10px] font-mono text-slate-400 truncate">
-                  <Link2 className="w-3 h-3 shrink-0" />
-                  {href.trim()}
-                </div>
-              )}
-              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
-                <span className="uppercase tracking-wider">
-                  {t("settings.notifications.content.typeLabel")}:
-                </span>
-                <span className="font-mono text-slate-500 dark:text-slate-400 truncate">
-                  {finalType || "—"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Section>
-
-      {/* ── 3. DELIVERY (single user only) ──────────────────────────────── */}
+      {/* ── 2. DELIVERY (single user only) ──────────────────────────────── */}
       {!isOrgTarget && (
         <Section
           icon={<Smartphone className="w-5 h-5" />}
@@ -876,7 +742,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
                   value: "inbox",
                   label: t("settings.notifications.delivery.inbox"),
                   desc: t("settings.notifications.delivery.inboxDesc"),
-                  icon: <Info className="w-4 h-4" />,
+                  icon: <Bell className="w-4 h-4" />,
                 },
                 {
                   value: "push",
@@ -887,7 +753,7 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
                 {
                   value: "both",
                   label: t("settings.notifications.delivery.both"),
-                  desc: t("settings.notifications.delivery.pushDesc"),
+                  desc: t("settings.notifications.delivery.bothDesc"),
                   icon: <Sparkles className="w-4 h-4" />,
                 },
               ]}
@@ -905,25 +771,16 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Input
-                    label={t("settings.notifications.delivery.pushTitleLabel")}
-                    placeholder={title.trim()}
-                    value={pushTitle}
-                    maxLength={255}
-                    onChange={(e) => setPushTitle(e.target.value)}
-                  />
-                  <Input
-                    label={t("settings.notifications.delivery.pushBodyLabel")}
-                    placeholder={
-                      description.trim() ||
-                      t("settings.notifications.content.titlePlaceholder")
-                    }
-                    value={pushBody}
-                    maxLength={1000}
-                    onChange={(e) => setPushBody(e.target.value)}
-                  />
-                </div>
+                {/* The deep link is mirrored into the push data automatically. */}
+                {href.trim() && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-mono">
+                    <Link2 className="w-3.5 h-3.5 text-m3-primary shrink-0" />
+                    <span className="text-slate-400 shrink-0">link:</span>
+                    <span className="text-slate-600 dark:text-slate-300 truncate">
+                      {href.trim()}
+                    </span>
+                  </div>
+                )}
 
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
@@ -992,6 +849,200 @@ export const NotificationsTab: React.FC<NotificationsTabProps> = ({
           </div>
         </Section>
       )}
+
+      {/* ── 3. MESSAGE ──────────────────────────────────────────────────── */}
+      <Section
+        icon={<Sparkles className="w-5 h-5" />}
+        title={t("settings.notifications.content.title")}
+        desc={t("settings.notifications.content.desc")}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3 space-y-4">
+            {/* Type — only decorates the in-app bell item */}
+            {showTypeField && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+                  {t("settings.notifications.content.typeLabel")}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {TYPE_PRESETS.map((preset) => {
+                    const isActive = typePreset === preset.value;
+                    return (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => setTypePreset(preset.value)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-m3-primary text-white border-m3-primary shadow-sm shadow-m3-primary/20"
+                            : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-m3-primary/50"
+                        }`}
+                      >
+                        {preset.icon}
+                        {t(
+                          `settings.notifications.content.types.${preset.value}` as "settings.notifications.content.types.info",
+                        )}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setTypePreset("custom")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
+                      typePreset === "custom"
+                        ? "bg-m3-primary text-white border-m3-primary shadow-sm shadow-m3-primary/20"
+                        : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-m3-primary/50"
+                    }`}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {t("settings.notifications.content.types.custom")}
+                  </button>
+                </div>
+                {typePreset === "custom" && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={customType}
+                      maxLength={128}
+                      onChange={(e) => setCustomType(e.target.value)}
+                      placeholder={t(
+                        "settings.notifications.content.customTypePlaceholder",
+                      )}
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-m3-primary transition-colors"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Input
+              label={t("settings.notifications.content.titleLabel")}
+              placeholder={t("settings.notifications.content.titlePlaceholder")}
+              value={title}
+              maxLength={255}
+              required
+              onChange={(e) => setTitle(e.target.value)}
+            />
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-bold text-m3-text/60 uppercase tracking-wider ml-1">
+                {t("settings.notifications.content.descriptionLabel")}
+              </label>
+              <textarea
+                value={description}
+                maxLength={1000}
+                rows={3}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t(
+                  "settings.notifications.content.descriptionPlaceholder",
+                )}
+                className="w-full rounded-xl border border-m3-border hover:border-m3-primary/30 focus:border-m3-primary bg-m3-card text-m3-text text-sm px-4 py-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-m3-primary/20 resize-y"
+              />
+            </div>
+
+            <Input
+              label={t("settings.notifications.content.linkLabel")}
+              placeholder={t("settings.notifications.content.linkPlaceholder")}
+              helperText={t("settings.notifications.content.linkHint")}
+              value={href}
+              maxLength={2048}
+              icon={<Link2 className="w-4 h-4" />}
+              onChange={(e) => setHref(e.target.value)}
+            />
+          </div>
+
+          {/* Live preview — one mock per delivery channel */}
+          <div className="lg:col-span-2 space-y-4">
+            <p className="text-[11px] font-bold text-m3-text/60 uppercase tracking-wider ml-1 mb-2">
+              {t("settings.notifications.content.preview")}
+            </p>
+
+            {showInboxPreview && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  <Bell className="w-3 h-3" />
+                  {t("settings.notifications.delivery.inbox")}
+                </div>
+                <div className="p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs">
+                  <div className="flex gap-3 items-start">
+                    <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 shadow-xs shrink-0 mt-0.5">
+                      {previewIcon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                          {title.trim() ||
+                            t("settings.notifications.content.previewEmpty")}
+                        </span>
+                        <span className="w-2 h-2 rounded-full bg-m3-primary shrink-0" />
+                      </div>
+                      {description.trim() && (
+                        <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                          {description.trim()}
+                        </p>
+                      )}
+                      <span className="text-[10px] text-slate-400 mt-1.5 block">
+                        {t("settings.notifications.content.now")}
+                      </span>
+                    </div>
+                  </div>
+                  {href.trim() && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
+                      <Link2 className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{href.trim()}</span>
+                    </div>
+                  )}
+                  <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
+                    <span className="uppercase tracking-wider">
+                      {t("settings.notifications.content.typeLabel")}:
+                    </span>
+                    <span className="font-mono text-slate-500 dark:text-slate-400 truncate">
+                      {effectiveType || "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showPushPreview && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  <Smartphone className="w-3 h-3" />
+                  {t("settings.notifications.delivery.push")}
+                </div>
+                <div className="rounded-2xl bg-linear-to-b from-slate-700 to-slate-900 border border-slate-600/50 shadow-lg p-3.5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-4 h-4 rounded-md bg-m3-primary flex items-center justify-center shrink-0">
+                      <Bell className="w-2.5 h-2.5 text-white" />
+                    </span>
+                    <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider truncate">
+                      {t("settings.notifications.content.appName")}
+                    </span>
+                    <span className="text-[10px] text-white/50 ml-auto shrink-0">
+                      {t("settings.notifications.content.now")}
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-white leading-snug">
+                    {title.trim() ||
+                      t("settings.notifications.content.previewEmpty")}
+                  </p>
+                  <p className="text-[11px] text-slate-300 leading-snug mt-0.5">
+                    {description.trim() || title.trim()}
+                  </p>
+                  {href.trim() && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg bg-white/10 text-slate-200">
+                      <Link2 className="w-3 h-3 shrink-0" />
+                      <span className="text-[10px] font-mono truncate">
+                        {href.trim()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Section>
 
       {/* ── 4. SEND ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
