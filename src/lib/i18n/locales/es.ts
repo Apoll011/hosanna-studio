@@ -981,7 +981,7 @@ export const es: typeof pt = {
         one: "1 usuario por notificar",
         other: "{count} usuarios por notificar",
       },
-      allNotified: "Todos los asignados ya fueron notificados.",
+      allNotified: "Sin asignaciones por notificar.",
       updateSection: "Cambios del evento",
       noPendingChanges: "Sin cambios por notificar.",
       datePending: "Fecha cambiada — aún por notificar.",

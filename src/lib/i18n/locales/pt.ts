@@ -976,7 +976,7 @@ export const pt = {
         one: "1 utilizador por notificar",
         other: "{count} utilizadores por notificar",
       },
-      allNotified: "Todos os atribuídos já foram notificados.",
+      allNotified: "Sem atribuições por notificar.",
       updateSection: "Alterações do evento",
       noPendingChanges: "Sem alterações por notificar.",
       datePending: "Data alterada — ainda por notificar.",

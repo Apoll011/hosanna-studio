@@ -967,7 +967,7 @@ export const en: typeof pt = {
         one: "1 user to notify",
         other: "{count} users to notify",
       },
-      allNotified: "Everyone assigned has already been notified.",
+      allNotified: "No assignments to notify about.",
       updateSection: "Event changes",
       noPendingChanges: "No changes to notify about.",
       datePending: "Date changed — not yet notified.",

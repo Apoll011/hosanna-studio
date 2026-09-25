@@ -430,13 +430,8 @@ export function useAgendaNotifications(options: {
     pendingDate,
     pendingLocation,
     markChanged,
-    clearChanged,
     notifyAssignments,
     notifyUpdate,
     notifyRemoval,
   };
 }
-
-export type UseAgendaNotificationsReturn = ReturnType<
-  typeof useAgendaNotifications
->;
