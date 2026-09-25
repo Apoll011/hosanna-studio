@@ -1,6 +1,13 @@
 export { ApiClient, ApiError } from "./client";
 export { backupApi } from "./backup";
 export { foldersApi } from "./folders";
+export {
+  notificationsApi,
+  type CreateNotificationInput,
+  type CreateNotificationResult,
+  type NotificationChannel,
+  type NotificationFcmMessage,
+} from "./notifications";
 export { configureApiClient, getApiClient } from "./http";
 export { servicesApi } from "./services";
 export { parseSong, songsApi } from "./songs";

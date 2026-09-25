@@ -9,6 +9,7 @@ import { useI18n } from "@/src/lib/i18n";
 import {
   AlertTriangle,
   AppWindow,
+  Bell,
   Building2,
   CreditCard,
   Info,
@@ -29,6 +30,7 @@ import { BillingTab } from "../components/settings/BillingTab";
 import { FeaturesTab } from "../components/settings/FeaturesTab";
 import { GeneralTab } from "../components/settings/GeneralTab";
 import { MembersTab } from "../components/settings/MembersTab";
+import { NotificationsTab } from "../components/settings/NotificationsTab";
 import { WorkspaceTab } from "../components/settings/WorkspaceTab";
 import { useCan } from "../lib/permissions/client";
 
@@ -41,6 +43,7 @@ type TabType =
   | "workspace"
   | "account"
   | "members"
+  | "notifications"
   | "billing"
   | "app"
   | "features"
@@ -50,6 +53,7 @@ const VALID_TABS: TabType[] = [
   "account",
   "workspace",
   "members",
+  "notifications",
   "billing",
   "general",
   "app",
@@ -116,6 +120,7 @@ export const SettingsPage: React.FC = () => {
 
   const { granted: canUpdate } = useCan("organization.update");
   const { granted: canAccessBilling } = useCan("billing.access");
+  const { granted: canSendNotifications } = useCan("notification.sent");
 
   const tabs = [
     {
@@ -138,6 +143,13 @@ export const SettingsPage: React.FC = () => {
       icon: Users,
       requiresNetwork: true,
       show: true,
+    },
+    {
+      id: "notifications",
+      label: t("settings.tabs.notifications"),
+      icon: Bell,
+      requiresNetwork: true,
+      show: canSendNotifications,
     },
     {
       id: "billing",
@@ -237,6 +249,7 @@ export const SettingsPage: React.FC = () => {
                 "account",
                 "workspace",
                 "members",
+                "notifications",
                 "billing",
                 "general",
               ].includes(activeTab)
@@ -253,6 +266,10 @@ export const SettingsPage: React.FC = () => {
               setIsTogglingWs={setIsTogglingWs}
             />
             <MembersTab active={activeTab === "members"} />
+            <NotificationsTab
+              active={activeTab === "notifications"}
+              showToast={showToast}
+            />
             <BillingTab
               active={activeTab === "billing"}
               showToast={showToast}
