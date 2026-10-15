@@ -111,7 +111,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const { t } = useI18n();
   const { granted: canViewLibraryHealth } = useCan("library.health");
   const shortName = organization?.metadata?.shortName || "";
-  const isDriveRoot = view === "explorer" && currentFolderId === null;
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isOrgMenuOpen, setIsOrgMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -167,7 +166,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         data-tour="sidebar"
         className={`${
           isSidebarOpen
-            ? "flex absolute inset-y-0 left-0 z-50 bg-m3-sidebar shadow-[var(--shadow-lg)]"
+            ? "flex absolute inset-y-0 left-0 z-50 bg-m3-sidebar shadow-lg"
             : "hidden"
         } md:flex md:relative md:bg-m3-sidebar/30 ${
           isSidebarCollapsed ? "md:w-20" : "md:w-64"
@@ -187,7 +186,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               disabled={!isSidebarCollapsed}
               title={isSidebarCollapsed ? t("sidebar.expand") : undefined}
               aria-label={isSidebarCollapsed ? t("sidebar.expand") : undefined}
-              className={`w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center border border-m3-border/50 bg-m3-card text-m3-secondary shadow-[var(--shadow-sm)] shrink-0 relative group transition-colors duration-200 ${
+              className={`w-11 h-11 rounded-md flex items-center justify-center border border-m3-border/50 bg-m3-card text-m3-secondary shadow-[var(--shadow-sm)] shrink-0 relative group transition-colors duration-200 ${
                 isSidebarCollapsed
                   ? "cursor-pointer hover:bg-m3-hover hover:border-m3-border hover:text-m3-text"
                   : ""
@@ -196,7 +195,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               <img
                 src="/favicon.png"
                 alt="Hosanna Studio"
-                className={`w-10 h-10 object-contain rounded-[var(--radius-md)] transition-opacity duration-200 ${
+                className={`w-10 h-10 object-contain rounded-md transition-opacity duration-200 ${
                   isSidebarCollapsed ? "group-hover:opacity-0" : ""
                 }`}
               />
@@ -240,7 +239,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     title={t("sidebar.switchWorkspace")}
                     aria-haspopup="menu"
                     aria-expanded={isOrgMenuOpen}
-                    className="mt-1 inline-flex max-w-full min-w-0 items-center gap-1 rounded-[var(--radius-md)] text-caption text-m3-secondary transition-colors hover:text-m3-text cursor-pointer"
+                    className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-md text-caption text-m3-secondary transition-colors hover:text-m3-text cursor-pointer"
                   >
                     <span className="truncate min-w-0">
                       {organization?.metadata?.shortName || organization.slug}
@@ -339,13 +338,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               ? t("sidebar.drive", { name: shortName })
               : undefined
           }
-          className={`${NAV_BASE} ${isDriveRoot ? NAV_ACTIVE : NAV_INACTIVE}`}
+          className={`${NAV_BASE} ${view === "explorer" ? NAV_ACTIVE : NAV_INACTIVE}`}
         >
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <HardDrive
                 className={`w-4.5 h-4.5 ${
-                  isDriveRoot ? "text-m3-primary" : "text-m3-secondary"
+                  view === "explorer" ? "text-m3-primary" : "text-m3-secondary"
                 }`}
               />
             </div>
@@ -354,7 +353,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </span>
           </div>
           <div className={collapseBadge()}>
-            <Badge variant={isDriveRoot ? "accent" : "neutral"}>
+            <Badge variant={view === "explorer" ? "accent" : "neutral"}>
               {rootSongsCount + rootFoldersCount}
             </Badge>
           </div>
@@ -445,7 +444,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
               <Church
                 className={`w-4.5 h-4.5 ${
-                  view === "services" ? "text-m3-primary" : "text-m3-secondary"
+                  view === "services" || view === "service-editor"
+                    ? "text-m3-primary"
+                    : "text-m3-secondary"
                 }`}
               />
             </div>
