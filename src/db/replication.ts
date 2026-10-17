@@ -680,7 +680,7 @@ async function replicateCollection<
       if (live.length > 0) {
         await (
           collection as unknown as HosanaCollection<T>
-        )._mergeBatchFromServer(live);
+        )._mergeBatchFromServer(live, { force: true });
       }
     }
   }

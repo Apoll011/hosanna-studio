@@ -282,7 +282,10 @@ export class HosanaCollection<T extends AnyDoc> {
       this._store.set(d.id, d);
     }
     await idbBulkPut(this._db, this._storeName, enriched);
-    notifyCollection(this._storeName);
+    notifyCollection(
+      this._storeName,
+      enriched.map((d) => d.id),
+    );
     if (origin === "local") notifyLocalChange(this._storeName);
   }
 
@@ -290,18 +293,59 @@ export class HosanaCollection<T extends AnyDoc> {
    * @internal Merge a doc from the server, preserving local-only fields.
    * If a local field is missing or null on the existing doc, it is (re)computed.
    * Computed fields are always recalculated.
+   *
+   * Drops stale server docs if local doc was updated more recently (e.g. edit during in-flight pull).
    */
-  async _mergeFromServer(serverDoc: T): Promise<void> {
+  async _mergeFromServer(
+    serverDoc: T,
+    options: { force?: boolean } = {},
+  ): Promise<void> {
+    if (!options.force) {
+      const existing = this._store.get(serverDoc.id);
+      if (
+        existing &&
+        typeof (existing as Record<string, unknown>).updatedAt === "string" &&
+        typeof (serverDoc as Record<string, unknown>).updatedAt === "string" &&
+        (existing as Record<string, unknown>).updatedAt >
+          (serverDoc as Record<string, unknown>).updatedAt
+      ) {
+        return;
+      }
+    }
     await this._put(this._mergeLocalFields(serverDoc), "remote");
   }
 
   /**
    * @internal Batch-merge server docs in a single IDB transaction.
    * Much faster than N individual `_mergeFromServer` calls during pull.
+   *
+   * Drops stale server docs if local doc was updated more recently (e.g. edit during in-flight pull).
    */
-  async _mergeBatchFromServer(serverDocs: T[]): Promise<void> {
+  async _mergeBatchFromServer(
+    serverDocs: T[],
+    options: { force?: boolean } = {},
+  ): Promise<void> {
     if (serverDocs.length === 0) return;
-    const merged = serverDocs.map((d) => this._mergeLocalFields(d));
+    const force = options.force ?? false;
+    const eligibleDocs = force
+      ? serverDocs
+      : serverDocs.filter((sDoc) => {
+          const existing = this._store.get(sDoc.id);
+          if (
+            existing &&
+            typeof (existing as Record<string, unknown>).updatedAt ===
+              "string" &&
+            typeof (sDoc as Record<string, unknown>).updatedAt === "string" &&
+            (existing as Record<string, unknown>).updatedAt >
+              (sDoc as Record<string, unknown>).updatedAt
+          ) {
+            return false;
+          }
+          return true;
+        });
+
+    if (eligibleDocs.length === 0) return;
+    const merged = eligibleDocs.map((d) => this._mergeLocalFields(d));
     await this._putBatch(merged, "remote");
   }
 
@@ -313,7 +357,7 @@ export class HosanaCollection<T extends AnyDoc> {
     if (ids.length === 0) return;
     for (const id of ids) this._store.delete(id);
     await idbBulkDelete(this._db, this._storeName, ids);
-    notifyCollection(this._storeName);
+    notifyCollection(this._storeName, ids);
   }
 
   /** Preserve non-null local-only fields across a server merge. */
