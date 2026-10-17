@@ -1493,14 +1493,16 @@ export const pt = {
     searchIcons: "Pesquisar...",
     noIconFound: 'Nenhum ícone encontrado para "{query}"',
     saving: "A guardar...",
-    importCifraTitle: "Importar Cifra (Cifra Club ou Ultimate Guitar)",
+    importCifraTitle: "Importar Cifra (Provedores de Terceiros)",
+    thirdPartyProvidersTitle: "Importar Cifra & Provedores de Terceiros",
+    tabOnline: "Link Online",
+    tabRawText: "Texto da Cifra",
     pasteLink:
-      "Cole o link direto da página da cifra no Cifra Club ou Ultimate Guitar.",
+      "Cole o link direto da página da cifra de um provedor suportado.",
     songLink: "Link da Música / Cifra",
-    pleaseEnterLink:
-      "Por favor, introduza um link do Cifra Club ou Ultimate Guitar.",
+    pleaseEnterLink: "Por favor, introduza um link de cifra válido.",
     pleaseEnterValidLink:
-      "Por favor, introduza um link válido do Cifra Club ou Ultimate Guitar.",
+      "Por favor, introduza um link de um provedor suportado ({providers}).",
     errorGetCifra: "Erro ao obter a cifra: {error}",
     cifraNotFound: "Cifra não encontrada.",
     unexpectedError: "Ocorreu um erro inesperado ao importar a cifra.",
@@ -1516,6 +1518,20 @@ export const pt = {
     copyChordPro: "Copiar ChordPro",
     copied: "Copiado!",
     copyFailed: "Não foi possível copiar para a área de transferência",
+    rawTextDesc:
+      "Cole o texto com as cifras sobre a letra. O texto será convertido para o formato ChordPro.",
+    rawTextLabel: "Texto da Cifra (Acordes e Letra)",
+    rawTextPlaceholder:
+      "Cole a cifra e a letra aqui (acordes na linha acima da letra)...",
+    songTitle: "Nome da Música",
+    songTitlePlaceholder: "ex: Salvador Maravilhoso",
+    artist: "Artista",
+    artistPlaceholder: "ex: Diante do Trono",
+    pleaseEnterText: "Por favor, insira ou cole o texto da cifra.",
+    pleaseEnterSongTitle: "Por favor, insira o nome da música.",
+    supportedProviders: "Provedores Suportados",
+    detectedProvider: "Detetado: {provider}",
+    backToEdit: "Voltar para Edição",
   },
 
   explorer: {

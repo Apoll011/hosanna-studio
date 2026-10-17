@@ -1478,13 +1478,16 @@ export const en: typeof pt = {
     searchIcons: "Search...",
     noIconFound: 'No icon found for "{query}"',
     saving: "Saving...",
-    importCifraTitle: "Import Chords (Cifra Club or Ultimate Guitar)",
+    importCifraTitle: "Import Chords (3rd-Party Providers)",
+    thirdPartyProvidersTitle: "Import Chords & 3rd-Party Providers",
+    tabOnline: "Online Link",
+    tabRawText: "Raw Cifra Text",
     pasteLink:
-      "Paste the direct link to the chord page from Cifra Club or Ultimate Guitar.",
+      "Paste the direct link to the chord page from a supported provider.",
     songLink: "Song / Chord Link",
-    pleaseEnterLink: "Please enter a Cifra Club or Ultimate Guitar link.",
+    pleaseEnterLink: "Please enter a valid chord link.",
     pleaseEnterValidLink:
-      "Please enter a valid Cifra Club or Ultimate Guitar link.",
+      "Please enter a link from a supported provider ({providers}).",
     errorGetCifra: "Error retrieving chords: {error}",
     cifraNotFound: "Chords not found.",
     unexpectedError: "An unexpected error occurred while importing chords.",
@@ -1500,6 +1503,20 @@ export const en: typeof pt = {
     copyChordPro: "Copy ChordPro",
     copied: "Copied!",
     copyFailed: "Couldn't copy to clipboard",
+    rawTextDesc:
+      "Paste plain text with chords placed directly over lyrics. It will be converted into ChordPro format.",
+    rawTextLabel: "Cifra Text (Chords & Lyrics)",
+    rawTextPlaceholder:
+      "Paste chords and lyrics here (chords on line above lyrics)...",
+    songTitle: "Song Title",
+    songTitlePlaceholder: "e.g. Salvador Maravilhoso",
+    artist: "Artist",
+    artistPlaceholder: "e.g. Diante do Trono",
+    pleaseEnterText: "Please enter or paste the cifra text.",
+    pleaseEnterSongTitle: "Please enter the song title.",
+    supportedProviders: "Supported Providers",
+    detectedProvider: "Detected: {provider}",
+    backToEdit: "Back to Edit",
   },
 
   explorer: {
