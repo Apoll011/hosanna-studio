@@ -34,7 +34,7 @@ import { AddToCollectionModal } from "../modals/AddToCollectionModal";
 import { BatchDeleteModal } from "../modals/BatchDeleteModal";
 import { BatchMoveModal } from "../modals/BatchMoveModal";
 import { BatchTagModal } from "../modals/BatchTagModal";
-import { CifraClubImportModal } from "../modals/CifraModal";
+import { ThirdPartyProvidersModal } from "../modals/ThirdPartyProvidersModal";
 import { CreateCollectionModal } from "../modals/CreateCollectionModal";
 import { CustomizeFolderModal } from "../modals/CustomizeFolderModal";
 import { MoveSongModal } from "../modals/MoveSongModal";
@@ -679,7 +679,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
 
   return (
     <>
-      <CifraClubImportModal
+      <ThirdPartyProvidersModal
         isOpen={activeModal === "cifra-import"}
         handleClose={onCloseModal}
         handleSave={onCifraClubSubmit}

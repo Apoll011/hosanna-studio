@@ -1500,14 +1500,16 @@ export const es: typeof pt = {
     searchIcons: "Buscar...",
     noIconFound: 'Ningún icono encontrado para "{query}"',
     saving: "Guardando...",
-    importCifraTitle: "Importar Acordes (Cifra Club o Ultimate Guitar)",
+    importCifraTitle: "Importar Acordes (Proveedores de Terceros)",
+    thirdPartyProvidersTitle: "Importar Acordes & Proveedores de Terceros",
+    tabOnline: "Enlace Online",
+    tabRawText: "Texto de Acordes",
     pasteLink:
-      "Pegue el enlace directo de la página de acordes en Cifra Club o Ultimate Guitar.",
+      "Pegue el enlace directo de la página de acordes de un proveedor compatible.",
     songLink: "Enlace de la Canción / Acordes",
-    pleaseEnterLink:
-      "Por favor, introduzca un enlace de Cifra Club o Ultimate Guitar.",
+    pleaseEnterLink: "Por favor, introduzca un enlace de acordes válido.",
     pleaseEnterValidLink:
-      "Por favor, introduzca un enlace válido de Cifra Club o Ultimate Guitar.",
+      "Por favor, introduzca un enlace de un proveedor compatible ({providers}).",
     errorGetCifra: "Error al obtener los acordes: {error}",
     cifraNotFound: "Acordes no encontrados.",
     unexpectedError: "Ocurrió un error inesperado al importar los acordes.",
@@ -1523,6 +1525,20 @@ export const es: typeof pt = {
     copyChordPro: "Copiar ChordPro",
     copied: "¡Copiado!",
     copyFailed: "No se pudo copiar al portapapeles",
+    rawTextDesc:
+      "Pega el texto con los acordes sobre la letra. Se convertirá al formato ChordPro.",
+    rawTextLabel: "Texto de la Cifra (Acordes y Letra)",
+    rawTextPlaceholder:
+      "Pega los acordes y la letra aquí (acordes arriba de la letra)...",
+    songTitle: "Título de la Canción",
+    songTitlePlaceholder: "ej: Salvador Maravilloso",
+    artist: "Artista",
+    artistPlaceholder: "ej: Diante do Trono",
+    pleaseEnterText: "Por favor, introduzca o pegue el texto de la cifra.",
+    pleaseEnterSongTitle: "Por favor, introduzca el título de la canción.",
+    supportedProviders: "Proveedores Compatibles",
+    detectedProvider: "Detectado: {provider}",
+    backToEdit: "Volver a Edición",
   },
 
   explorer: {

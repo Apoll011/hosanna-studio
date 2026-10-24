@@ -61,22 +61,43 @@ export function notify(collection: string, id: string): void {
 }
 
 /**
- * Notify all listeners for a collection (used after bulk writes).
+ * Notify listeners for a collection.
  *
- * Bug fix (original): the old implementation iterated ALL keys and also fired
- * the "*" scope set twice (once via the prefix check, once explicitly above it).
- * This rewrite collects each unique Set exactly once.
+ * If `changedIds` is provided, notifies the collection scope ("*") AND the
+ * specific doc-level listeners for each changed ID.
+ * If `changedIds` is omitted, notifies the collection scope ("*") and all doc
+ * listeners for this collection (e.g. after a full collection wipe).
  */
-export function notifyCollection(collection: string): void {
-  const prefix = `${collection}:`;
-  // Use a Set of Sets to deduplicate — each listener set fires exactly once.
-  const fired = new Set<Set<Listener>>();
+export function notifyCollection(
+  collection: string,
+  changedIds?: readonly string[],
+): void {
+  // Always notify collection-level subscribers (queries like find())
+  const colSet = listeners.get(busKey(collection, "*"));
+  if (colSet) {
+    for (const fn of Array.from(colSet)) fn();
+  }
 
-  for (const [key, set] of listeners) {
-    if (key.startsWith(prefix)) {
-      if (!fired.has(set)) {
-        fired.add(set);
-        for (const fn of Array.from(set)) fn();
+  if (changedIds) {
+    // Notify specific doc-level listeners for each changed ID
+    for (const id of changedIds) {
+      const docSet = listeners.get(busKey(collection, id));
+      if (docSet) {
+        for (const fn of Array.from(docSet)) fn();
+      }
+    }
+  } else {
+    // If changedIds is omitted, notify all listeners for this collection
+    const prefix = `${collection}:`;
+    const fired = new Set<Set<Listener>>();
+    if (colSet) fired.add(colSet);
+
+    for (const [key, set] of listeners) {
+      if (key.startsWith(prefix)) {
+        if (!fired.has(set)) {
+          fired.add(set);
+          for (const fn of Array.from(set)) fn();
+        }
       }
     }
   }

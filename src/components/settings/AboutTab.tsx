@@ -30,11 +30,6 @@ export const AboutTab: React.FC<{ active: boolean }> = ({ active }) => {
   if (!active) return null;
   const productionDependencies = [
     // --- Dependências Existentes ---
-    {
-      name: "RxDB",
-      license: "Apache-2.0",
-      type: "Offline-First Database",
-    },
     { name: "Better Auth", license: "MIT", type: "Autenticação & RBAC" },
     { name: "@tailwindcss/vite", license: "MIT", type: "Estilização" },
     { name: "Lucide React", license: "ISC", type: "Ícones" },
@@ -63,7 +58,6 @@ export const AboutTab: React.FC<{ active: boolean }> = ({ active }) => {
       license: "MIT",
       type: "Comunicação / Notificações",
     },
-    { name: "cheerio", license: "MIT", type: "Parsing & Scraping HTML" },
     {
       name: "dotenv",
       license: "BSD-2-Clause",
@@ -82,18 +76,7 @@ export const AboutTab: React.FC<{ active: boolean }> = ({ active }) => {
       type: "Tratamento de Erros UI",
     },
     { name: "react-hook-form", license: "MIT", type: "Gestão de Formulários" },
-    {
-      name: "rxdb",
-      license: "Apache-2.0",
-      type: "Base de Dados Reativa (Client-Side)",
-    },
-    { name: "rxjs", license: "Apache-2.0", type: "Programação Reativa" },
     { name: "tailwindcss", license: "MIT", type: "Estilização" },
-
-    // --- Adicionadas do @hosanna/shared ---
-    { name: "react", license: "MIT", type: "Framework UI" },
-    { name: "react-dom", license: "MIT", type: "Renderização UI" },
-    { name: "react-youtube", license: "MIT", type: "Integração Vídeo YouTube" },
   ];
   return (
     <div className="space-y-6">

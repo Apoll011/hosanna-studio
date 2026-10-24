@@ -109,12 +109,30 @@ export const SongEditorPage: React.FC = () => {
     settings.transposeVal,
   ]);
 
+  const currentSongIdRef = useRef<string | null>(null);
+  const appliedUpdatedAtRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (song) {
+    if (!song) return;
+
+    // First load or navigated to a different song: initialize editor
+    if (song.id !== currentSongIdRef.current) {
+      currentSongIdRef.current = song.id;
+      appliedUpdatedAtRef.current = song.updatedAt;
       setContent(song.content);
       setHasUnsavedChanges(false);
+      return;
     }
-  }, [song]);
+
+    // Same song: never overwrite active unsaved user changes!
+    if (hasUnsavedChanges) return;
+
+    // Same song with no unsaved changes: update if remote/stored version advanced
+    if (song.updatedAt && song.updatedAt !== appliedUpdatedAtRef.current) {
+      appliedUpdatedAtRef.current = song.updatedAt;
+      setContent(song.content);
+    }
+  }, [song, hasUnsavedChanges]);
 
   useEffect(() => {
     setSelectedVariant(null);
@@ -133,7 +151,6 @@ export const SongEditorPage: React.FC = () => {
 
         const updates: Partial<Song> = {
           content: updatedContent,
-          updatedAt: song.updatedAt,
         };
 
         if (meta.title) updates.title = meta.title;
@@ -141,7 +158,10 @@ export const SongEditorPage: React.FC = () => {
         if (meta.songNumber && Number(meta.songNumber))
           updates.song_number = Number(meta.songNumber);
 
-        await updateSong({ id: song.id, data: updates });
+        const updated = await updateSong({ id: song.id, data: updates });
+        if (updated?.updatedAt) {
+          appliedUpdatedAtRef.current = updated.updatedAt;
+        }
         posthog.capture("song_saved", { layout_mode: layoutMode });
         setHasUnsavedChanges(false);
         emitOnboardingEvent("song-saved");
@@ -157,12 +177,12 @@ export const SongEditorPage: React.FC = () => {
   useEffect(() => {
     if (!hasUnsavedChanges || isUpdating || isSavingRef.current) return;
 
-    const timer = setInterval(() => {
-      handleSave(deferredContent);
-    }, 60000);
+    const timer = setTimeout(() => {
+      handleSave(content);
+    }, 15000);
 
-    return () => clearInterval(timer);
-  }, [hasUnsavedChanges, deferredContent, handleSave, isUpdating]);
+    return () => clearTimeout(timer);
+  }, [hasUnsavedChanges, content, handleSave, isUpdating]);
 
   if (isLoading) {
     return (
