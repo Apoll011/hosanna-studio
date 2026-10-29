@@ -14,11 +14,14 @@ export type AiToolCallState = {
   output?: unknown;
 };
 
+export type AiMessagePart =
+  | { type: "text"; text: string }
+  | { type: "tool"; tool: AiToolCallState };
+
 export type AiChatMessage = {
   id: string;
   role: "user" | "assistant";
-  text: string;
-  tools: AiToolCallState[];
+  parts: AiMessagePart[];
   error?: string;
 };
 
@@ -30,11 +33,18 @@ export type QuickChip = {
 
 export type PageContextSnapshot = AiChatContext;
 
+export function messageText(msg: AiChatMessage): string {
+  return msg.parts
+    .filter((p): p is Extract<AiMessagePart, { type: "text" }> => p.type === "text")
+    .map((p) => p.text)
+    .join("");
+}
+
 export function toUiMessages(messages: AiChatMessage[]): AiUiMessage[] {
   return messages.map((m) => ({
     id: m.id,
     role: m.role,
-    parts: [{ type: "text", text: m.text }],
+    parts: [{ type: "text", text: messageText(m) }],
   }));
 }
 

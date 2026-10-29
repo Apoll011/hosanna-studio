@@ -63,9 +63,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
 import { useSync } from "../../contexts/SyncContext";
 import {
-  AI_APPLY_SERVICE_EVENT,
+  AI_STAGE_SERVICE_EVENT,
+  AiProposalBanner,
   aiContextBridge,
-  type AiApplyServiceDetail,
+  type AiStageServiceDetail,
 } from "../../features/ai-chat";
 import { useOrgSettings } from "../../hooks/useOrgSettings";
 import { useService, useServices } from "../../hooks/useServices";
@@ -77,8 +78,7 @@ import { MessageModal } from "./modals/Message";
 import { WelcomeModal } from "./modals/Welcome";
 
 function arrayMove<T>(array: T[], fromIndex: number, toIndex: number): T[] {
-  const newArray = [...array];
-  const [removed] = newArray.splice(fromIndex, 1);
+  const newArray = [...array];  const [removed] = newArray.splice(fromIndex, 1);
   newArray.splice(toIndex, 0, removed);
   return newArray;
 }
@@ -885,6 +885,8 @@ export const ServiceDetailPage: React.FC = () => {
   const [elements, setElements] = useState<ServiceElement[]>([]);
   const elementsRef = useRef<ServiceElement[]>([]);
   const [generalNotes, setGeneralNotes] = useState("");
+  const [stagedProposal, setStagedProposal] =
+    useState<AiStageServiceDetail | null>(null);
   const [librarySearch, setLibrarySearch] = useState("");
   const [pendingSongIds, setPendingSongIds] = useState<Record<string, number>>(
     {},
@@ -965,22 +967,32 @@ export const ServiceDetailPage: React.FC = () => {
   }, [service, elements]);
 
   useEffect(() => {
-    const onApply = (event: Event) => {
-      const detail = (event as CustomEvent<AiApplyServiceDetail>).detail;
+    const onStage = (event: Event) => {
+      const detail = (event as CustomEvent<AiStageServiceDetail>).detail;
       if (!detail?.elements) return;
       if (detail.serviceId && service && detail.serviceId !== service.id) return;
-      const next = detail.elements.map((el, index) => ({
-        ...el,
-        position: el.position ?? index,
-      }));
-      setElements(next);
-      elementsRef.current = next;
-      if (detail.notes != null) setGeneralNotes(detail.notes);
-      showToast(t("ai.chat.appliedToEditor"), "success");
+      setStagedProposal(detail);
     };
-    window.addEventListener(AI_APPLY_SERVICE_EVENT, onApply);
-    return () => window.removeEventListener(AI_APPLY_SERVICE_EVENT, onApply);
-  }, [service, showToast, t]);
+    window.addEventListener(AI_STAGE_SERVICE_EVENT, onStage);
+    return () => window.removeEventListener(AI_STAGE_SERVICE_EVENT, onStage);
+  }, [service]);
+
+  const acceptStagedProposal = () => {
+    if (!stagedProposal?.elements) return;
+    const next = stagedProposal.elements.map((el, index) => ({
+      ...el,
+      position: el.position ?? index,
+    }));
+    setElements(next);
+    elementsRef.current = next;
+    if (stagedProposal.notes != null) setGeneralNotes(stagedProposal.notes);
+    setStagedProposal(null);
+    showToast(t("ai.chat.appliedToEditor"), "success");
+  };
+
+  const declineStagedProposal = () => {
+    setStagedProposal(null);
+  };
 
   // Auto-save general notes after a short debounce when the org autoSave is on
   useEffect(() => {
@@ -1513,8 +1525,15 @@ export const ServiceDetailPage: React.FC = () => {
   return (
     <div
       data-tour="service-builder"
-      className="flex-1 flex flex-col h-full overflow-hidden bg-m3-sidebar/10"
+      className="flex-1 flex flex-col h-full overflow-hidden bg-m3-sidebar/10 relative"
     >
+      {stagedProposal && (
+        <AiProposalBanner
+          title={stagedProposal.name || service.name}
+          onAccept={acceptStagedProposal}
+          onDecline={declineStagedProposal}
+        />
+      )}
       {/* ── Top Header ────────────────────────────────────────────── */}
       <div className="h-14 bg-m3-sidebar border-b border-m3-border flex items-center justify-between px-4 shrink-0 gap-4">
         <div className="flex items-center gap-3">

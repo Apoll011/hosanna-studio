@@ -2533,6 +2533,10 @@ export const es: typeof pt = {
       toolError: "Error",
       applyToEditor: "Aplicar al editor",
       appliedToEditor: "Propuesta aplicada al editor (sin guardar).",
+      proposalTitle: "Edición propuesta por la IA",
+      proposalHint: "Revisa el diff y acepta o rechaza.",
+      accept: "Aceptar",
+      decline: "Rechazar",
       chips: {
         fixChordPro: "Corregir ChordPro",
         reviewSong: "Revisar",

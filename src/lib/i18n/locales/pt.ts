@@ -2522,6 +2522,10 @@ export const pt = {
       toolError: "Erro",
       applyToEditor: "Aplicar ao editor",
       appliedToEditor: "Proposta aplicada ao editor (por guardar).",
+      proposalTitle: "Edição proposta pela IA",
+      proposalHint: "Reveja o diff e aceite ou recuse.",
+      accept: "Aceitar",
+      decline: "Recusar",
       chips: {
         fixChordPro: "Corrigir ChordPro",
         reviewSong: "Rever",

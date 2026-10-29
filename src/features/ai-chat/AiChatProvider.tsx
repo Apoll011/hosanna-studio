@@ -5,8 +5,8 @@
 
 import { aiApi, type AiSettingsPublic } from "@/src/api/ai";
 import { useAuth } from "@/src/contexts/AuthContext";
-import { useCan } from "@/src/lib/permissions/client";
 import { deriveView } from "@/src/layouts/view";
+import { useCan } from "@/src/lib/permissions/client";
 import React, {
   createContext,
   useCallback,
@@ -20,13 +20,17 @@ import { useLocation, useParams } from "react-router-dom";
 import {
   AI_SETTINGS_CHANGED_EVENT,
   aiContextBridge,
+  dispatchStageService,
+  dispatchStageSong,
 } from "./contextBridge";
+import { extractServiceProposal, extractSongProposal } from "./proposals";
 import { chipsForContext } from "./quickActions";
 import { readUiMessageStream } from "./stream";
 import {
   newId,
   toUiMessages,
   type AiChatMessage,
+  type AiMessagePart,
   type AiToolCallState,
   type PageContextSnapshot,
   type QuickChip,
@@ -58,6 +62,11 @@ export function useAiChat(): AiChatContextValue {
     throw new Error("useAiChat must be used within AiChatProvider");
   }
   return ctx;
+}
+
+/** Safe when provider may be absent (e.g. address bar outside mount). */
+export function useAiChatOptional(): AiChatContextValue | null {
+  return useContext(AiChatCtx);
 }
 
 function buildPageContext(
@@ -97,13 +106,64 @@ function buildPageContext(
       contentExcerpt: excerpt,
     };
   }
-  if (view === "songs") {
-    return { kind: "songs_list", route: pathname };
-  }
-  if (view === "services") {
-    return { kind: "services_list", route: pathname };
-  }
+  if (view === "songs") return { kind: "songs_list", route: pathname };
+  if (view === "services") return { kind: "services_list", route: pathname };
   return { kind: "general", route: pathname };
+}
+
+function upsertToolPart(
+  parts: AiMessagePart[],
+  tool: AiToolCallState,
+): AiMessagePart[] {
+  const idx = parts.findIndex(
+    (p) => p.type === "tool" && p.tool.toolCallId === tool.toolCallId,
+  );
+  if (idx >= 0) {
+    const next = [...parts];
+    next[idx] = { type: "tool", tool };
+    return next;
+  }
+  return [...parts, { type: "tool", tool }];
+}
+
+function appendTextDelta(parts: AiMessagePart[], delta: string): AiMessagePart[] {
+  const next = [...parts];
+  const last = next[next.length - 1];
+  if (last?.type === "text") {
+    next[next.length - 1] = { type: "text", text: last.text + delta };
+    return next;
+  }
+  next.push({ type: "text", text: delta });
+  return next;
+}
+
+function maybeStageProposal(
+  toolName: string,
+  output: unknown,
+  page: PageContextSnapshot,
+) {
+  const song = extractSongProposal(output);
+  if (song) {
+    dispatchStageSong({
+      songId: song.id ?? page.songId,
+      content: song.content,
+      title: song.title ?? page.title,
+      artist: song.artist,
+      diffPreview: song.diffPreview,
+      source: toolName,
+    });
+    return;
+  }
+  const service = extractServiceProposal(output);
+  if (service) {
+    dispatchStageService({
+      serviceId: service.serviceId ?? page.serviceId,
+      name: service.name,
+      notes: service.notes,
+      elements: service.elements as never,
+      source: toolName,
+    });
+  }
 }
 
 export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -130,8 +190,7 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
     try {
-      const data = await aiApi.getSettings();
-      setSettings(data);
+      setSettings(await aiApi.getSettings());
     } catch {
       setSettings(null);
     }
@@ -142,15 +201,11 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [refreshSettings]);
 
   useEffect(() => {
-    const onChanged = () => {
-      void refreshSettings();
-    };
+    const onChanged = () => void refreshSettings();
     window.addEventListener(AI_SETTINGS_CHANGED_EVENT, onChanged);
-    return () =>
-      window.removeEventListener(AI_SETTINGS_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(AI_SETTINGS_CHANGED_EVENT, onChanged);
   }, [refreshSettings]);
 
-  // Re-read bridge when route changes or periodically while open
   useEffect(() => {
     setContextTick((n) => n + 1);
   }, [location.pathname, params.id]);
@@ -163,16 +218,12 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const pageContext = useMemo(
     () => buildPageContext(location.pathname, slugPrefix, params),
-    // contextTick forces re-read of bridge content
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [location.pathname, slugPrefix, params.id, contextTick],
   );
 
   const chips = useMemo(() => chipsForContext(pageContext), [pageContext]);
-
-  const visible = Boolean(
-    canUse && settings?.configured && settings?.enabled,
-  );
+  const visible = Boolean(canUse && settings?.configured && settings?.enabled);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -192,18 +243,18 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!trimmed || streaming) return;
 
       setError(null);
+      setOpen(true);
+
       const userMsg: AiChatMessage = {
         id: newId(),
         role: "user",
-        text: trimmed,
-        tools: [],
+        parts: [{ type: "text", text: trimmed }],
       };
       const assistantId = newId();
       const assistantMsg: AiChatMessage = {
         id: assistantId,
         role: "assistant",
-        text: "",
-        tools: [],
+        parts: [],
       };
 
       const nextMessages = [...messages, userMsg];
@@ -212,6 +263,15 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const controller = new AbortController();
       abortRef.current = controller;
+      const toolsById = new Map<string, AiToolCallState>();
+
+      const patchParts = (updater: (parts: AiMessagePart[]) => AiMessagePart[]) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, parts: updater(m.parts) } : m,
+          ),
+        );
+      };
 
       try {
         const response = await aiApi.streamChat({
@@ -220,25 +280,12 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
           signal: controller.signal,
         });
 
-        const toolsById = new Map<string, AiToolCallState>();
-
-        const patchAssistant = (patch: Partial<AiChatMessage>) => {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === assistantId ? { ...m, ...patch } : m)),
-          );
-        };
-
         for await (const event of readUiMessageStream(response)) {
           if (controller.signal.aborted) break;
 
           if (event.type === "text-delta" && typeof event.delta === "string") {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, text: m.text + event.delta }
-                  : m,
-              ),
-            );
+            const delta = event.delta;
+            patchParts((parts) => appendTextDelta(parts, delta));
           } else if (event.type === "tool-input-start") {
             const tool: AiToolCallState = {
               toolCallId: String(event.toolCallId),
@@ -246,7 +293,7 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
               status: "running",
             };
             toolsById.set(tool.toolCallId, tool);
-            patchAssistant({ tools: Array.from(toolsById.values()) });
+            patchParts((parts) => upsertToolPart(parts, tool));
           } else if (event.type === "tool-input-available") {
             const id = String(event.toolCallId);
             const existing = toolsById.get(id) ?? {
@@ -257,7 +304,7 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
             existing.input = event.input;
             existing.toolName = String(event.toolName ?? existing.toolName);
             toolsById.set(id, existing);
-            patchAssistant({ tools: Array.from(toolsById.values()) });
+            patchParts((parts) => upsertToolPart(parts, existing));
           } else if (event.type === "tool-output-available") {
             const id = String(event.toolCallId);
             const existing = toolsById.get(id) ?? {
@@ -268,13 +315,22 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
             existing.output = event.output;
             existing.status = "done";
             toolsById.set(id, existing);
-            patchAssistant({ tools: Array.from(toolsById.values()) });
+            patchParts((parts) => upsertToolPart(parts, existing));
+            maybeStageProposal(
+              existing.toolName,
+              event.output,
+              buildPageContext(location.pathname, slugPrefix, params),
+            );
           } else if (event.type === "error") {
             const msg =
               typeof event.errorText === "string"
                 ? event.errorText
                 : "AI stream error";
-            patchAssistant({ error: msg });
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, error: msg } : m,
+              ),
+            );
             setError(msg);
           }
         }

@@ -38,7 +38,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { usePrint } from "../contexts/PrintContext";
 import { useSync } from "../contexts/SyncContext";
 import { getDatabase, purgeExpiredTrash } from "../db";
-import { AiChatFab, AiChatPanel, AiChatProvider } from "../features/ai-chat";
+import { AiChatDock, AiChatProvider } from "../features/ai-chat";
 import { useAgenda } from "../hooks/useAgenda";
 import { useAppNavigate } from "../hooks/useAppNavigate";
 import { useCollections } from "../hooks/useCollections";
@@ -1522,8 +1522,8 @@ export const MainLayout: React.FC = () => {
           logout={logout}
         />
 
-        {/* Main Container (Toolbar + Content) */}
-        <div className="flex-1 flex flex-col p-2 sm:p-4 md:p-0 h-full w-full overflow-hidden">
+        {/* Main Container (Toolbar + Content) — shrinks when AI dock opens */}
+        <div className="flex-1 min-w-0 flex flex-col p-2 sm:p-4 md:p-0 h-full overflow-hidden">
           {/* Hidden File Input for Multiple ChordPro Uploads */}
           <input
             type="file"
@@ -1672,12 +1672,12 @@ export const MainLayout: React.FC = () => {
             )}
           </div>
         </div>
+
+        <AiChatDock />
       </div>
 
       <ToastContainer />
       <ProductTourController />
-      <AiChatFab />
-      <AiChatPanel />
 
       <BatchActionFloatingBar
         selectedCount={totalSelectedCount}

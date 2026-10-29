@@ -2498,6 +2498,10 @@ export const en: typeof pt = {
       toolError: "Error",
       applyToEditor: "Apply to editor",
       appliedToEditor: "Proposal applied to the editor (unsaved).",
+      proposalTitle: "AI proposed edit",
+      proposalHint: "Review the diff, then accept or decline.",
+      accept: "Accept",
+      decline: "Decline",
       chips: {
         fixChordPro: "Fix ChordPro",
         reviewSong: "Review",

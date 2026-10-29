@@ -43,9 +43,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
 import { useSync } from "../../contexts/SyncContext";
 import {
-  AI_APPLY_SONG_EVENT,
+  AI_STAGE_SONG_EVENT,
+  AiProposalBanner,
   aiContextBridge,
-  type AiApplySongDetail,
+  type AiStageSongDetail,
 } from "../../features/ai-chat";
 import { useSong, useSongs } from "../../hooks/useSongs";
 import { posthog } from "../../lib/posthog";
@@ -67,6 +68,8 @@ export const SongEditorPage: React.FC = () => {
   const { showToast } = useSync();
 
   const [content, setContent] = useState("");
+  const [stagedProposal, setStagedProposal] =
+    useState<AiStageSongDetail | null>(null);
 
   const deferredContent = useDeferredValue(content);
 
@@ -146,6 +149,10 @@ export const SongEditorPage: React.FC = () => {
   }, [song?.id, deferredContent]);
 
   useEffect(() => {
+    setStagedProposal(null);
+  }, [song?.id]);
+
+  useEffect(() => {
     if (!song) {
       aiContextBridge.setSong(null);
       return;
@@ -161,17 +168,28 @@ export const SongEditorPage: React.FC = () => {
   }, [song, content]);
 
   useEffect(() => {
-    const onApply = (event: Event) => {
-      const detail = (event as CustomEvent<AiApplySongDetail>).detail;
+    const onStage = (event: Event) => {
+      const detail = (event as CustomEvent<AiStageSongDetail>).detail;
       if (!detail?.content) return;
       if (detail.songId && song && detail.songId !== song.id) return;
-      setContent(detail.content);
-      setHasUnsavedChanges(true);
-      showToast(t("ai.chat.appliedToEditor"), "success");
+      if (!canUpdateSong) return;
+      setStagedProposal(detail);
     };
-    window.addEventListener(AI_APPLY_SONG_EVENT, onApply);
-    return () => window.removeEventListener(AI_APPLY_SONG_EVENT, onApply);
-  }, [song, showToast, t]);
+    window.addEventListener(AI_STAGE_SONG_EVENT, onStage);
+    return () => window.removeEventListener(AI_STAGE_SONG_EVENT, onStage);
+  }, [song, canUpdateSong]);
+
+  const acceptStagedProposal = useCallback(() => {
+    if (!stagedProposal?.content) return;
+    setContent(stagedProposal.content);
+    setHasUnsavedChanges(true);
+    setStagedProposal(null);
+    showToast(t("ai.chat.appliedToEditor"), "success");
+  }, [stagedProposal, showToast, t]);
+
+  const declineStagedProposal = useCallback(() => {
+    setStagedProposal(null);
+  }, []);
 
   const handleSave = useCallback(
     async (updatedContent: string) => {
@@ -391,6 +409,14 @@ export const SongEditorPage: React.FC = () => {
           />
 
           <div className="flex-1 overflow-hidden relative">
+            {stagedProposal && (
+              <AiProposalBanner
+                title={stagedProposal.title}
+                diffPreview={stagedProposal.diffPreview}
+                onAccept={acceptStagedProposal}
+                onDecline={declineStagedProposal}
+              />
+            )}
             <Editor
               value={content}
               onChange={(val) => {
