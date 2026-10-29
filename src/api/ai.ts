@@ -30,12 +30,31 @@ export type AiChatContext = {
     | "service_editor"
     | "songs_list"
     | "services_list"
+    | "explorer"
+    | "collection_detail"
+    | "agenda"
+    | "trash"
     | "general";
   route?: string;
   songId?: string;
   serviceId?: string;
+  folderId?: string | null;
+  collectionId?: string | null;
   title?: string;
+  /** ISO updatedAt of the open song/service when known. */
+  updatedAt?: string;
+  artist?: string;
   contentExcerpt?: string;
+  contentTruncated?: boolean;
+  selectedSongIds?: string[];
+  selectedFolderIds?: string[];
+  /** Compact service element summary (ids/types/titles/songIds). */
+  serviceElementsSummary?: Array<{
+    id: string;
+    type: string;
+    title?: string;
+    songId?: string;
+  }>;
 };
 
 export type AiUiMessage = {

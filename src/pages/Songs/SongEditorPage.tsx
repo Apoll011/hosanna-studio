@@ -160,7 +160,10 @@ export const SongEditorPage: React.FC = () => {
     aiContextBridge.setSong({
       songId: song.id,
       title: song.title,
+      artist: song.artist,
       content,
+      updatedAt: song.updatedAt,
+      folderId: song.folderId ?? null,
     });
     return () => {
       aiContextBridge.setSong(null);

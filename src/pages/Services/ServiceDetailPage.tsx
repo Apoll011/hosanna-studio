@@ -960,11 +960,19 @@ export const ServiceDetailPage: React.FC = () => {
       serviceId: service.id,
       title: service.name,
       elements,
+      updatedAt: service.updatedAt,
+      notes: generalNotes,
+      date:
+        typeof service.date === "string"
+          ? service.date
+          : service.date
+            ? new Date(service.date).toISOString()
+            : undefined,
     });
     return () => {
       aiContextBridge.setService(null);
     };
-  }, [service, elements]);
+  }, [service, elements, generalNotes]);
 
   useEffect(() => {
     const onStage = (event: Event) => {

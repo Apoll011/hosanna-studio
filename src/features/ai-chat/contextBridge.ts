@@ -9,16 +9,30 @@ export type SongEditorBridge = {
   songId: string;
   title: string;
   content: string;
+  updatedAt?: string;
+  folderId?: string | null;
+  artist?: string;
 } | null;
 
 export type ServiceEditorBridge = {
   serviceId: string;
   title: string;
   elements: ServiceElement[];
+  updatedAt?: string;
+  notes?: string;
+  date?: string;
+} | null;
+
+export type ExplorerBridge = {
+  folderId: string | null;
+  collectionId?: string | null;
+  selectedSongIds?: string[];
+  selectedFolderIds?: string[];
 } | null;
 
 let songBridge: SongEditorBridge = null;
 let serviceBridge: ServiceEditorBridge = null;
+let explorerBridge: ExplorerBridge = null;
 
 export const aiContextBridge = {
   setSong(value: SongEditorBridge) {
@@ -32,6 +46,12 @@ export const aiContextBridge = {
   },
   getService() {
     return serviceBridge;
+  },
+  setExplorer(value: ExplorerBridge) {
+    explorerBridge = value;
+  },
+  getExplorer() {
+    return explorerBridge;
   },
 };
 

@@ -38,7 +38,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { usePrint } from "../contexts/PrintContext";
 import { useSync } from "../contexts/SyncContext";
 import { getDatabase, purgeExpiredTrash } from "../db";
-import { AiChatDock, AiChatProvider } from "../features/ai-chat";
+import { AiChatDock, AiChatProvider, aiContextBridge } from "../features/ai-chat";
 import { useAgenda } from "../hooks/useAgenda";
 import { useAppNavigate } from "../hooks/useAppNavigate";
 import { useCollections } from "../hooks/useCollections";
@@ -804,6 +804,23 @@ export const MainLayout: React.FC = () => {
       collections.find((c) => c.id === currentCollectionId)?.name ?? undefined,
     [collections, currentCollectionId],
   );
+
+  useEffect(() => {
+    aiContextBridge.setExplorer({
+      folderId: currentFolderId,
+      collectionId: currentCollectionId ?? null,
+      selectedSongIds: Array.from(selectedSongIds).slice(0, 50),
+      selectedFolderIds: Array.from(selectedFolderIds).slice(0, 50),
+    });
+    return () => {
+      aiContextBridge.setExplorer(null);
+    };
+  }, [
+    currentFolderId,
+    currentCollectionId,
+    selectedSongIds,
+    selectedFolderIds,
+  ]);
   const [addToCollectionTarget, setAddToCollectionTarget] =
     useState<Song | null>(null);
 
