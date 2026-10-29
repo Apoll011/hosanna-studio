@@ -2526,7 +2526,7 @@ export const pt = {
         fixChordPro: "Corrigir ChordPro",
         reviewSong: "Rever",
         transpose: "Transpor…",
-        completeNotes: "Completar notas",
+        completeChords: "Completar acordes",
         completeMeta: "Completar metadados",
         explainSelection: "Explicar",
         reviewPlan: "Rever plano",

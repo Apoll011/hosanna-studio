@@ -2502,7 +2502,7 @@ export const en: typeof pt = {
         fixChordPro: "Fix ChordPro",
         reviewSong: "Review",
         transpose: "Transpose…",
-        completeNotes: "Complete notes",
+        completeChords: "Complete chords",
         completeMeta: "Complete metadata",
         explainSelection: "Explain",
         reviewPlan: "Review plan",

@@ -2537,7 +2537,7 @@ export const es: typeof pt = {
         fixChordPro: "Corregir ChordPro",
         reviewSong: "Revisar",
         transpose: "Transponer…",
-        completeNotes: "Completar notas",
+        completeChords: "Completar acordes",
         completeMeta: "Completar metadatos",
         explainSelection: "Explicar",
         reviewPlan: "Revisar plan",
