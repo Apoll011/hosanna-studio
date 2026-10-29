@@ -183,15 +183,25 @@ export const MainLayout: React.FC = () => {
   const { items: trashItems } = useTrash();
 
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const onLibraryChanged = () => {
-      invalidateSongsCache();
-      void foldersQuery.refetch();
-      void songsQuery.refetch();
+      // Coalesce bursts (e.g. several folders_update in one chat turn).
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        void triggerSyncCheck().finally(() => {
+          invalidateSongsCache();
+          void foldersQuery.refetch();
+          void songsQuery.refetch();
+        });
+      }, 150);
     };
     window.addEventListener(AI_LIBRARY_CHANGED_EVENT, onLibraryChanged);
-    return () =>
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       window.removeEventListener(AI_LIBRARY_CHANGED_EVENT, onLibraryChanged);
-  }, [foldersQuery, songsQuery]);
+    };
+  }, [foldersQuery, songsQuery, triggerSyncCheck]);
 
   // Folder & Navigation State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);

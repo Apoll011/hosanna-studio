@@ -20,11 +20,13 @@ import { useLocation, useParams } from "react-router-dom";
 import {
   AI_SETTINGS_CHANGED_EVENT,
   aiContextBridge,
+  dispatchLibraryChanged,
   dispatchStageService,
   dispatchStageSong,
 } from "./contextBridge";
 import { extractServiceProposal, extractSongProposal } from "./proposals";
 import { chipsForContext } from "./quickActions";
+import { shouldStudioSyncAfterTool } from "./studioSync";
 import { readUiMessageStream } from "./stream";
 import {
   newId,
@@ -224,6 +226,11 @@ function maybeStageProposal(
   }
 }
 
+function maybeSyncLibrary(toolName: string, output: unknown) {
+  if (!shouldStudioSyncAfterTool(toolName, output)) return;
+  dispatchLibraryChanged({ action: toolName });
+}
+
 export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -379,6 +386,7 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
               event.output,
               buildPageContext(location.pathname, slugPrefix, params),
             );
+            maybeSyncLibrary(existing.toolName, event.output);
           } else if (event.type === "error") {
             const msg =
               typeof event.errorText === "string"

@@ -28,3 +28,4 @@ export {
   type AiStageServiceDetail,
   type AiStageSongDetail,
 } from "./contextBridge";
+export { shouldStudioSyncAfterTool } from "./studioSync";
