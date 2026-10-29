@@ -4,21 +4,11 @@
  */
 
 import { useI18n } from "@/src/lib/i18n";
-import { Markdown } from "@tanstack/markdown/react";
 import { Eraser, Send, Sparkles, Square, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { AiChatMarkdown } from "./AiChatMarkdown";
 import { useAiChat } from "./AiChatProvider";
 import { AiToolCard } from "./AiToolCard";
-
-const proseClass =
-  "prose prose-sm dark:prose-invert max-w-none " +
-  "prose-headings:text-m3-text prose-p:text-m3-text prose-strong:text-m3-text " +
-  "prose-li:text-m3-text prose-a:text-m3-primary " +
-  "prose-table:text-[12px] prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 " +
-  "prose-table:border-collapse prose-th:border prose-td:border prose-th:border-m3-border prose-td:border-m3-border " +
-  "prose-th:bg-m3-sidebar/80 " +
-  "[&_pre]:text-[11px] [&_code]:text-[11px] [&_pre]:max-h-52 [&_pre]:overflow-auto " +
-  "[&_table]:block [&_table]:w-full [&_table]:overflow-x-auto";
 
 /** In-flow docked chat column — parent controls width; this fills height. */
 export const AiChatPanel: React.FC = () => {
@@ -129,8 +119,11 @@ export const AiChatPanel: React.FC = () => {
                         tool={part.tool}
                       />
                     ) : part.text.trim() ? (
-                      <div key={`t-${i}`} className={`${proseClass} py-0.5`}>
-                        <Markdown>{part.text}</Markdown>
+                      <div
+                        key={`t-${i}`}
+                        className="py-0.5 text-m3-text text-[13px] leading-relaxed [&_:first-child]:mt-0 [&_:last-child]:mb-0"
+                      >
+                        <AiChatMarkdown>{part.text}</AiChatMarkdown>
                       </div>
                     ) : null,
                   )}

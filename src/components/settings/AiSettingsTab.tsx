@@ -212,12 +212,29 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
                   handleProviderChange(e.currentTarget.value as AiProvider)
                 }
               >
-                {(settings.providers ?? []).map((p) => (
-                  <option key={p} value={p}>
-                    {PROVIDER_LABELS[p]}
-                  </option>
-                ))}
+                {(settings.providers ?? []).map((p) => {
+                  const cap = settings.nativeWebCapabilities?.[p];
+                  const badge =
+                    cap?.search || cap?.fetch
+                      ? " · web search/fetch"
+                      : "";
+                  return (
+                    <option key={p} value={p}>
+                      {PROVIDER_LABELS[p]}
+                      {badge}
+                    </option>
+                  );
+                })}
               </select>
+              {settings.nativeWebCapabilities?.[provider]?.search ? (
+                <span className="text-caption text-m3-secondary block">
+                  {t("ai.settings.nativeWebOn")}
+                </span>
+              ) : (
+                <span className="text-caption text-m3-secondary block">
+                  {t("ai.settings.nativeWebOff")}
+                </span>
+              )}
             </label>
 
             {needsBaseUrl && (

@@ -12,6 +12,12 @@ export type AiProvider =
   | "deepseek"
   | "openai_compatible";
 
+export type NativeWebCapability = {
+  search: boolean;
+  fetch: boolean;
+  note: string;
+};
+
 export type AiSettingsPublic = {
   provider: AiProvider;
   model: string;
@@ -22,6 +28,15 @@ export type AiSettingsPublic = {
   providers: AiProvider[];
   modelPresets: Record<AiProvider, string[]>;
   defaultBaseUrls?: Partial<Record<AiProvider, string>>;
+  /** All providers → whether Hosanna can call REST Search/Fetch with BYOK. */
+  nativeWebCapabilities?: Record<AiProvider, NativeWebCapability>;
+  /** Capability for the currently selected provider. */
+  nativeWeb?: {
+    search: boolean;
+    fetch: boolean;
+    note: string;
+    active: boolean;
+  };
 };
 
 export type AiChatContext = {

@@ -2463,6 +2463,10 @@ export const en: typeof pt = {
       encryptionMissing:
         "Server is missing AI_SETTINGS_ENCRYPTION_KEY. Ask an admin to configure it before saving keys.",
       provider: "Provider",
+      nativeWebOn:
+        "This provider’s API key also powers Studio web search & page fetch (metadata tools).",
+      nativeWebOff:
+        "Metadata web search uses DuckDuckGo for this provider. DeepSeek adds native Search & Fetch.",
       baseUrl: "API base URL",
       baseUrlPlaceholder: "Leave blank for the provider default",
       baseUrlRequiredPlaceholder: "https://api.example.com/v1",

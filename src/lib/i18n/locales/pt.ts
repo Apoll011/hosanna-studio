@@ -2486,6 +2486,10 @@ export const pt = {
       encryptionMissing:
         "Falta AI_SETTINGS_ENCRYPTION_KEY no servidor. Configure-a antes de guardar chaves.",
       provider: "Fornecedor",
+      nativeWebOn:
+        "A chave deste fornecedor também alimenta a pesquisa web e o fetch de páginas nas ferramentas de metadados.",
+      nativeWebOff:
+        "A pesquisa web de metadados usa DuckDuckGo neste fornecedor. O DeepSeek adiciona Search & Fetch nativos.",
       baseUrl: "URL base da API",
       baseUrlPlaceholder: "Deixe em branco para o valor predefinido",
       baseUrlRequiredPlaceholder: "https://api.example.com/v1",
