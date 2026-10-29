@@ -2496,6 +2496,8 @@ export const en: typeof pt = {
       toolRunning: "Running",
       toolDone: "Done",
       toolError: "Error",
+      toolInput: "Input",
+      toolOutput: "Result",
       applyToEditor: "Apply to editor",
       appliedToEditor: "Proposal applied to the editor (unsaved).",
       proposalTitle: "AI proposed edit",

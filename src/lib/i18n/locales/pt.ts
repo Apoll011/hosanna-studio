@@ -2520,6 +2520,8 @@ export const pt = {
       toolRunning: "A executar",
       toolDone: "Concluído",
       toolError: "Erro",
+      toolInput: "Entrada",
+      toolOutput: "Resultado",
       applyToEditor: "Aplicar ao editor",
       appliedToEditor: "Proposta aplicada ao editor (por guardar).",
       proposalTitle: "Edição proposta pela IA",

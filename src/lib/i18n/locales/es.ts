@@ -2531,6 +2531,8 @@ export const es: typeof pt = {
       toolRunning: "Ejecutando",
       toolDone: "Listo",
       toolError: "Error",
+      toolInput: "Entrada",
+      toolOutput: "Resultado",
       applyToEditor: "Aplicar al editor",
       appliedToEditor: "Propuesta aplicada al editor (sin guardar).",
       proposalTitle: "Edición propuesta por la IA",

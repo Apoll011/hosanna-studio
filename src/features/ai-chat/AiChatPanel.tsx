@@ -10,6 +10,16 @@ import React, { useEffect, useRef, useState } from "react";
 import { useAiChat } from "./AiChatProvider";
 import { AiToolCard } from "./AiToolCard";
 
+const proseClass =
+  "prose prose-sm dark:prose-invert max-w-none " +
+  "prose-headings:text-m3-text prose-p:text-m3-text prose-strong:text-m3-text " +
+  "prose-li:text-m3-text prose-a:text-m3-primary " +
+  "prose-table:text-[12px] prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 " +
+  "prose-table:border-collapse prose-th:border prose-td:border prose-th:border-m3-border prose-td:border-m3-border " +
+  "prose-th:bg-m3-sidebar/80 " +
+  "[&_pre]:text-[11px] [&_code]:text-[11px] [&_pre]:max-h-52 [&_pre]:overflow-auto " +
+  "[&_table]:block [&_table]:w-full [&_table]:overflow-x-auto";
+
 /** In-flow docked chat column — parent controls width; this fills height. */
 export const AiChatPanel: React.FC = () => {
   const { t } = useI18n();
@@ -84,22 +94,6 @@ export const AiChatPanel: React.FC = () => {
         </button>
       </header>
 
-      {chips.length > 0 && (
-        <div className="px-2.5 py-2 border-b border-m3-border flex flex-wrap gap-1.5 shrink-0">
-          {chips.map((chip) => (
-            <button
-              key={chip.id}
-              type="button"
-              disabled={streaming}
-              className="text-[11px] px-2 py-0.5 rounded-[var(--radius-md)] border border-m3-border text-m3-text hover:bg-m3-sidebar disabled:opacity-50 transition-colors"
-              onClick={() => void send(chip.prompt)}
-            >
-              {t(chip.labelKey)}
-            </button>
-          ))}
-        </div>
-      )}
-
       <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
         {messages.length === 0 && (
           <p className="text-sm text-m3-secondary text-center py-10 px-4">
@@ -121,28 +115,30 @@ export const AiChatPanel: React.FC = () => {
                   .join("")}
               </div>
             ) : (
-              <div className="max-w-[95%] w-full space-y-1">
+              <div className="max-w-[95%] w-full rounded-[var(--radius-lg)] border border-m3-border bg-m3-sidebar text-m3-text overflow-hidden">
                 {msg.parts.length === 0 && streaming ? (
-                  <span className="text-m3-secondary text-xs px-1">
+                  <p className="text-m3-secondary text-xs px-3 py-2 m-0">
                     {t("ai.chat.thinking")}
-                  </span>
+                  </p>
                 ) : null}
-                {msg.parts.map((part, i) =>
-                  part.type === "tool" ? (
-                    <AiToolCard key={part.tool.toolCallId} tool={part.tool} />
-                  ) : part.text.trim() ? (
-                    <div
-                      key={`t-${i}`}
-                      className="rounded-[var(--radius-lg)] px-3 py-2 text-sm leading-relaxed bg-m3-sidebar text-m3-text border border-m3-border"
-                    >
-                      <div className="prose prose-sm dark:prose-invert max-w-none [&_pre]:text-[11px] [&_code]:text-[11px] [&_pre]:max-h-40 [&_pre]:overflow-auto">
+                <div className="px-3 py-2 space-y-1">
+                  {msg.parts.map((part, i) =>
+                    part.type === "tool" ? (
+                      <AiToolCard
+                        key={part.tool.toolCallId}
+                        tool={part.tool}
+                      />
+                    ) : part.text.trim() ? (
+                      <div key={`t-${i}`} className={`${proseClass} py-0.5`}>
                         <Markdown>{part.text}</Markdown>
                       </div>
-                    </div>
-                  ) : null,
-                )}
+                    ) : null,
+                  )}
+                </div>
                 {msg.error && (
-                  <p className="text-xs text-red-500 px-1">{msg.error}</p>
+                  <p className="text-xs text-red-500 px-3 pb-2 m-0">
+                    {msg.error}
+                  </p>
                 )}
               </div>
             )}
@@ -153,7 +149,22 @@ export const AiChatPanel: React.FC = () => {
         )}
       </div>
 
-      <footer className="border-t border-m3-border p-2.5 shrink-0">
+      <footer className="border-t border-m3-border p-2.5 shrink-0 space-y-2">
+        {chips.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {chips.map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                disabled={streaming}
+                className="text-[11px] px-2 py-0.5 rounded-[var(--radius-md)] border border-m3-border text-m3-text hover:bg-m3-sidebar disabled:opacity-50 transition-colors"
+                onClick={() => void send(chip.prompt)}
+              >
+                {t(chip.labelKey)}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <textarea
             ref={inputRef}
@@ -167,7 +178,7 @@ export const AiChatPanel: React.FC = () => {
               }
             }}
             placeholder={t("ai.chat.placeholder")}
-            className="flex-1 resize-none rounded-[var(--radius-md)] border border-m3-border bg-m3-bg text-m3-text text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-m3-primary/25 focus:border-m3-primary"
+            className="flex-1 min-w-0 resize-none rounded-[var(--radius-md)] border border-m3-border bg-m3-bg text-m3-text text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-m3-primary/25 focus:border-m3-primary"
             disabled={streaming}
           />
           {streaming ? (
