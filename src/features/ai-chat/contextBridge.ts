@@ -60,6 +60,8 @@ export const AI_STAGE_SONG_EVENT = "hosanna:ai-stage-song";
 export const AI_STAGE_SERVICE_EVENT = "hosanna:ai-stage-service";
 export const AI_SETTINGS_CHANGED_EVENT = "hosanna:ai-settings-changed";
 export const AI_LIBRARY_CHANGED_EVENT = "hosanna:ai-library-changed";
+export const AI_NAVIGATE_EVENT = "hosanna:ai-navigate";
+export const AI_PRINT_EVENT = "hosanna:ai-print";
 
 export type AiStageSongDetail = {
   songId?: string;
@@ -97,6 +99,29 @@ export function dispatchLibraryChanged(detail?: {
   window.dispatchEvent(
     new CustomEvent(AI_LIBRARY_CHANGED_EVENT, { detail: detail ?? {} }),
   );
+}
+
+export type AiNavigateDetail = {
+  kind: string;
+  id?: string | null;
+  route?: string;
+  reason?: string;
+};
+
+export type AiPrintDetail = {
+  kind: string;
+  ids: string[];
+  title?: string;
+  options?: Record<string, unknown>;
+  reason?: string;
+};
+
+export function dispatchAiNavigate(detail: AiNavigateDetail) {
+  window.dispatchEvent(new CustomEvent(AI_NAVIGATE_EVENT, { detail }));
+}
+
+export function dispatchAiPrint(detail: AiPrintDetail) {
+  window.dispatchEvent(new CustomEvent(AI_PRINT_EVENT, { detail }));
 }
 
 // Back-compat aliases used by older imports

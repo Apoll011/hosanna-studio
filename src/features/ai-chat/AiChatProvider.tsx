@@ -26,6 +26,7 @@ import {
 } from "./contextBridge";
 import { extractServiceProposal, extractSongProposal } from "./proposals";
 import { chipsForContext } from "./quickActions";
+import { maybeDispatchStudioActions } from "./studioActions";
 import { shouldStudioSyncAfterTool } from "./studioSync";
 import { readUiMessageStream } from "./stream";
 import {
@@ -387,6 +388,7 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
               buildPageContext(location.pathname, slugPrefix, params),
             );
             maybeSyncLibrary(existing.toolName, event.output);
+            maybeDispatchStudioActions(existing.toolName, event.output);
           } else if (event.type === "error") {
             const msg =
               typeof event.errorText === "string"
