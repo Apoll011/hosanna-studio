@@ -57,6 +57,11 @@ export const lazyImport = <T>(
 export const LoginPage = lazyImport(() =>
   import("../pages/Login/LoginPage").then((m) => ({ default: m.LoginPage })),
 );
+export const OAuthConsentPage = lazyImport(() =>
+  import("../pages/OAuthConsentPage").then((m) => ({
+    default: m.OAuthConsentPage,
+  })),
+);
 export const TwoFactorPage = lazyImport(() =>
   import("../pages/Login/TwoFactorPage").then((m) => ({
     default: m.TwoFactorPage,

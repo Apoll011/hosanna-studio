@@ -2438,6 +2438,17 @@ export const en: typeof pt = {
     },
   },
 
+  oauth: {
+    consent: {
+      title: "Authorize MCP access",
+      desc: "{client} wants to access your Hosanna library via MCP.",
+      scopes: "Requested scopes",
+      allow: "Allow",
+      deny: "Deny",
+      genericError: "Could not complete authorization.",
+    },
+  },
+
   ai: {
     settings: {
       title: "Studio AI",

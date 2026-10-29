@@ -2471,6 +2471,17 @@ export const es: typeof pt = {
     },
   },
 
+  oauth: {
+    consent: {
+      title: "Autorizar acceso MCP",
+      desc: "{client} quiere acceder a tu biblioteca Hosanna vía MCP.",
+      scopes: "Ámbitos solicitados",
+      allow: "Permitir",
+      deny: "Denegar",
+      genericError: "No se pudo completar la autorización.",
+    },
+  },
+
   ai: {
     settings: {
       title: "Studio IA",
