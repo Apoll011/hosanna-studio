@@ -62,6 +62,11 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
 import { useSync } from "../../contexts/SyncContext";
+import {
+  AI_APPLY_SERVICE_EVENT,
+  aiContextBridge,
+  type AiApplyServiceDetail,
+} from "../../features/ai-chat";
 import { useOrgSettings } from "../../hooks/useOrgSettings";
 import { useService, useServices } from "../../hooks/useServices";
 import { useSearchableSongs, useSong, useSongs } from "../../hooks/useSongs";
@@ -943,6 +948,39 @@ export const ServiceDetailPage: React.FC = () => {
   useEffect(() => {
     elementsRef.current = elements;
   }, [elements]);
+
+  useEffect(() => {
+    if (!service) {
+      aiContextBridge.setService(null);
+      return;
+    }
+    aiContextBridge.setService({
+      serviceId: service.id,
+      title: service.name,
+      elements,
+    });
+    return () => {
+      aiContextBridge.setService(null);
+    };
+  }, [service, elements]);
+
+  useEffect(() => {
+    const onApply = (event: Event) => {
+      const detail = (event as CustomEvent<AiApplyServiceDetail>).detail;
+      if (!detail?.elements) return;
+      if (detail.serviceId && service && detail.serviceId !== service.id) return;
+      const next = detail.elements.map((el, index) => ({
+        ...el,
+        position: el.position ?? index,
+      }));
+      setElements(next);
+      elementsRef.current = next;
+      if (detail.notes != null) setGeneralNotes(detail.notes);
+      showToast(t("ai.chat.appliedToEditor"), "success");
+    };
+    window.addEventListener(AI_APPLY_SERVICE_EVENT, onApply);
+    return () => window.removeEventListener(AI_APPLY_SERVICE_EVENT, onApply);
+  }, [service, showToast, t]);
 
   // Auto-save general notes after a short debounce when the org autoSave is on
   useEffect(() => {

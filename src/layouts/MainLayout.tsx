@@ -34,6 +34,11 @@ import {
 } from "../components/layout";
 import { ProductTourController } from "../components/tour/ProductTourController";
 import { ToastContainer } from "../components/Toast";
+import {
+  AiChatFab,
+  AiChatPanel,
+  AiChatProvider,
+} from "../features/ai-chat";
 import { useAuth } from "../contexts/AuthContext";
 import { emitOnboardingEvent, getActiveOnboardingWaitFor } from "../lib/tour";
 import { usePrint } from "../contexts/PrintContext";
@@ -1675,6 +1680,8 @@ export const MainLayout: React.FC = () => {
 
       <ToastContainer />
       <ProductTourController />
+      <AiChatFab />
+      <AiChatPanel />
 
       <BatchActionFloatingBar
         selectedCount={totalSelectedCount}
@@ -1887,6 +1894,7 @@ export const MainLayout: React.FC = () => {
   );
 
   return (
+    <AiChatProvider>
     <HosannaCommandPalette
       slugPrefix={organization?.slug || ""}
       isDataLoading={
@@ -1963,5 +1971,6 @@ export const MainLayout: React.FC = () => {
     >
       {layoutContent}
     </HosannaCommandPalette>
+    </AiChatProvider>
   );
 };

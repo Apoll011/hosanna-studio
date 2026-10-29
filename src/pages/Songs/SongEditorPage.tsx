@@ -41,6 +41,12 @@ import { useParams } from "react-router-dom";
 import { HelpModal } from "../../components/modals/HelpModal";
 import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
+import { useSync } from "../../contexts/SyncContext";
+import {
+  AI_APPLY_SONG_EVENT,
+  aiContextBridge,
+  type AiApplySongDetail,
+} from "../../features/ai-chat";
 import { useSong, useSongs } from "../../hooks/useSongs";
 import { posthog } from "../../lib/posthog";
 
@@ -58,6 +64,7 @@ export const SongEditorPage: React.FC = () => {
   const { data: song, isLoading, isError, error } = useSong(id || null);
   const { updateSong, isUpdating } = useSongs();
   const { printSong } = usePrint();
+  const { showToast } = useSync();
 
   const [content, setContent] = useState("");
 
@@ -137,6 +144,34 @@ export const SongEditorPage: React.FC = () => {
   useEffect(() => {
     setSelectedVariant(null);
   }, [song?.id, deferredContent]);
+
+  useEffect(() => {
+    if (!song) {
+      aiContextBridge.setSong(null);
+      return;
+    }
+    aiContextBridge.setSong({
+      songId: song.id,
+      title: song.title,
+      content,
+    });
+    return () => {
+      aiContextBridge.setSong(null);
+    };
+  }, [song, content]);
+
+  useEffect(() => {
+    const onApply = (event: Event) => {
+      const detail = (event as CustomEvent<AiApplySongDetail>).detail;
+      if (!detail?.content) return;
+      if (detail.songId && song && detail.songId !== song.id) return;
+      setContent(detail.content);
+      setHasUnsavedChanges(true);
+      showToast(t("ai.chat.appliedToEditor"), "success");
+    };
+    window.addEventListener(AI_APPLY_SONG_EVENT, onApply);
+    return () => window.removeEventListener(AI_APPLY_SONG_EVENT, onApply);
+  }, [song, showToast, t]);
 
   const handleSave = useCallback(
     async (updatedContent: string) => {

@@ -23,10 +23,12 @@ import {
   Lock,
   RotateCcw,
   Server,
+  Sparkles,
   Users,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { AiSettingsTab } from "../components/settings/AiSettingsTab";
 import { BillingTab } from "../components/settings/BillingTab";
 import { GeneralTab } from "../components/settings/GeneralTab";
 import { LoginHistorySection } from "../components/settings/LoginHistorySection";
@@ -43,6 +45,7 @@ type TabType =
   | "notifications"
   | "billing"
   | "general"
+  | "ai"
   | "loginActivity";
 
 const VALID_TABS: TabType[] = [
@@ -51,6 +54,7 @@ const VALID_TABS: TabType[] = [
   "notifications",
   "billing",
   "general",
+  "ai",
   "loginActivity",
 ];
 
@@ -67,6 +71,7 @@ export const OrganizationPage: React.FC = () => {
   const { granted: canUpdate } = useCan("organization.update");
   const { granted: canAccessBilling } = useCan("billing.access");
   const { granted: canSendNotifications } = useCan("notification.sent");
+  const { granted: canManageAi } = useCan("ai.manage");
 
   const initialTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -103,9 +108,16 @@ export const OrganizationPage: React.FC = () => {
       next.set("tab", "workspace");
       setSearchParams(next, { replace: true });
     }
+    if (activeTab === "ai" && !canManageAi) {
+      setActiveTab("workspace");
+      const next = new URLSearchParams(searchParams);
+      next.set("tab", "workspace");
+      setSearchParams(next, { replace: true });
+    }
   }, [
     activeTab,
     canViewLoginActivity,
+    canManageAi,
     roleLoading,
     searchParams,
     setSearchParams,
@@ -176,6 +188,13 @@ export const OrganizationPage: React.FC = () => {
       icon: <Server className="w-4 h-4" />,
       requiresNetwork: true,
       show: canUpdate,
+    },
+    {
+      id: "ai" as const,
+      label: t("organization.tabs.ai"),
+      icon: <Sparkles className="w-4 h-4" />,
+      requiresNetwork: true,
+      show: canManageAi && !isDemoMode(),
     },
     {
       id: "loginActivity" as const,
@@ -253,6 +272,10 @@ export const OrganizationPage: React.FC = () => {
             />
             <GeneralTab
               active={activeTab === "general"}
+              showToast={showToast}
+            />
+            <AiSettingsTab
+              active={activeTab === "ai"}
               showToast={showToast}
             />
             {activeTab === "loginActivity" && canViewLoginActivity && (
