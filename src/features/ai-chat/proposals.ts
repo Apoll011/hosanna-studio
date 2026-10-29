@@ -3,6 +3,64 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export type AiDestructiveConfirmation = {
+  action:
+    | "delete_song"
+    | "delete_service"
+    | "delete_folder"
+    | "delete_collection"
+    | "delete_agenda";
+  id: string;
+  title: string;
+  detail?: string;
+  folderAction?: "move_to_root" | "delete_songs";
+};
+
+/** Extract a destructive Confirm-card payload from a tool result. */
+export function extractDestructiveConfirmation(
+  output: unknown,
+): AiDestructiveConfirmation | null {
+  let parsed: unknown = output;
+  if (typeof output === "string") {
+    try {
+      parsed = JSON.parse(output);
+    } catch {
+      return null;
+    }
+  }
+  if (!parsed || typeof parsed !== "object") return null;
+  const confirmation = (parsed as { confirmation?: Record<string, unknown> })
+    .confirmation;
+  if (!confirmation || typeof confirmation !== "object") return null;
+  const action = confirmation.action;
+  const id = confirmation.id;
+  const title = confirmation.title;
+  if (typeof action !== "string" || typeof id !== "string") return null;
+  if (
+    ![
+      "delete_song",
+      "delete_service",
+      "delete_folder",
+      "delete_collection",
+      "delete_agenda",
+    ].includes(action)
+  ) {
+    return null;
+  }
+  return {
+    action: action as AiDestructiveConfirmation["action"],
+    id,
+    title: typeof title === "string" && title.trim() ? title : id,
+    detail:
+      typeof confirmation.detail === "string" ? confirmation.detail : undefined,
+    folderAction:
+      confirmation.folderAction === "delete_songs" ||
+      confirmation.folderAction === "move_to_root"
+        ? confirmation.folderAction
+        : undefined,
+  };
+}
+
 /** Extract a ChordPro/song proposal payload from a tool result. */
 export function extractSongProposal(output: unknown): {
   id?: string;

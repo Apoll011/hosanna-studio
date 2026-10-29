@@ -59,6 +59,7 @@ export const aiContextBridge = {
 export const AI_STAGE_SONG_EVENT = "hosanna:ai-stage-song";
 export const AI_STAGE_SERVICE_EVENT = "hosanna:ai-stage-service";
 export const AI_SETTINGS_CHANGED_EVENT = "hosanna:ai-settings-changed";
+export const AI_LIBRARY_CHANGED_EVENT = "hosanna:ai-library-changed";
 
 export type AiStageSongDetail = {
   songId?: string;
@@ -87,6 +88,15 @@ export function dispatchStageService(detail: AiStageServiceDetail) {
 
 export function dispatchAiSettingsChanged() {
   window.dispatchEvent(new CustomEvent(AI_SETTINGS_CHANGED_EVENT));
+}
+
+export function dispatchLibraryChanged(detail?: {
+  action?: string;
+  id?: string;
+}) {
+  window.dispatchEvent(
+    new CustomEvent(AI_LIBRARY_CHANGED_EVENT, { detail: detail ?? {} }),
+  );
 }
 
 // Back-compat aliases used by older imports

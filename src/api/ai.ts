@@ -86,6 +86,17 @@ export type UpdateAiSettingsInput = {
   baseUrl?: string | null;
 };
 
+export type AiConfirmAction = {
+  action:
+    | "delete_song"
+    | "delete_service"
+    | "delete_folder"
+    | "delete_collection"
+    | "delete_agenda";
+  id: string;
+  folderAction?: "move_to_root" | "delete_songs";
+};
+
 export const aiApi = {
   getSettings: (): Promise<AiSettingsPublic> =>
     getApiClient().request<AiSettingsPublic>("/ai/settings"),
@@ -99,6 +110,12 @@ export const aiApi = {
   clearKey: (): Promise<AiSettingsPublic> =>
     getApiClient().request<AiSettingsPublic>("/ai/settings/key", {
       method: "DELETE",
+    }),
+
+  confirmAction: (body: AiConfirmAction): Promise<{ confirmed: boolean }> =>
+    getApiClient().request<{ confirmed: boolean }>("/ai/confirm", {
+      method: "POST",
+      body: JSON.stringify(body),
     }),
 
   streamChat: (body: {

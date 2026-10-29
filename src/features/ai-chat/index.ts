@@ -8,9 +8,11 @@ export { AiChatPanel } from "./AiChatPanel";
 export { AiChatProvider, useAiChat, useAiChatOptional } from "./AiChatProvider";
 export { AiChatToggle } from "./AiChatToggle";
 export { AiProposalBanner } from "./AiProposalBanner";
+export { AiConfirmCard } from "./AiConfirmCard";
 export {
   AI_APPLY_SERVICE_EVENT,
   AI_APPLY_SONG_EVENT,
+  AI_LIBRARY_CHANGED_EVENT,
   AI_SETTINGS_CHANGED_EVENT,
   AI_STAGE_SERVICE_EVENT,
   AI_STAGE_SONG_EVENT,
@@ -18,6 +20,7 @@ export {
   dispatchAiSettingsChanged,
   dispatchApplyService,
   dispatchApplySong,
+  dispatchLibraryChanged,
   dispatchStageService,
   dispatchStageSong,
   type AiApplyServiceDetail,

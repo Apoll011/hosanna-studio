@@ -38,14 +38,23 @@ import { useAuth } from "../contexts/AuthContext";
 import { usePrint } from "../contexts/PrintContext";
 import { useSync } from "../contexts/SyncContext";
 import { getDatabase, purgeExpiredTrash } from "../db";
-import { AiChatDock, AiChatProvider, aiContextBridge } from "../features/ai-chat";
+import {
+  AI_LIBRARY_CHANGED_EVENT,
+  AiChatDock,
+  AiChatProvider,
+  aiContextBridge,
+} from "../features/ai-chat";
 import { useAgenda } from "../hooks/useAgenda";
 import { useAppNavigate } from "../hooks/useAppNavigate";
 import { useCollections } from "../hooks/useCollections";
 import { useFolders } from "../hooks/useFolders";
 import { usePersonalSettings } from "../hooks/usePersonalSettings";
 import { useServices } from "../hooks/useServices";
-import { useSearchableSongs, useSongs } from "../hooks/useSongs";
+import {
+  invalidateSongsCache,
+  useSearchableSongs,
+  useSongs,
+} from "../hooks/useSongs";
 import { useTrash } from "../hooks/useTrash";
 import { songImportRegistry } from "../lib/import";
 import { emitOnboardingEvent, getActiveOnboardingWaitFor } from "../lib/tour";
@@ -172,6 +181,17 @@ export const MainLayout: React.FC = () => {
     useSongs();
 
   const { items: trashItems } = useTrash();
+
+  useEffect(() => {
+    const onLibraryChanged = () => {
+      invalidateSongsCache();
+      void foldersQuery.refetch();
+      void songsQuery.refetch();
+    };
+    window.addEventListener(AI_LIBRARY_CHANGED_EVENT, onLibraryChanged);
+    return () =>
+      window.removeEventListener(AI_LIBRARY_CHANGED_EVENT, onLibraryChanged);
+  }, [foldersQuery, songsQuery]);
 
   // Folder & Navigation State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
