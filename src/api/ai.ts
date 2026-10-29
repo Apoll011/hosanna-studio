@@ -5,16 +5,23 @@
 
 import { getApiClient } from "./http";
 
-export type AiProvider = "openai" | "anthropic" | "google";
+export type AiProvider =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "deepseek"
+  | "openai_compatible";
 
 export type AiSettingsPublic = {
   provider: AiProvider;
   model: string;
   enabled: boolean;
   configured: boolean;
+  baseUrl: string | null;
   encryptionReady: boolean;
   providers: AiProvider[];
   modelPresets: Record<AiProvider, string[]>;
+  defaultBaseUrls?: Partial<Record<AiProvider, string>>;
 };
 
 export type AiChatContext = {
@@ -42,6 +49,7 @@ export type UpdateAiSettingsInput = {
   model?: string;
   enabled?: boolean;
   apiKey?: string;
+  baseUrl?: string | null;
 };
 
 export const aiApi = {

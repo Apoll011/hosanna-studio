@@ -32,18 +32,13 @@ import {
   ExplorerModals,
   ExplorerToolbar,
 } from "../components/layout";
-import { ProductTourController } from "../components/tour/ProductTourController";
 import { ToastContainer } from "../components/Toast";
-import {
-  AiChatFab,
-  AiChatPanel,
-  AiChatProvider,
-} from "../features/ai-chat";
+import { ProductTourController } from "../components/tour/ProductTourController";
 import { useAuth } from "../contexts/AuthContext";
-import { emitOnboardingEvent, getActiveOnboardingWaitFor } from "../lib/tour";
 import { usePrint } from "../contexts/PrintContext";
 import { useSync } from "../contexts/SyncContext";
 import { getDatabase, purgeExpiredTrash } from "../db";
+import { AiChatFab, AiChatPanel, AiChatProvider } from "../features/ai-chat";
 import { useAgenda } from "../hooks/useAgenda";
 import { useAppNavigate } from "../hooks/useAppNavigate";
 import { useCollections } from "../hooks/useCollections";
@@ -53,6 +48,7 @@ import { useServices } from "../hooks/useServices";
 import { useSearchableSongs, useSongs } from "../hooks/useSongs";
 import { useTrash } from "../hooks/useTrash";
 import { songImportRegistry } from "../lib/import";
+import { emitOnboardingEvent, getActiveOnboardingWaitFor } from "../lib/tour";
 import { filterSearchableSongsWithLiqe } from "../utils";
 import { ProviderImportResult } from "../utils/import";
 import { deriveView } from "./view";
@@ -1540,7 +1536,7 @@ export const MainLayout: React.FC = () => {
 
           {/* Window Container */}
           <div
-            className="bg-m3-card border md:border-none border-m3-border rounded-[var(--radius-xl)] md:rounded-none shadow-[var(--shadow-lg)] md:shadow-none overflow-hidden flex flex-col flex-1 h-full transition-colors duration-300"
+            className="bg-m3-card border md:border-none border-m3-border rounded-xl md:rounded-none shadow-lg md:shadow-none overflow-hidden flex flex-col flex-1 h-full transition-colors duration-300"
             role="main"
           >
             <ExplorerAddressBar
@@ -1653,7 +1649,7 @@ export const MainLayout: React.FC = () => {
               <div className="h-10 bg-m3-sidebar/40 border-t border-m3-border px-6 flex items-center justify-between text-caption select-none">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-m3-primary shadow-[var(--shadow-sm)]" />
+                    <span className="w-2 h-2 rounded-full bg-m3-primary shadow-sm" />
                     {currentFolder
                       ? `/${currentFolder.name}`
                       : t("layout.rootLocation")}
@@ -1887,7 +1883,7 @@ export const MainLayout: React.FC = () => {
             pointerEvents: "none",
             zIndex: 100,
           }}
-          className="border-2 border-m3-primary bg-m3-primary/25 rounded-[var(--radius-md)] shadow-[var(--shadow-md)] backdrop-blur-[1px]"
+          className="border-2 border-m3-primary bg-m3-primary/25 rounded-md shadow-md backdrop-blur-[1px]"
         />
       )}
     </>
@@ -1895,82 +1891,84 @@ export const MainLayout: React.FC = () => {
 
   return (
     <AiChatProvider>
-    <HosannaCommandPalette
-      slugPrefix={organization?.slug || ""}
-      isDataLoading={
-        songsQuery.isLoading ||
-        foldersQuery.isLoading ||
-        servicesQuery.isLoading
-      }
-      searchSongsDb={async (query) => {
-        if (songsQuery.isLoading || !songsQuery.data?.songs) return [];
-        const lowerQuery = query.toLowerCase().trim();
-        const allSongsList = songsQuery.data.songs;
-        const matches: Song[] = [];
-        for (const song of allSongsList) {
-          const matchTitle = song.title?.toLowerCase().includes(lowerQuery);
-          const matchArtist = song.artist?.toLowerCase().includes(lowerQuery);
-          const matchTags = song.tags?.some((t: string) =>
-            t.toLowerCase().includes(lowerQuery),
-          );
+      <HosannaCommandPalette
+        slugPrefix={organization?.slug || ""}
+        isDataLoading={
+          songsQuery.isLoading ||
+          foldersQuery.isLoading ||
+          servicesQuery.isLoading
+        }
+        searchSongsDb={async (query) => {
+          if (songsQuery.isLoading || !songsQuery.data?.songs) return [];
+          const lowerQuery = query.toLowerCase().trim();
+          const allSongsList = songsQuery.data.songs;
+          const matches: Song[] = [];
+          for (const song of allSongsList) {
+            const matchTitle = song.title?.toLowerCase().includes(lowerQuery);
+            const matchArtist = song.artist?.toLowerCase().includes(lowerQuery);
+            const matchTags = song.tags?.some((t: string) =>
+              t.toLowerCase().includes(lowerQuery),
+            );
 
-          if (matchTitle || matchArtist || matchTags) {
-            matches.push(song);
-            if (matches.length >= 8) break;
+            if (matchTitle || matchArtist || matchTags) {
+              matches.push(song);
+              if (matches.length >= 8) break;
+            }
           }
-        }
-        return matches;
-      }}
-      searchFoldersDb={async (query) => {
-        if (foldersQuery.isLoading || !foldersQuery.data?.folders) return [];
-        const lowerQuery = query.toLowerCase().trim();
-        const allFoldersList = foldersQuery.data.folders;
-        const matches: Folder[] = [];
-        for (const folder of allFoldersList) {
-          if (folder.name?.toLowerCase().includes(lowerQuery)) {
-            matches.push(folder);
-            if (matches.length >= 5) break;
+          return matches;
+        }}
+        searchFoldersDb={async (query) => {
+          if (foldersQuery.isLoading || !foldersQuery.data?.folders) return [];
+          const lowerQuery = query.toLowerCase().trim();
+          const allFoldersList = foldersQuery.data.folders;
+          const matches: Folder[] = [];
+          for (const folder of allFoldersList) {
+            if (folder.name?.toLowerCase().includes(lowerQuery)) {
+              matches.push(folder);
+              if (matches.length >= 5) break;
+            }
           }
-        }
-        return matches;
-      }}
-      searchServicesDb={async (query) => {
-        const rawServices = servicesQuery.data;
-        if (servicesQuery.isLoading || !Array.isArray(rawServices)) return [];
-        const lowerQuery = query.toLowerCase().trim();
-        const matches: Service[] = [];
-        for (const service of rawServices) {
-          const matchName = service.name?.toLowerCase().includes(lowerQuery);
-          const matchNotes = service.notes?.toLowerCase().includes(lowerQuery);
+          return matches;
+        }}
+        searchServicesDb={async (query) => {
+          const rawServices = servicesQuery.data;
+          if (servicesQuery.isLoading || !Array.isArray(rawServices)) return [];
+          const lowerQuery = query.toLowerCase().trim();
+          const matches: Service[] = [];
+          for (const service of rawServices) {
+            const matchName = service.name?.toLowerCase().includes(lowerQuery);
+            const matchNotes = service.notes
+              ?.toLowerCase()
+              .includes(lowerQuery);
 
-          if (matchName || matchNotes) {
-            matches.push(service);
-            if (matches.length >= 5) break;
+            if (matchName || matchNotes) {
+              matches.push(service);
+              if (matches.length >= 5) break;
+            }
           }
-        }
-        return matches;
-      }}
-      getFolderPathString={getFolderPathString}
-      navigate={navigate}
-      logout={logout}
-      currentFolderId={currentFolderId}
-      currentSong={currentSong}
-      currentService={currentService}
-      view={view}
-      isSidebarCollapsed={isSidebarCollapsed}
-      setIsSidebarCollapsed={setIsSidebarCollapsed}
-      setCurrentFolderId={setCurrentFolderId}
-      openModal={openModal}
-      handleViewModeChange={handleViewModeChange}
-      handlePrintSong={() => {}}
-      setMoveSongTarget={setMoveSongTarget}
-      setTargetSongFolderId={setTargetSongFolderId}
-      setDeleteSongTarget={setDeleteSongTarget}
-      deleteService={deleteService}
-      fileInputRef={fileInputRef}
-    >
-      {layoutContent}
-    </HosannaCommandPalette>
+          return matches;
+        }}
+        getFolderPathString={getFolderPathString}
+        navigate={navigate}
+        logout={logout}
+        currentFolderId={currentFolderId}
+        currentSong={currentSong}
+        currentService={currentService}
+        view={view}
+        isSidebarCollapsed={isSidebarCollapsed}
+        setIsSidebarCollapsed={setIsSidebarCollapsed}
+        setCurrentFolderId={setCurrentFolderId}
+        openModal={openModal}
+        handleViewModeChange={handleViewModeChange}
+        handlePrintSong={() => {}}
+        setMoveSongTarget={setMoveSongTarget}
+        setTargetSongFolderId={setTargetSongFolderId}
+        setDeleteSongTarget={setDeleteSongTarget}
+        deleteService={deleteService}
+        fileInputRef={fileInputRef}
+      >
+        {layoutContent}
+      </HosannaCommandPalette>
     </AiChatProvider>
   );
 };

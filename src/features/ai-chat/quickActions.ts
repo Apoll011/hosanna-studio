@@ -29,6 +29,12 @@ export function chipsForContext(ctx: PageContextSnapshot): QuickChip[] {
             "Help me transpose this song. Ask which target key if unclear, then propose the transposed ChordPro.",
         },
         {
+          id: "complete-notes",
+          labelKey: "ai.chat.chips.completeNotes",
+          prompt:
+            "Complete Notes: use chordpro_propagate_notes (or chordpro.propagate_notes) on the current song. Copy {c:}/{ci:}/{cb:} notes from the first annotated verse onto the other verses at the same relative places — do NOT invent new notes. Show the diff and propose applying to the editor; do not save yet.",
+        },
+        {
           id: "complete-meta",
           labelKey: "ai.chat.chips.completeMeta",
           prompt:

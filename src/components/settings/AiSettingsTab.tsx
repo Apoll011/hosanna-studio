@@ -40,6 +40,8 @@ const PROVIDER_LABELS: Record<AiProvider, string> = {
   openai: "OpenAI",
   anthropic: "Anthropic",
   google: "Google Gemini",
+  deepseek: "DeepSeek",
+  openai_compatible: "OpenAI-compatible (custom)",
 };
 
 export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
@@ -59,6 +61,7 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
   const [customModel, setCustomModel] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [apiKey, setApiKey] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
 
   useEffect(() => {
     if (!active || !canManage) return;
@@ -72,6 +75,7 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
         setProvider(data.provider);
         setModel(data.model);
         setEnabled(data.enabled);
+        setBaseUrl(data.baseUrl ?? "");
         const presets = data.modelPresets[data.provider] ?? [];
         setCustomModel(!presets.includes(data.model));
       })
@@ -119,7 +123,15 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
     if (nextPresets.length > 0 && !customModel) {
       setModel(nextPresets[0]!);
     }
+    const def = settings?.defaultBaseUrls?.[next];
+    if (def) setBaseUrl(def);
+    else if (next !== "openai_compatible") setBaseUrl("");
   };
+
+  const needsBaseUrl =
+    provider === "openai_compatible" ||
+    provider === "deepseek" ||
+    provider === "openai";
 
   const handleSave = async () => {
     setSaving(true);
@@ -129,6 +141,9 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
         model: model.trim(),
         enabled,
         ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+        ...(needsBaseUrl
+          ? { baseUrl: baseUrl.trim() || null }
+          : { baseUrl: null }),
       });
       setSettings(data);
       setApiKey("");
@@ -204,6 +219,28 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
                 ))}
               </select>
             </label>
+
+            {needsBaseUrl && (
+              <label className="block space-y-1.5">
+                <span className="text-label text-m3-text">
+                  {t("ai.settings.baseUrl")}
+                </span>
+                <input
+                  className={inputClass}
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.currentTarget.value)}
+                  placeholder={
+                    provider === "openai_compatible"
+                      ? t("ai.settings.baseUrlRequiredPlaceholder")
+                      : t("ai.settings.baseUrlPlaceholder")
+                  }
+                  required={provider === "openai_compatible"}
+                />
+                <span className="text-caption text-m3-secondary">
+                  {t("ai.settings.baseUrlHint")}
+                </span>
+              </label>
+            )}
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
@@ -306,7 +343,11 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
                 isLoading={saving}
                 icon={<Save className="w-4 h-4" />}
                 onClick={() => void handleSave()}
-                disabled={clearing || !model.trim()}
+                disabled={
+                  clearing ||
+                  !model.trim() ||
+                  (provider === "openai_compatible" && !baseUrl.trim())
+                }
               >
                 {t("common.save")}
               </Button>
