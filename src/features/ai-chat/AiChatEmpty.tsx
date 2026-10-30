@@ -58,7 +58,7 @@ export const AiChatEmpty: React.FC<Props> = ({
       <LogosMascot
         track
         interactive
-        size={dense ? 96 : 132}
+        size={dense ? 150 : 184}
         mood={mood}
         label={t("ai.chat.mascotLabel")}
       />
