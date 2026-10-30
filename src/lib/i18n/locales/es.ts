@@ -2778,6 +2778,7 @@ export const es: typeof pt = {
         chordpro_convert: "Convertir a ChordPro",
         chordpro_directives: "Consultar directivas",
         songs_search: "Buscar canciones",
+        songs_list_in_folder: "Listar canciones de la carpeta",
         songs_search_lyrics: "Buscar letras",
         songs_get: "Leer canción",
         songs_get_many: "Leer canciones",

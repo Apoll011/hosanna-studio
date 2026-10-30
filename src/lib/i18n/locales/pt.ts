@@ -2767,6 +2767,7 @@ export const pt = {
         chordpro_convert: "Converter para ChordPro",
         chordpro_directives: "Consultar diretivas",
         songs_search: "Pesquisar canções",
+        songs_list_in_folder: "Listar canções da pasta",
         songs_search_lyrics: "Pesquisar letras",
         songs_get: "Ler canção",
         songs_get_many: "Ler canções",

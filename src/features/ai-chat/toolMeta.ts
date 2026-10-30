@@ -82,6 +82,7 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   chordpro_convert: FileCode2,
   chordpro_directives: FileCode2,
   songs_search: Search,
+  songs_list_in_folder: Folder,
   songs_search_lyrics: Search,
   songs_get: Music,
   songs_get_many: Music,
