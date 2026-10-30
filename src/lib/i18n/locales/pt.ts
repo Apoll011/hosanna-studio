@@ -2507,6 +2507,8 @@ export const pt = {
       keyNeverReturned: "A chave nunca é devolvida ao browser.",
       enabled: "Ativar assistente",
       enabledDesc: "Membros com acesso a IA podem abrir o painel de chat.",
+      advanced: "Avançado",
+      advancedDesc: "Limite de ferramentas, criatividade e tamanho máximo da resposta.",
       behaviorTitle: "Comportamento",
       behaviorDesc: "Controle como o Logos trabalha em cada resposta.",
       maxToolCalls: "Máximo de chamadas de ferramentas por resposta",
@@ -2527,8 +2529,10 @@ export const pt = {
       memoryDesc:
         "Notas curtas que o Logos lembra em todas as conversas da organização. Ele só guarda algo quando alguém lho pede.",
       memoryEnabled: "Ativar memória",
-      memoryEnabledDesc: "Inclui as notas no contexto e deixa o Logos geri-las.",
-      memoryEmpty: "Ainda sem notas. Peça ao Logos para “lembrar” algo ou adicione aqui.",
+      memoryEnabledDesc:
+        "Inclui as notas no contexto e deixa o Logos geri-las.",
+      memoryEmpty:
+        "Ainda sem notas. Peça ao Logos para “lembrar” algo ou adicione aqui.",
       memoryPlaceholder: "Ex.: A equipa de louvor prefere cantar em Sol maior.",
       memoryAdd: "Adicionar",
       memoryDelete: "Esquecer",

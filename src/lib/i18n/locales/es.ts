@@ -2518,6 +2518,8 @@ export const es: typeof pt = {
       keyNeverReturned: "La clave nunca se devuelve al navegador.",
       enabled: "Activar asistente",
       enabledDesc: "Los miembros con acceso a IA pueden abrir el chat.",
+      advanced: "Avanzado",
+      advancedDesc: "Límite de herramientas, creatividad y longitud máxima de la respuesta.",
       behaviorTitle: "Comportamiento",
       behaviorDesc: "Controla cómo trabaja Logos en cada respuesta.",
       maxToolCalls: "Máximo de llamadas a herramientas por respuesta",
@@ -2528,7 +2530,8 @@ export const es: typeof pt = {
         "Valores bajos dan respuestas más predecibles; valores altos, más variadas.",
       temperatureDefault: "Predeterminado del modelo",
       maxOutputTokens: "Longitud máxima de respuesta (tokens)",
-      maxOutputTokensHint: "Déjalo vacío para usar el predeterminado del modelo.",
+      maxOutputTokensHint:
+        "Déjalo vacío para usar el predeterminado del modelo.",
       instructions: "Instrucciones de la organización",
       instructionsHint:
         "Se envían a Logos en cada conversación. Ej.: tono, nomenclatura, tonalidades preferidas.",
@@ -2538,9 +2541,12 @@ export const es: typeof pt = {
       memoryDesc:
         "Notas cortas que Logos recuerda en todos los chats de la organización. Solo guarda algo cuando alguien se lo pide.",
       memoryEnabled: "Activar memoria",
-      memoryEnabledDesc: "Incluye las notas en el contexto y deja que Logos las gestione.",
-      memoryEmpty: "Aún no hay notas. Pide a Logos que “recuerde” algo o añade una aquí.",
-      memoryPlaceholder: "Ej.: El equipo de alabanza prefiere cantar en Sol mayor.",
+      memoryEnabledDesc:
+        "Incluye las notas en el contexto y deja que Logos las gestione.",
+      memoryEmpty:
+        "Aún no hay notas. Pide a Logos que “recuerde” algo o añade una aquí.",
+      memoryPlaceholder:
+        "Ej.: El equipo de alabanza prefiere cantar en Sol mayor.",
       memoryAdd: "Añadir",
       memoryDelete: "Olvidar",
       memoryClear: "Borrar todo",

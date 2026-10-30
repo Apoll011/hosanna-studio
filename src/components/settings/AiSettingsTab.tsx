@@ -8,7 +8,15 @@ import { Button, Spinner, Surface } from "@/src/components/common";
 import { dispatchAiSettingsChanged } from "@/src/features/ai-chat";
 import { useI18n } from "@/src/lib/i18n";
 import { useCan } from "@/src/lib/permissions/client";
-import { KeyRound, Loader2, Lock, Save, Sparkles, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  KeyRound,
+  Loader2,
+  Lock,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { AiMemoryPanel } from "./AiMemoryPanel";
 import React, { useEffect, useMemo, useState } from "react";
 
@@ -57,6 +65,7 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
   const [maxOutputTokens, setMaxOutputTokens] = useState("");
   const [instructions, setInstructions] = useState("");
   const [memoryEnabled, setMemoryEnabled] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     if (!active || !canManage) return;
@@ -362,91 +371,6 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-label text-m3-text">
-                    {t("ai.settings.maxToolCalls")}
-                  </span>
-                  <span className="text-sm font-semibold tabular-nums text-m3-primary">
-                    {maxToolCalls}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  className="w-full accent-[var(--color-m3-primary)]"
-                  min={settings.limits.maxToolCalls.min}
-                  max={settings.limits.maxToolCalls.max}
-                  step={1}
-                  value={maxToolCalls}
-                  onChange={(e) =>
-                    setMaxToolCalls(Number(e.currentTarget.value))
-                  }
-                />
-                <span className="text-caption text-m3-secondary block">
-                  {t("ai.settings.maxToolCallsHint", {
-                    min: settings.limits.maxToolCalls.min,
-                    max: settings.limits.maxToolCalls.max,
-                  })}
-                </span>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-label text-m3-text">
-                    {t("ai.settings.temperature")}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="text-sm font-semibold tabular-nums text-m3-primary">
-                      {temperature == null
-                        ? t("ai.settings.temperatureDefault")
-                        : temperature.toFixed(1)}
-                    </span>
-                    {temperature != null ? (
-                      <button
-                        type="button"
-                        className="text-xs text-m3-primary hover:underline"
-                        onClick={() => setTemperature(null)}
-                      >
-                        {t("ai.settings.temperatureDefault")}
-                      </button>
-                    ) : null}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  className="w-full accent-[var(--color-m3-primary)]"
-                  min={settings.limits.temperature.min}
-                  max={settings.limits.temperature.max}
-                  step={0.1}
-                  value={temperature ?? 0.7}
-                  onChange={(e) =>
-                    setTemperature(Number(e.currentTarget.value))
-                  }
-                />
-                <span className="text-caption text-m3-secondary block">
-                  {t("ai.settings.temperatureHint")}
-                </span>
-              </div>
-
-              <label className="block space-y-1.5">
-                <span className="text-label text-m3-text">
-                  {t("ai.settings.maxOutputTokens")}
-                </span>
-                <input
-                  className={inputClass}
-                  type="number"
-                  inputMode="numeric"
-                  min={settings.limits.maxOutputTokens.min}
-                  max={settings.limits.maxOutputTokens.max}
-                  value={maxOutputTokens}
-                  onChange={(e) => setMaxOutputTokens(e.currentTarget.value)}
-                  placeholder={t("ai.settings.temperatureDefault")}
-                />
-                <span className="text-caption text-m3-secondary">
-                  {t("ai.settings.maxOutputTokensHint")}
-                </span>
-              </label>
-
               <label className="block space-y-1.5">
                 <span className="text-label text-m3-text">
                   {t("ai.settings.instructions")}
@@ -482,6 +406,116 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
                   onChange={(e) => setMemoryEnabled(e.currentTarget.checked)}
                 />
               </label>
+
+              <div className="rounded-[var(--radius-md)] border border-m3-border overflow-hidden">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-left hover:bg-m3-sidebar/60 transition-colors"
+                  aria-expanded={showAdvanced}
+                  onClick={() => setShowAdvanced((v) => !v)}
+                >
+                  <span>
+                    <span className="text-sm font-medium text-m3-text block">
+                      {t("ai.settings.advanced")}
+                    </span>
+                    <span className="text-caption text-m3-secondary">
+                      {t("ai.settings.advancedDesc")}
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-m3-secondary shrink-0 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {showAdvanced ? (
+                  <div className="space-y-5 px-3.5 pb-4 pt-3 border-t border-m3-border bg-m3-sidebar/30">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-label text-m3-text">
+                          {t("ai.settings.maxToolCalls")}
+                        </span>
+                        <span className="text-sm font-semibold tabular-nums text-m3-primary">
+                          {maxToolCalls}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        className="w-full accent-[var(--color-m3-primary)]"
+                        min={settings.limits.maxToolCalls.min}
+                        max={settings.limits.maxToolCalls.max}
+                        step={1}
+                        value={maxToolCalls}
+                        onChange={(e) =>
+                          setMaxToolCalls(Number(e.currentTarget.value))
+                        }
+                      />
+                      <span className="text-caption text-m3-secondary block">
+                        {t("ai.settings.maxToolCallsHint", {
+                          min: settings.limits.maxToolCalls.min,
+                          max: settings.limits.maxToolCalls.max,
+                        })}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-label text-m3-text">
+                          {t("ai.settings.temperature")}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm font-semibold tabular-nums text-m3-primary">
+                            {temperature == null
+                              ? t("ai.settings.temperatureDefault")
+                              : temperature.toFixed(1)}
+                          </span>
+                          {temperature != null ? (
+                            <button
+                              type="button"
+                              className="text-xs text-m3-primary hover:underline"
+                              onClick={() => setTemperature(null)}
+                            >
+                              {t("ai.settings.temperatureDefault")}
+                            </button>
+                          ) : null}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        className="w-full accent-[var(--color-m3-primary)]"
+                        min={settings.limits.temperature.min}
+                        max={settings.limits.temperature.max}
+                        step={0.1}
+                        value={temperature ?? 0.7}
+                        onChange={(e) =>
+                          setTemperature(Number(e.currentTarget.value))
+                        }
+                      />
+                      <span className="text-caption text-m3-secondary block">
+                        {t("ai.settings.temperatureHint")}
+                      </span>
+                    </div>
+
+                    <label className="block space-y-1.5">
+                      <span className="text-label text-m3-text">
+                        {t("ai.settings.maxOutputTokens")}
+                      </span>
+                      <input
+                        className={inputClass}
+                        type="number"
+                        inputMode="numeric"
+                        min={settings.limits.maxOutputTokens.min}
+                        max={settings.limits.maxOutputTokens.max}
+                        value={maxOutputTokens}
+                        onChange={(e) =>
+                          setMaxOutputTokens(e.currentTarget.value)
+                        }
+                        placeholder={t("ai.settings.temperatureDefault")}
+                      />
+                      <span className="text-caption text-m3-secondary">
+                        {t("ai.settings.maxOutputTokensHint")}
+                      </span>
+                    </label>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-m3-border">

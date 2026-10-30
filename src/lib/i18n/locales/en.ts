@@ -2485,6 +2485,8 @@ export const en: typeof pt = {
       keyNeverReturned: "The key is never returned to the browser.",
       enabled: "Enable assistant",
       enabledDesc: "Members with AI access can open the chat panel.",
+      advanced: "Advanced",
+      advancedDesc: "Tool-call limit, creativity and maximum reply length.",
       behaviorTitle: "Behavior",
       behaviorDesc: "Control how Logos works on every reply.",
       maxToolCalls: "Max tool calls per reply",
@@ -2505,8 +2507,10 @@ export const en: typeof pt = {
       memoryDesc:
         "Short notes Logos remembers across all of the organization's chats. It only saves something when someone asks it to.",
       memoryEnabled: "Enable memory",
-      memoryEnabledDesc: "Includes the notes in context and lets Logos manage them.",
-      memoryEmpty: "No notes yet. Ask Logos to “remember” something or add one here.",
+      memoryEnabledDesc:
+        "Includes the notes in context and lets Logos manage them.",
+      memoryEmpty:
+        "No notes yet. Ask Logos to “remember” something or add one here.",
       memoryPlaceholder: "E.g. The worship team prefers singing in G major.",
       memoryAdd: "Add",
       memoryDelete: "Forget",
