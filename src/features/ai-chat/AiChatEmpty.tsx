@@ -47,7 +47,7 @@ export const AiChatEmpty: React.FC<Props> = ({
       <LogosMascot
         track
         size={132}
-        mood={mood}
+        mood={mood === "idle" ? "helping" : mood}
         label={t("ai.chat.mascotLabel")}
       />
       <p className="mt-3 mb-0 text-[11px] font-medium uppercase tracking-wider text-m3-primary">

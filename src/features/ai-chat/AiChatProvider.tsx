@@ -409,7 +409,12 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
       const working = last?.parts.some(
         (p) => p.type === "tool" && p.tool.status === "running",
       );
-      setMood(working ? "working" : "thinking");
+      const singing = last?.parts.some(
+        (p) => p.type === "text" && p.text.trim().length > 0,
+      );
+      // Tools running → headphones-on busy; words arriving → singing;
+      // otherwise pondering.
+      setMood(working ? "working" : singing ? "singing" : "thinking");
       return;
     }
     if (!hadStreamRef.current) return;
@@ -421,7 +426,10 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
       setMood("idle");
       return;
     }
-    setMood(failed ? "oops" : "happy");
+    const usedTools = last?.parts.some(
+      (p) => p.type === "tool" && p.tool.status === "done",
+    );
+    setMood(failed ? "oops" : usedTools ? "celebrating" : "happy");
     const timer = window.setTimeout(
       () => setMood("idle"),
       failed ? 4000 : 2800,

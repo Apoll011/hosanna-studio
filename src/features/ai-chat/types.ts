@@ -73,7 +73,18 @@ export type QuickChip = {
 
 export type PageContextSnapshot = AiChatContext;
 
-export type LogosMood = "idle" | "thinking" | "working" | "happy" | "oops";
+export type LogosMood =
+  | "idle"
+  | "thinking"
+  | "working"
+  | "listening"
+  | "singing"
+  | "happy"
+  | "excited"
+  | "celebrating"
+  | "sleeping"
+  | "helping"
+  | "oops";
 
 /** Tools whose cards are noise for the user (hidden from the tool list). */
 export const SILENT_TOOLS = new Set(["studio_sync", "suggest_followups"]);
