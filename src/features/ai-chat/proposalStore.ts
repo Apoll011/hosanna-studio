@@ -40,6 +40,12 @@ export type ServiceProposal = {
 export type AiProposal = SongProposal | ServiceProposal;
 
 const STORAGE_KEY = "hosanna:ai-proposals:v1";
+const OUTCOMES_KEY = "hosanna:ai-proposal-outcomes:v1";
+const MAX_OUTCOMES = 200;
+
+export type ProposalOutcome = "accepted" | "declined";
+/** What a proposal shown in the chat is doing right now. */
+export type ProposalStatus = "pending" | ProposalOutcome | "stale";
 const MAX_PROPOSALS = 50;
 
 const songKey = (id: string) => `song:${id}`;
@@ -66,7 +72,38 @@ function load(): AiProposal[] {
   }
 }
 
+/** Cheap stable fingerprint of a proposal's content (djb2). */
+function hashText(text: string): string {
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) {
+    h = ((h << 5) + h + text.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(36);
+}
+
+export function proposalFingerprint(key: string, content: string): string {
+  return `${key}@${hashText(content)}`;
+}
+
+function contentOf(p: AiProposal): string {
+  return p.kind === "song" ? p.content : JSON.stringify(p.elements);
+}
+
+function loadOutcomes(): Record<string, ProposalOutcome> {
+  if (typeof sessionStorage === "undefined") return {};
+  try {
+    const raw = sessionStorage.getItem(OUTCOMES_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    return parsed && typeof parsed === "object"
+      ? (parsed as Record<string, ProposalOutcome>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
 let proposals: AiProposal[] = load();
+let outcomes: Record<string, ProposalOutcome> = loadOutcomes();
 const listeners = new Set<() => void>();
 
 function commit(next: AiProposal[]) {
@@ -77,6 +114,24 @@ function commit(next: AiProposal[]) {
     // Storage full / unavailable — in-memory state is still correct.
   }
   listeners.forEach((fn) => fn());
+}
+
+function recordOutcomes(list: AiProposal[], outcome: ProposalOutcome) {
+  if (list.length === 0) return;
+  const next = { ...outcomes };
+  for (const p of list) {
+    next[proposalFingerprint(p.key, contentOf(p))] = outcome;
+  }
+  const keys = Object.keys(next);
+  for (const k of keys.slice(0, Math.max(0, keys.length - MAX_OUTCOMES))) {
+    delete next[k];
+  }
+  outcomes = next;
+  try {
+    sessionStorage.setItem(OUTCOMES_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
 }
 
 function upsert(p: AiProposal) {
@@ -126,15 +181,28 @@ export const aiProposals = {
     });
   },
 
-  resolve(key: string) {
-    if (!proposals.some((p) => p.key === key)) return;
+  /** Remove a proposal, remembering how it ended (shown in the chat). */
+  resolve(key: string, outcome: ProposalOutcome = "declined") {
+    const found = proposals.find((p) => p.key === key);
+    if (!found) return;
+    recordOutcomes([found], outcome);
     commit(proposals.filter((p) => p.key !== key));
   },
 
-  resolveAll(keys?: string[]) {
-    if (!keys) return commit([]);
-    const set = new Set(keys);
+  resolveAll(keys?: string[], outcome: ProposalOutcome = "declined") {
+    const targets = keys
+      ? proposals.filter((p) => keys.includes(p.key))
+      : proposals;
+    recordOutcomes(targets, outcome);
+    const set = new Set(targets.map((p) => p.key));
     commit(proposals.filter((p) => !set.has(p.key)));
+  },
+
+  /** Status of a proposal as it appears in a chat message. */
+  statusOf(key: string, content: string): ProposalStatus {
+    const live = proposals.find((p) => p.key === key);
+    if (live && contentOf(live) === content) return "pending";
+    return outcomes[proposalFingerprint(key, content)] ?? "stale";
   },
 
   subscribe(listener: () => void) {
@@ -185,4 +253,16 @@ export function useServiceProposal(
     useSyncExternalStore(aiProposals.subscribe, getSnapshot, getSnapshot) ??
     null
   );
+}
+
+/** Pending / accepted / declined / stale for one song proposal in the chat. */
+export function useSongProposalStatus(
+  songId: string,
+  content: string,
+): ProposalStatus {
+  const getSnapshot = useCallback(
+    () => aiProposals.statusOf(songKey(songId), content),
+    [songId, content],
+  );
+  return useSyncExternalStore(aiProposals.subscribe, getSnapshot, getSnapshot);
 }

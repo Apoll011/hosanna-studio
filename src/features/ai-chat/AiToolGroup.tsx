@@ -14,11 +14,16 @@ import {
 } from "lucide-react";
 import React, { memo, useMemo, useState } from "react";
 import { AiConfirmCard } from "./AiConfirmCard";
+import { AiProposalCard } from "./AiProposalCard";
 import { CopyButton } from "./CopyButton";
 import { countByName, toolRunStatus } from "./messageState";
-import { extractDestructiveConfirmation } from "./proposals";
+import {
+  extractDestructiveConfirmation,
+  extractSongProposal,
+} from "./proposals";
 import {
   formatDuration,
+  parseToolOutput,
   toolIcon,
   toolLabel,
   toolPayloadText,
@@ -189,6 +194,16 @@ export const AiToolGroup = memo(function AiToolGroup({
     [tools],
   );
 
+  const songProposals = useMemo(
+    () =>
+      tools.map((tool) => {
+        if (tool.status !== "done") return null;
+        const p = extractSongProposal(parseToolOutput(tool.output));
+        return p?.id ? { ...p, id: p.id } : null;
+      }),
+    [tools],
+  );
+
   const current = useMemo(() => {
     for (let i = tools.length - 1; i >= 0; i--) {
       if (tools[i].status === "running") return tools[i];
@@ -262,6 +277,13 @@ export const AiToolGroup = memo(function AiToolGroup({
           )}
         </div>
       </div>
+
+      {/* Song edits can be reviewed and applied right here. */}
+      {songProposals.map((p, i) =>
+        p ? (
+          <AiProposalCard key={`p-${tools[i].toolCallId}`} proposal={p} />
+        ) : null,
+      )}
 
       {/* Pending confirmations stay visible even while the list is collapsed. */}
       {confirmations.map((c, i) =>

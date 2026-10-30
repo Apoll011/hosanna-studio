@@ -31,7 +31,7 @@ export function useProposalActions() {
       try {
         // Success / error toasts are raised by the mutation itself.
         await updateSong({ id: proposal.entityId, data });
-        aiProposals.resolve(proposal.key);
+        aiProposals.resolve(proposal.key, "accepted");
         return true;
       } catch {
         return false;

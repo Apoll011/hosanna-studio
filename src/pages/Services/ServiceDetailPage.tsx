@@ -983,7 +983,7 @@ export const ServiceDetailPage: React.FC = () => {
     setElements(next);
     elementsRef.current = next;
     if (stagedProposal.notes != null) setGeneralNotes(stagedProposal.notes);
-    aiProposals.resolve(stagedProposal.key);
+    aiProposals.resolve(stagedProposal.key, "accepted");
     showToast(t("ai.chat.appliedToEditor"), "success");
   };
 

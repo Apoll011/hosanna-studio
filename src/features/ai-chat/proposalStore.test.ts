@@ -37,4 +37,23 @@ describe("aiProposals", () => {
     off();
     assert.equal(calls, 4);
   });
+
+  it("reports pending, accepted, declined and stale for chat cards", () => {
+    aiProposals.stageSong({ songId: "a", content: "v1" });
+    assert.equal(aiProposals.statusOf("song:a", "v1"), "pending");
+    // A newer proposal for the same song supersedes the old card.
+    aiProposals.stageSong({ songId: "a", content: "v2" });
+    assert.equal(aiProposals.statusOf("song:a", "v1"), "stale");
+    assert.equal(aiProposals.statusOf("song:a", "v2"), "pending");
+
+    aiProposals.resolve("song:a", "accepted");
+    assert.equal(aiProposals.statusOf("song:a", "v2"), "accepted");
+
+    aiProposals.stageSong({ songId: "b", content: "B" });
+    aiProposals.resolve("song:b");
+    assert.equal(aiProposals.statusOf("song:b", "B"), "declined");
+    // Re-proposing identical content makes it actionable again.
+    aiProposals.stageSong({ songId: "b", content: "B" });
+    assert.equal(aiProposals.statusOf("song:b", "B"), "pending");
+  });
 });

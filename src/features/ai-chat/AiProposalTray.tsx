@@ -16,8 +16,8 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import React, { useCallback, useState, useSyncExternalStore } from "react";
-import { aiContextBridge } from "./contextBridge";
+import React, { useCallback, useState } from "react";
+import { useOpenEditorKey } from "./useOpenEditorKey";
 import { AiProposalReview } from "./AiProposalReview";
 import { useProposalActions } from "./proposalActions";
 import {
@@ -26,23 +26,6 @@ import {
   type AiProposal,
   type SongProposal,
 } from "./proposalStore";
-
-/** Key of the editor currently open (`song:<id>` / `service:<id>`), if any. */
-function openEditorKey(): string {
-  const song = aiContextBridge.getSong();
-  if (song) return `song:${song.songId}`;
-  const service = aiContextBridge.getService();
-  if (service) return `service:${service.serviceId}`;
-  return "";
-}
-
-function useOpenEditorKey(): string {
-  return useSyncExternalStore(
-    aiContextBridge.subscribe,
-    openEditorKey,
-    openEditorKey,
-  );
-}
 
 const iconBtn =
   "inline-flex items-center justify-center w-7 h-7 rounded-[var(--radius-md)] text-m3-secondary hover:bg-m3-hover hover:text-m3-text disabled:opacity-50 transition-colors";

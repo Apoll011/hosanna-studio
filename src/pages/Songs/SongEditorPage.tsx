@@ -181,7 +181,7 @@ export const SongEditorPage: React.FC = () => {
       if (!aiProposal) return;
       setContent(next);
       setHasUnsavedChanges(true);
-      aiProposals.resolve(aiProposal.key);
+      aiProposals.resolve(aiProposal.key, "accepted");
       showToast(t("ai.chat.appliedToEditor"), "success");
     },
     [aiProposal, showToast, t],

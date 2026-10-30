@@ -27,6 +27,8 @@ export {
   useAiProposals,
   useServiceProposal,
   useSongProposal,
+  useSongProposalStatus,
+  type ProposalStatus,
   type AiProposal,
   type ServiceProposal,
   type SongProposal,
