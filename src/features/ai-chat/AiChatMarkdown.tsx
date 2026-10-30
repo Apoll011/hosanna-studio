@@ -4,7 +4,17 @@
  */
 
 import { Markdown, type MarkdownComponents } from "@tanstack/markdown/react";
-import React from "react";
+import React, { memo } from "react";
+import { CopyButton } from "./CopyButton";
+
+/** Plain text of a rendered subtree (for the code-block copy button). */
+function nodeText(node: unknown): string {
+  if (node == null || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeText).join("");
+  const props = (node as { props?: { children?: unknown } }).props;
+  return props ? nodeText(props.children) : "";
+}
 
 const components = {
   a(props) {
@@ -106,11 +116,20 @@ const components = {
     );
   },
   pre(props) {
+    const { children, ...rest } = props;
     return (
-      <pre
-        {...props}
-        className="my-2 max-h-52 overflow-auto rounded-[var(--radius-md)] border border-m3-border bg-m3-card px-2.5 py-2 text-[11px] font-mono leading-snug"
-      />
+      <div className="group/code relative my-2">
+        <pre
+          {...rest}
+          className="max-h-60 overflow-auto rounded-[var(--radius-md)] border border-m3-border bg-m3-card px-2.5 py-2 pr-9 text-[11px] font-mono leading-snug"
+        >
+          {children}
+        </pre>
+        <CopyButton
+          text={() => nodeText(children).replace(/\n$/, "")}
+          className="absolute top-1.5 right-1.5 p-1 bg-m3-card/90 border border-m3-border/70 opacity-0 group-hover/code:opacity-100 focus-visible:opacity-100 transition-opacity"
+        />
+      </div>
     );
   },
   table(props) {
@@ -153,6 +172,10 @@ const components = {
 } satisfies MarkdownComponents;
 
 /** Studio chat markdown with explicit table/list/code styles (no typography plugin). */
-export const AiChatMarkdown: React.FC<{ children: string }> = ({
+export const AiChatMarkdown = memo(function AiChatMarkdown({
   children,
-}) => <Markdown components={components}>{children}</Markdown>;
+}: {
+  children: string;
+}) {
+  return <Markdown components={components}>{children}</Markdown>;
+});

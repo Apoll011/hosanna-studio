@@ -4,14 +4,68 @@
  */
 
 import { useI18n } from "@/src/lib/i18n";
-import { Eraser, Send, Sparkles, Square, X } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
-import { AiChatMarkdown } from "./AiChatMarkdown";
+import {
+  ArrowDown,
+  Maximize2,
+  Minimize2,
+  MessageSquarePlus,
+  X,
+} from "lucide-react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { AiChatComposer, type AiChatComposerHandle } from "./AiChatComposer";
+import { AiChatEmpty } from "./AiChatEmpty";
+import { AiChatHistory } from "./AiChatHistory";
+import { AiProposalTray } from "./AiProposalTray";
+import { AiChatMessageView } from "./AiChatMessage";
 import { useAiChat } from "./AiChatProvider";
-import { AiToolCard } from "./AiToolCard";
+import { LogosMascot } from "./LogosMascot";
+import type { PageContextSnapshot } from "./types";
+
+const STICK_THRESHOLD_PX = 72;
+
+function useContextLabel(ctx: PageContextSnapshot): string {
+  const { t } = useI18n();
+  const title = ctx.title?.trim();
+  switch (ctx.kind) {
+    case "song_editor":
+      return title
+        ? t("ai.chat.contextSong", { title })
+        : t("ai.chat.contextSongs");
+    case "service_editor":
+      return title
+        ? t("ai.chat.contextService", { title })
+        : t("ai.chat.contextServices");
+    case "songs_list":
+      return t("ai.chat.contextSongs");
+    case "services_list":
+      return t("ai.chat.contextServices");
+    case "explorer":
+      return t("ai.chat.contextExplorer");
+    case "collection_detail":
+      return t("ai.chat.contextCollection");
+    case "agenda":
+      return t("ai.chat.contextAgenda");
+    case "trash":
+      return t("ai.chat.contextTrash");
+    default:
+      return t("ai.chat.contextGeneral");
+  }
+}
+
+type PanelProps = {
+  /** Dock can offer a wide mode (desktop only). */
+  wide?: boolean;
+  onToggleWide?: () => void;
+};
 
 /** In-flow docked chat column — parent controls width; this fills height. */
-export const AiChatPanel: React.FC = () => {
+export const AiChatPanel: React.FC<PanelProps> = ({ wide, onToggleWide }) => {
   const { t } = useI18n();
   const {
     open,
@@ -19,179 +73,230 @@ export const AiChatPanel: React.FC = () => {
     visible,
     messages,
     streaming,
-    error,
     chips,
+    pageContext,
+    mood,
+    includeContext,
+    setIncludeContext,
+    threads,
+    threadId,
     send,
     stop,
-    clear,
+    newChat,
+    openThread,
+    deleteThread,
+    regenerate,
+    editAndResend,
   } = useAiChat();
 
-  const [draft, setDraft] = useState("");
-  const listRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<AiChatComposerHandle>(null);
+  const stickRef = useRef(true);
+  const [showJump, setShowJump] = useState(false);
+  const contextLabel = useContextLabel(pageContext);
+  const empty = messages.length === 0;
+
+  const scrollToBottom = useCallback((smooth = false) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: smooth ? "smooth" : "auto",
+    });
+  }, []);
+
+  const onScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const atBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < STICK_THRESHOLD_PX;
+    stickRef.current = atBottom;
+    setShowJump((prev) => (prev === !atBottom ? prev : !atBottom));
+  }, []);
+
+  // Follow growth (streaming, expanding tool groups) only while pinned.
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!open || !content || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      if (stickRef.current) scrollToBottom();
+    });
+    ro.observe(content);
+    return () => ro.disconnect();
+  }, [open, empty, scrollToBottom]);
+
+  // A new user turn always re-pins.
+  const lastUserId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") return messages[i].id;
+    }
+    return null;
+  }, [messages]);
+  useEffect(() => {
+    stickRef.current = true;
+    scrollToBottom();
+  }, [lastUserId, threadId, scrollToBottom]);
 
   useEffect(() => {
-    if (!open) return;
-    const el = listRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, open, streaming]);
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
+    if (open) composerRef.current?.focus();
+  }, [open, threadId]);
 
   if (!visible) return null;
 
-  const onSubmit = async () => {
-    const text = draft;
-    setDraft("");
-    await send(text);
-  };
+  const lastIndex = messages.length - 1;
 
   return (
     <aside
-      className={`h-full w-full flex flex-col bg-m3-card overflow-hidden transition-[opacity] duration-200 ${
+      className={`h-full w-full flex flex-col bg-m3-card overflow-hidden transition-opacity duration-200 ${
         open ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
-      aria-hidden={!open}
+      // `inert` removes the hidden panel from tab order and the a11y tree.
+      {...({ inert: !open } as Record<string, unknown>)}
       aria-label={t("ai.chat.title")}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !e.defaultPrevented && !streaming) {
+          setOpen(false);
+        }
+      }}
     >
-      <header className="flex items-center gap-2 px-3 py-2.5 border-b border-m3-border shrink-0">
-        <div className="w-7 h-7 rounded-[var(--radius-md)] bg-m3-primary/10 text-m3-primary flex items-center justify-center">
-          <Sparkles className="w-3.5 h-3.5" />
-        </div>
+      <header className="flex items-center gap-2 pl-3 pr-2 py-2 border-b border-m3-border shrink-0">
+        <LogosMascot flat size={32} mood={mood} />
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold text-m3-text truncate">
+          <h2 className="text-sm font-semibold text-m3-text truncate m-0 leading-tight">
             {t("ai.chat.title")}
           </h2>
+          <p
+            className="m-0 text-[11px] text-m3-secondary truncate leading-tight"
+            title={t("ai.chat.contextHint")}
+          >
+            {includeContext ? contextLabel : t("ai.chat.subtitle")}
+          </p>
         </div>
         <button
           type="button"
-          className="p-1.5 rounded-[var(--radius-md)] text-m3-secondary hover:bg-m3-sidebar hover:text-m3-text"
-          onClick={clear}
-          title={t("ai.chat.clear")}
-          aria-label={t("ai.chat.clear")}
+          className="p-1.5 rounded-[var(--radius-md)] text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
+          onClick={newChat}
+          title={t("ai.chat.new")}
+          aria-label={t("ai.chat.new")}
         >
-          <Eraser className="w-4 h-4" />
+          <MessageSquarePlus className="w-4 h-4" />
         </button>
+        <AiChatHistory
+          threads={threads}
+          activeId={threadId}
+          onOpen={(id) => void openThread(id)}
+          onDelete={(id) => void deleteThread(id)}
+        />
+        {onToggleWide && (
+          <button
+            type="button"
+            className="hidden sm:inline-flex p-1.5 rounded-[var(--radius-md)] text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
+            onClick={onToggleWide}
+            title={wide ? t("ai.chat.collapse") : t("ai.chat.expand")}
+            aria-label={wide ? t("ai.chat.collapse") : t("ai.chat.expand")}
+          >
+            {wide ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
+          </button>
+        )}
         <button
           type="button"
-          className="p-1.5 rounded-[var(--radius-md)] text-m3-secondary hover:bg-m3-sidebar hover:text-m3-text"
+          className="p-1.5 rounded-[var(--radius-md)] text-m3-secondary hover:bg-m3-hover hover:text-m3-text"
           onClick={() => setOpen(false)}
+          title={t("ai.chat.close")}
           aria-label={t("ai.chat.close")}
         >
           <X className="w-4 h-4" />
         </button>
       </header>
 
-      <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {messages.length === 0 && (
-          <p className="text-sm text-m3-secondary text-center py-10 px-4">
-            {t("ai.chat.empty")}
-          </p>
-        )}
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex flex-col gap-1 ${
-              msg.role === "user" ? "items-end" : "items-start"
-            }`}
+      <AiProposalTray />
+
+      <div className="relative flex-1 min-h-0">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className="h-full overflow-y-auto overscroll-contain custom-scrollbar"
+        >
+          {empty ? (
+            <AiChatEmpty
+              chips={chips}
+              mood={mood}
+              disabled={streaming}
+              onPick={(prompt) => void send(prompt)}
+            />
+          ) : (
+            <div ref={contentRef} className="px-3 py-4 space-y-4">
+              {messages.map((msg, i) => (
+                <AiChatMessageView
+                  key={msg.id}
+                  msg={msg}
+                  isLast={i === lastIndex}
+                  streaming={streaming}
+                  mood={i === lastIndex ? mood : "idle"}
+                  onRegenerate={() => void regenerate()}
+                  onEdit={(id, text) => void editAndResend(id, text)}
+                  onSend={(text) => void send(text)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {showJump && !empty && (
+          <button
+            type="button"
+            onClick={() => {
+              stickRef.current = true;
+              scrollToBottom(true);
+            }}
+            className="logos-msg-in absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full border border-m3-border bg-m3-card shadow-md px-3 py-1 text-[11.5px] text-m3-text hover:bg-m3-hover"
           >
-            {msg.role === "user" ? (
-              <div className="max-w-[92%] rounded-[var(--radius-lg)] px-3 py-2 text-sm bg-m3-primary text-white whitespace-pre-wrap">
-                {msg.parts
-                  .filter((p) => p.type === "text")
-                  .map((p) => (p.type === "text" ? p.text : ""))
-                  .join("")}
-              </div>
-            ) : (
-              <div className="max-w-[95%] w-full rounded-[var(--radius-lg)] border border-m3-border bg-m3-sidebar text-m3-text overflow-hidden">
-                {msg.parts.length === 0 && streaming ? (
-                  <p className="text-m3-secondary text-xs px-3 py-2 m-0">
-                    {t("ai.chat.thinking")}
-                  </p>
-                ) : null}
-                <div className="px-3 py-2 space-y-1">
-                  {msg.parts.map((part, i) =>
-                    part.type === "tool" ? (
-                      <AiToolCard key={part.tool.toolCallId} tool={part.tool} />
-                    ) : part.text.trim() ? (
-                      <div
-                        key={`t-${i}`}
-                        className="py-0.5 text-m3-text text-[13px] leading-relaxed [&_:first-child]:mt-0 [&_:last-child]:mb-0"
-                      >
-                        <AiChatMarkdown>{part.text}</AiChatMarkdown>
-                      </div>
-                    ) : null,
-                  )}
-                </div>
-                {msg.error && (
-                  <p className="text-xs text-red-500 px-3 pb-2 m-0">
-                    {msg.error}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-        {error && messages.every((m) => !m.error) && (
-          <p className="text-xs text-red-500 text-center">{error}</p>
+            <ArrowDown className="w-3.5 h-3.5" />
+            {t("ai.chat.jumpToLatest")}
+          </button>
         )}
       </div>
 
-      <footer className="border-t border-m3-border p-2.5 shrink-0 space-y-2">
-        {chips.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {chips.map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                disabled={streaming}
-                className="text-[11px] px-2 py-0.5 rounded-[var(--radius-md)] border border-m3-border text-m3-text hover:bg-m3-sidebar disabled:opacity-50 transition-colors"
-                onClick={() => void send(chip.prompt)}
-              >
-                {t(chip.labelKey)}
-              </button>
-            ))}
+      <footer className="border-t border-m3-border px-2.5 pt-2 pb-2.5 shrink-0 space-y-2">
+        {!empty && chips.length > 0 && (
+          <div
+            className="flex gap-1.5 overflow-x-auto hide-scrollbar -mx-0.5 px-0.5"
+            role="group"
+            aria-label={t("ai.chat.quickActions")}
+          >
+            {chips.map((chip) => {
+              const Icon = chip.icon;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  disabled={streaming}
+                  title={t(chip.descKey)}
+                  className="shrink-0 inline-flex items-center gap-1 text-[11.5px] px-2.5 py-1 rounded-full border border-m3-border bg-m3-card text-m3-text hover:border-m3-primary/50 hover:bg-m3-primary/5 disabled:opacity-50 transition-colors"
+                  onClick={() => void send(t(chip.promptKey))}
+                >
+                  <Icon className="w-3 h-3 text-m3-primary" />
+                  {t(chip.labelKey)}
+                </button>
+              );
+            })}
           </div>
         )}
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={inputRef}
-            rows={2}
-            value={draft}
-            onChange={(e) => setDraft(e.currentTarget.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void onSubmit();
-              }
-            }}
-            placeholder={t("ai.chat.placeholder")}
-            className="flex-1 min-w-0 resize-none rounded-[var(--radius-md)] border border-m3-border bg-m3-bg text-m3-text text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-m3-primary/25 focus:border-m3-primary"
-            disabled={streaming}
-          />
-          {streaming ? (
-            <button
-              type="button"
-              onClick={stop}
-              className="shrink-0 w-9 h-9 rounded-[var(--radius-md)] bg-m3-sidebar border border-m3-border text-m3-text flex items-center justify-center"
-              aria-label={t("ai.chat.stop")}
-            >
-              <Square className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void onSubmit()}
-              disabled={!draft.trim()}
-              className="shrink-0 w-9 h-9 rounded-[var(--radius-md)] bg-m3-primary text-white flex items-center justify-center disabled:opacity-40"
-              aria-label={t("ai.chat.send")}
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+        <AiChatComposer
+          ref={composerRef}
+          streaming={streaming}
+          pageContext={pageContext}
+          includeContext={includeContext}
+          onToggleContext={setIncludeContext}
+          onSend={(text) => void send(text)}
+          onStop={stop}
+          draftKey={threadId}
+        />
       </footer>
     </aside>
   );

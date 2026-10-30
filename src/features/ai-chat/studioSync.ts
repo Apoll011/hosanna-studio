@@ -10,9 +10,12 @@
 const STUDIO_SYNC_AFTER_TOOLS = new Set([
   "folders_create",
   "folders_update",
+  "folders_create_many",
+  "folders_update_many",
   "folders_restore",
   "collections_create",
   "collections_update",
+  "collections_update_many",
   "collections_add_songs",
   "collections_remove_songs",
   "songs_save",

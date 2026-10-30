@@ -32,7 +32,7 @@ export function invalidateSongsCache(): void {
   cachedSingleSongs.clear();
 }
 
-function useSongMutations() {
+export function useSongMutations() {
   const { showToast } = useSync();
   const { t } = useI18n();
   const [isCreating, setIsCreating] = useState(false);

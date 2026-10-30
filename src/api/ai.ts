@@ -117,6 +117,8 @@ export const aiApi = {
   streamChat: (body: {
     messages: AiUiMessage[];
     context?: AiChatContext;
+    /** UI language so replies match ("pt" | "en" | "es"). */
+    locale?: string;
     signal?: AbortSignal;
   }): Promise<Response> =>
     getApiClient().request_raw("/ai/chat", {
@@ -124,6 +126,7 @@ export const aiApi = {
       body: JSON.stringify({
         messages: body.messages,
         context: body.context,
+        locale: body.locale,
       }),
       signal: body.signal,
     }),
