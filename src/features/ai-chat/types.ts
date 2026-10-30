@@ -94,7 +94,12 @@ export type LogosMood =
   | "surprised"
   | "love"
   | "wink"
-  | "dizzy";
+  | "dizzy"
+  | "giggle"
+  | "shy"
+  | "grumpy"
+  | "cool"
+  | "dance";
 
 /** Tools whose cards are noise for the user (hidden from the tool list). */
 export const SILENT_TOOLS = new Set(["studio_sync", "suggest_followups"]);

@@ -41,7 +41,11 @@
 .logos-brow,
 .logos-bang,
 .logos-eq-bar,
-.logos-eye-wink {
+.logos-eye-wink,
+.logos-morph,
+.logos-shades,
+.logos-puff,
+.logos-anger {
   transform-box: fill-box;
 }
 
@@ -139,6 +143,9 @@
 .logos-hearts,
 .logos-heart,
 .logos-bang,
+.logos-anger,
+.logos-shades,
+.logos-puff,
 .logos-dizzy-stars,
 .logos-waves,
 .logos-zzz,
@@ -164,6 +171,7 @@
 }
 .logos-compact .logos-hearts,
 .logos-compact .logos-bang,
+.logos-compact .logos-anger,
 .logos-compact .logos-dizzy-stars {
   display: none;
 }
@@ -440,7 +448,10 @@
 .logos[data-mood="singing"] .logos-blush,
 .logos[data-mood="love"] .logos-blush,
 .logos[data-mood="wink"] .logos-blush,
+.logos[data-mood="giggle"] .logos-blush,
+.logos[data-mood="dance"] .logos-blush,
 .logos[data-act="hop"] .logos-blush,
+.logos[data-act="boogie"] .logos-blush,
 .logos[data-act="hum"] .logos-blush {
   opacity: 0.62;
 }
@@ -480,6 +491,9 @@
 .logos[data-mood="listening"] .logos-eq-bar,
 .logos[data-mood="singing"] .logos-eq-bar,
 .logos[data-mood="celebrating"] .logos-eq-bar,
+.logos[data-mood="dance"] .logos-eq-bar,
+.logos[data-mood="cool"] .logos-eq-bar,
+.logos[data-act="boogie"] .logos-eq-bar,
 .logos[data-act="hum"] .logos-eq-bar {
   animation: logos-eq 0.5s ease-in-out infinite alternate;
 }
@@ -490,6 +504,9 @@
 .logos[data-mood="listening"] .logos-eq-1,
 .logos[data-mood="singing"] .logos-eq-1,
 .logos[data-mood="celebrating"] .logos-eq-1,
+.logos[data-mood="dance"] .logos-eq-1,
+.logos[data-mood="cool"] .logos-eq-1,
+.logos[data-act="boogie"] .logos-eq-1,
 .logos[data-act="hum"] .logos-eq-1 {
   animation-duration: 0.38s;
   animation-delay: -0.2s;
@@ -498,6 +515,9 @@
 .logos[data-mood="listening"] .logos-eq-2,
 .logos[data-mood="singing"] .logos-eq-2,
 .logos[data-mood="celebrating"] .logos-eq-2,
+.logos[data-mood="dance"] .logos-eq-2,
+.logos[data-mood="cool"] .logos-eq-2,
+.logos[data-act="boogie"] .logos-eq-2,
 .logos[data-act="hum"] .logos-eq-2 {
   animation-duration: 0.46s;
   animation-delay: -0.1s;
@@ -664,12 +684,21 @@
 /* eyes shut for a happy / sleepy moment */
 .logos[data-act="hop"] .logos-eyes,
 .logos[data-act="stretch"] .logos-eyes,
-.logos[data-act="hum"] .logos-eyes {
+.logos[data-act="sneeze"] .logos-eyes,
+.logos[data-act="boogie"] .logos-eyes,
+.logos[data-act="hum"] .logos-eyes,
+.logos[data-mood="giggle"] .logos-eyes,
+.logos[data-mood="dance"] .logos-eyes,
+.logos[data-mood="cool"] .logos-eyes {
   opacity: 0;
 }
 .logos[data-act="hop"] .logos-eyes-happy,
 .logos[data-act="stretch"] .logos-eyes-happy,
-.logos[data-act="hum"] .logos-eyes-happy {
+.logos[data-act="sneeze"] .logos-eyes-happy,
+.logos[data-act="boogie"] .logos-eyes-happy,
+.logos[data-act="hum"] .logos-eyes-happy,
+.logos[data-mood="giggle"] .logos-eyes-happy,
+.logos[data-mood="dance"] .logos-eyes-happy {
   opacity: 1;
 }
 
@@ -1205,6 +1234,455 @@
   }
   75% {
     transform: rotate(4deg) scale(1.04, 0.97);
+  }
+}
+
+/* ============================================================
+   State transitions — settle squash, blink and a mood-coloured aura
+   ============================================================ */
+
+/* The aura cross-fades between moods (it reads `color`). */
+.logos {
+  color: transparent;
+  transition: color 0.6s ease;
+}
+.logos-aura {
+  transform-origin: center;
+  animation: logos-pulse 4s ease-in-out infinite;
+}
+.logos[data-mood="thinking"],
+.logos[data-mood="dizzy"] {
+  color: rgb(139 124 246 / 0.3);
+}
+.logos[data-mood="working"],
+.logos[data-mood="happy"],
+.logos[data-mood="excited"],
+.logos[data-mood="celebrating"],
+.logos[data-mood="giggle"] {
+  color: rgb(255 190 69 / 0.36);
+}
+.logos[data-mood="listening"] {
+  color: rgb(54 169 232 / 0.3);
+}
+.logos[data-mood="singing"],
+.logos[data-mood="helping"] {
+  color: rgb(141 218 245 / 0.42);
+}
+.logos[data-mood="love"],
+.logos[data-mood="shy"] {
+  color: rgb(255 92 134 / 0.28);
+}
+.logos[data-mood="oops"],
+.logos[data-mood="grumpy"] {
+  color: rgb(229 72 77 / 0.26);
+}
+.logos[data-mood="surprised"] {
+  color: rgb(243 154 50 / 0.3);
+}
+.logos[data-mood="cool"],
+.logos[data-mood="sleeping"] {
+  color: rgb(79 92 190 / 0.28);
+}
+.logos[data-mood="dance"] {
+  color: rgb(236 90 200 / 0.28);
+}
+
+/* Whenever the mood changes the body squashes in and the eyes blink, which
+   hides the hand-over between two keyframe animations. Two identical
+   animation names (a / b) let the same effect restart back to back. */
+.logos-morph {
+  transform-origin: 50% 100%;
+}
+.logos[data-shift="a"] .logos-morph {
+  animation: logos-settle-a 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.logos[data-shift="b"] .logos-morph {
+  animation: logos-settle-b 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.logos[data-shift="a"] .logos-eye {
+  animation:
+    logos-blink-a 0.3s ease-in-out,
+    logos-blink 5.6s 0.3s infinite;
+}
+.logos[data-shift="b"] .logos-eye {
+  animation:
+    logos-blink-b 0.3s ease-in-out,
+    logos-blink 5.6s 0.3s infinite;
+}
+
+/* ============================================================
+   More reactions — giggle, shy, grumpy, cool, dance
+   ============================================================ */
+
+/* giggle: ticklish — squeezed-shut eyes and a happy wiggle */
+.logos[data-mood="giggle"] {
+  --open: 3px;
+}
+.logos[data-mood="giggle"] .logos-mouth,
+.logos[data-mood="giggle"] .logos-tongue {
+  opacity: 1;
+}
+.logos[data-mood="giggle"] .logos-body {
+  animation: logos-giggle 0.26s ease-in-out infinite;
+}
+.logos[data-mood="giggle"] .logos-wing-l,
+.logos[data-mood="giggle"] .logos-wing-r {
+  --wa: 18deg;
+}
+.logos[data-mood="giggle"] .logos-wing-l {
+  animation: logos-flap-l 0.26s ease-in-out infinite;
+}
+.logos[data-mood="giggle"] .logos-wing-r {
+  animation: logos-flap-r 0.26s ease-in-out infinite;
+}
+
+/* shy: looks away, blushes, a wing up to the cheek */
+.logos[data-mood="shy"] .logos-look {
+  transform: translate(-3.4px, 2.6px);
+}
+.logos[data-mood="shy"] .logos-eyes {
+  transform: scale(0.92);
+}
+.logos[data-mood="shy"] .logos-blush {
+  opacity: 0.95;
+}
+.logos[data-mood="shy"] .logos-brows {
+  opacity: 1;
+}
+.logos[data-mood="shy"] .logos-brow-l {
+  transform: translateY(-1px) rotate(-9deg);
+}
+.logos[data-mood="shy"] .logos-brow-r {
+  transform: translateY(-1px) rotate(9deg);
+}
+.logos[data-mood="shy"] .logos-wing-r {
+  animation: none;
+  transform: rotate(138deg);
+}
+.logos[data-mood="shy"] .logos-body {
+  animation: logos-tilt 2.6s ease-in-out infinite;
+}
+
+/* grumpy: furrowed brows, puffed up, a little anger mark */
+.logos[data-mood="grumpy"] .logos-brows {
+  opacity: 1;
+}
+.logos[data-mood="grumpy"] .logos-brow-l {
+  transform: translateY(3px) rotate(15deg);
+}
+.logos[data-mood="grumpy"] .logos-brow-r {
+  transform: translateY(3px) rotate(-15deg);
+}
+.logos[data-mood="grumpy"] .logos-eyes {
+  transform: scaleY(0.78);
+}
+.logos[data-mood="grumpy"] .logos-look {
+  transform: translate(0, 1.2px);
+}
+.logos[data-mood="grumpy"] .logos-anger {
+  opacity: 1;
+  transform-origin: center;
+  animation: logos-throb 0.5s ease-in-out infinite;
+}
+.logos[data-mood="grumpy"] .logos-body {
+  animation: logos-huff 0.9s ease-in-out infinite;
+}
+.logos[data-mood="grumpy"] .logos-wing-l {
+  animation: none;
+  transform: rotate(-10deg);
+}
+.logos[data-mood="grumpy"] .logos-wing-r {
+  animation: none;
+  transform: rotate(10deg);
+}
+
+/* cool: shades drop in, headphones bob, one wing waves */
+.logos-shades {
+  transform: translateY(-18px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.5s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.logos[data-mood="cool"] .logos-shades {
+  opacity: 1;
+  transform: translateY(0);
+}
+.logos[data-mood="cool"] .logos-body {
+  animation: logos-bob 0.9s ease-in-out infinite;
+}
+.logos[data-mood="cool"] .logos-notes {
+  opacity: 1;
+}
+.logos[data-mood="cool"] .logos-note-a {
+  animation: logos-note 2.2s ease-out infinite;
+}
+.logos[data-mood="cool"] .logos-note-b {
+  animation: logos-note 2.2s ease-out 1.1s infinite;
+}
+.logos[data-mood="cool"] .logos-wing-r {
+  --wa: 34deg;
+  animation: logos-flap-r 1.8s ease-in-out infinite;
+}
+.logos[data-mood="cool"] .logos-sparkle {
+  opacity: 1;
+  animation: logos-twinkle 1.6s ease-in-out infinite;
+}
+
+/* dance: shuffling side to side, wings alternating, notes everywhere */
+.logos[data-mood="dance"] {
+  --open: 2.6px;
+}
+.logos[data-mood="dance"] .logos-mouth {
+  opacity: 1;
+}
+.logos[data-mood="dance"] .logos-body {
+  animation: logos-dance 0.8s ease-in-out infinite;
+}
+.logos[data-mood="dance"] .logos-wing-l,
+.logos[data-mood="dance"] .logos-wing-r {
+  --wa: 66deg;
+}
+.logos[data-mood="dance"] .logos-wing-l {
+  animation: logos-flap-l 0.8s ease-in-out infinite;
+}
+.logos[data-mood="dance"] .logos-wing-r {
+  animation: logos-flap-r 0.8s ease-in-out -0.4s infinite;
+}
+.logos[data-mood="dance"] .logos-notes {
+  opacity: 1;
+}
+.logos[data-mood="dance"] .logos-note-a {
+  animation: logos-note 1.6s ease-out infinite;
+}
+.logos[data-mood="dance"] .logos-note-b {
+  animation: logos-note 1.6s ease-out 0.5s infinite;
+}
+.logos[data-mood="dance"] .logos-note-c {
+  animation: logos-note 1.6s ease-out 1s infinite;
+}
+.logos[data-mood="dance"] .logos-orbit {
+  opacity: 1;
+  animation: logos-orbit 4s linear infinite;
+}
+
+/* ============================================================
+   More idle antics — peck, sneeze, boogie, cheeky wink
+   ============================================================ */
+
+/* peck at the ground */
+.logos[data-act="peck"] .logos-body {
+  animation: logos-peck 0.95s ease-in-out 2;
+}
+.logos[data-act="peck"] .logos-look {
+  transform: translate(0, 3.2px);
+}
+
+/* a big sneeze: wind-up, ACHOO, puff */
+.logos[data-act="sneeze"] .logos-mouth {
+  opacity: 1;
+}
+.logos[data-act="sneeze"] .logos-body {
+  animation: logos-sneeze 1.9s ease-in-out 1;
+}
+.logos[data-act="sneeze"] .logos-beak-low {
+  animation: logos-sneeze-beak 1.9s ease-in-out 1;
+}
+.logos[data-act="sneeze"] .logos-puff {
+  animation: logos-puff 1.9s ease-out 1;
+}
+.logos[data-act="sneeze"] .logos-wing-l {
+  animation: logos-spread-l 1.9s ease-in-out 1;
+}
+.logos[data-act="sneeze"] .logos-wing-r {
+  animation: logos-spread-r 1.9s ease-in-out 1;
+}
+
+/* a quick groove to the music in his headphones */
+.logos[data-act="boogie"] {
+  --open: 2.4px;
+}
+.logos[data-act="boogie"] .logos-mouth {
+  opacity: 1;
+}
+.logos[data-act="boogie"] .logos-body {
+  animation: logos-dance 1s ease-in-out 3;
+}
+.logos[data-act="boogie"] .logos-wing-l,
+.logos[data-act="boogie"] .logos-wing-r {
+  --wa: 40deg;
+}
+.logos[data-act="boogie"] .logos-wing-l {
+  animation: logos-flap-l 1s ease-in-out 3;
+}
+.logos[data-act="boogie"] .logos-wing-r {
+  animation: logos-flap-r 1s ease-in-out -0.5s 3;
+}
+.logos[data-act="boogie"] .logos-notes {
+  opacity: 1;
+}
+.logos[data-act="boogie"] .logos-note-a {
+  animation: logos-note 1.5s ease-out 2;
+}
+.logos[data-act="boogie"] .logos-note-c {
+  animation: logos-note 1.5s ease-out 0.7s 2;
+}
+
+/* a cheeky wink with a sparkle */
+.logos[data-act="cheeky"] .logos-eye + .logos-eye {
+  opacity: 0;
+}
+.logos[data-act="cheeky"] .logos-eye-wink {
+  opacity: 1;
+}
+.logos[data-act="cheeky"] .logos-body {
+  animation: logos-tilt 1.7s ease-in-out 1;
+}
+.logos[data-act="cheeky"] .logos-sparkle {
+  opacity: 1;
+  animation: logos-twinkle 0.85s ease-in-out 2;
+}
+
+/* ---- keyframes: transitions, new reactions and antics ---- */
+@keyframes logos-settle-a {
+  0% {
+    transform: scale(1.06, 0.93);
+  }
+  45% {
+    transform: scale(0.98, 1.04);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+@keyframes logos-settle-b {
+  0% {
+    transform: scale(1.06, 0.93);
+  }
+  45% {
+    transform: scale(0.98, 1.04);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+@keyframes logos-blink-a {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes logos-blink-b {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes logos-giggle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2.5deg);
+  }
+  50% {
+    transform: translateY(-1.6px) rotate(2.5deg);
+  }
+}
+@keyframes logos-huff {
+  0%,
+  100% {
+    transform: scale(1.03, 1.02);
+  }
+  50% {
+    transform: scale(1.08, 1.06);
+  }
+}
+@keyframes logos-throb {
+  0%,
+  100% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+}
+@keyframes logos-dance {
+  0%,
+  100% {
+    transform: translate(-3px, 0) rotate(-5deg);
+  }
+  25%,
+  75% {
+    transform: translate(0, -8px) rotate(0deg);
+  }
+  50% {
+    transform: translate(3px, 0) rotate(5deg);
+  }
+}
+@keyframes logos-peck {
+  0%,
+  40%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  15% {
+    transform: translateY(5px) scale(1.03, 0.94) rotate(3deg);
+  }
+  55% {
+    transform: translateY(5px) scale(1.03, 0.94) rotate(3deg);
+  }
+  70% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+@keyframes logos-sneeze {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1, 1);
+  }
+  35% {
+    transform: rotate(-4deg) scale(0.98, 1.05);
+  }
+  50% {
+    transform: rotate(-6deg) scale(0.97, 1.07);
+  }
+  56% {
+    transform: rotate(5deg) translateY(2px) scale(1.07, 0.92);
+  }
+  70% {
+    transform: rotate(2deg) scale(1.02, 0.98);
+  }
+}
+@keyframes logos-sneeze-beak {
+  0%,
+  48%,
+  100% {
+    transform: translateY(0);
+  }
+  56%,
+  72% {
+    transform: translateY(8px);
+  }
+  86% {
+    transform: translateY(2px);
+  }
+}
+@keyframes logos-puff {
+  0%,
+  52% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(14px, -2px) scale(1.6);
   }
 }
 
