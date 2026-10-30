@@ -247,8 +247,6 @@ function contextKey(ctx: PageContextSnapshot): string {
   ]);
 }
 
-const RESTORE_WINDOW_MS = 6 * 60 * 60 * 1000;
-
 export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -359,24 +357,15 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
     setThreads(await threadStore.list(scope));
   }, [scope]);
 
-  // Restore the most recent conversation (if recent) once per scope.
+  // Load the history list once per scope. The chat itself always starts
+  // fresh (see "open → new chat" below); older chats live in History.
   useEffect(() => {
     if (!scope || restoredScopeRef.current === scope) return;
     restoredScopeRef.current = scope;
     let cancelled = false;
-    void (async () => {
-      const list = await threadStore.list(scope);
-      if (cancelled) return;
-      setThreads(list);
-      const latest = list[0];
-      if (!latest || Date.now() - latest.updatedAt > RESTORE_WINDOW_MS) return;
-      const thread = await threadStore.load(scope, latest.id);
-      if (cancelled || !thread || streamingRef.current) return;
-      if (messagesRef.current.length > 0) return;
-      setThreadId(thread.id);
-      setThreadCreatedAt(thread.createdAt);
-      setMessages(thread.messages);
-    })();
+    void threadStore.list(scope).then((list) => {
+      if (!cancelled) setThreads(list);
+    });
     return () => {
       cancelled = true;
     };
@@ -457,6 +446,37 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const newChat = useCallback(() => resetConversation(), [resetConversation]);
+
+  // Opening the chat starts a new conversation. The previous one is saved
+  // first and stays available in History. A reply that is still streaming is
+  // never discarded.
+  const wasOpenRef = useRef(false);
+  const threadRef = useRef({ scope, threadId, threadCreatedAt });
+  threadRef.current = { scope, threadId, threadCreatedAt };
+  useEffect(() => {
+    const opened = open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!opened || streamingRef.current) return;
+    const current = messagesRef.current;
+    if (current.length === 0) return;
+    const {
+      scope: sc,
+      threadId: id,
+      threadCreatedAt: created,
+    } = threadRef.current;
+    if (sc) {
+      const thread: AiThread = {
+        id,
+        title: "",
+        createdAt: created,
+        updatedAt: Date.now(),
+        messages: current,
+      };
+      thread.title = deriveThreadTitle(thread);
+      void threadStore.save(sc, thread).then(refreshThreads);
+    }
+    resetConversation();
+  }, [open, resetConversation, refreshThreads]);
 
   const deleteThread = useCallback(
     async (id: string) => {
