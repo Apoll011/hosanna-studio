@@ -14,6 +14,22 @@ export type NativeWebCapability = {
   note: string;
 };
 
+export type AiLimits = {
+  maxToolCalls: { min: number; max: number; default: number };
+  temperature: { min: number; max: number };
+  maxOutputTokens: { min: number; max: number };
+  instructionsMaxChars: number;
+  memoryMaxEntries: number;
+  memoryEntryMaxChars: number;
+};
+
+export type AiMemoryItem = {
+  id: string;
+  content: string;
+  source: "admin" | "ai" | string;
+  createdAt: string;
+};
+
 export type AiSettingsPublic = {
   provider: AiProvider;
   model: string;
@@ -21,6 +37,15 @@ export type AiSettingsPublic = {
   configured: boolean;
   baseUrl: string | null;
   encryptionReady: boolean;
+  /** Max tool calls the assistant may make per reply. */
+  maxToolCalls: number;
+  /** null = model default. */
+  temperature: number | null;
+  /** null = model default. */
+  maxOutputTokens: number | null;
+  instructions: string;
+  memoryEnabled: boolean;
+  limits: AiLimits;
   providers: AiProvider[];
   modelPresets: Record<AiProvider, string[]>;
   defaultBaseUrls?: Partial<Record<AiProvider, string>>;
@@ -80,6 +105,11 @@ export type UpdateAiSettingsInput = {
   enabled?: boolean;
   apiKey?: string;
   baseUrl?: string | null;
+  maxToolCalls?: number;
+  temperature?: number | null;
+  maxOutputTokens?: number | null;
+  instructions?: string | null;
+  memoryEnabled?: boolean;
 };
 
 export type AiConfirmAction = {
@@ -105,6 +135,25 @@ export const aiApi = {
 
   clearKey: (): Promise<AiSettingsPublic> =>
     getApiClient().request<AiSettingsPublic>("/ai/settings/key", {
+      method: "DELETE",
+    }),
+
+  listMemory: (): Promise<{ items: AiMemoryItem[] }> =>
+    getApiClient().request<{ items: AiMemoryItem[] }>("/ai/memory"),
+
+  addMemory: (content: string): Promise<AiMemoryItem> =>
+    getApiClient().request<AiMemoryItem>("/ai/memory", {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }),
+
+  removeMemory: (id: string): Promise<void> =>
+    getApiClient().request<void>(`/ai/memory/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+
+  clearMemory: (): Promise<{ cleared: number }> =>
+    getApiClient().request<{ cleared: number }>("/ai/memory", {
       method: "DELETE",
     }),
 

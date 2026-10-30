@@ -32,6 +32,11 @@ export type AiMessageMeta = {
   outputTokens?: number;
   steps?: number;
   finishReason?: string;
+  /** Tool calls used for this reply and the org limit. */
+  toolCalls?: number;
+  toolLimit?: number;
+  /** Tools were switched off so the model had to write a final answer. */
+  limitReached?: boolean;
 };
 
 export type AiChatMessage = {

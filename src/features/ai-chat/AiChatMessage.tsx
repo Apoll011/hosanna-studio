@@ -273,7 +273,9 @@ const AssistantMessage: React.FC<Props> = ({
         {msg.truncated && !live ? (
           <div className="mt-2 flex items-center gap-2 rounded-[var(--radius-md)] border border-amber-500/30 bg-amber-500/5 px-2.5 py-1.5 text-[12px] text-m3-text">
             <span className="flex-1 min-w-0">
-              {t("ai.chat.truncatedNotice")}
+              {msg.meta?.limitReached && msg.meta.toolLimit
+                ? t("ai.chat.toolLimitNotice", { limit: msg.meta.toolLimit })
+                : t("ai.chat.truncatedNotice")}
             </span>
             {isLast ? (
               <button

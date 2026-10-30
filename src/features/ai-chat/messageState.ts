@@ -64,6 +64,9 @@ function readMeta(raw: unknown): AiMessageMeta | undefined {
     outputTokens: num(usage.outputTokens),
     finishReason:
       typeof m.finishReason === "string" ? m.finishReason : undefined,
+    toolCalls: num(m.toolCalls),
+    toolLimit: num(m.toolLimit),
+    limitReached: m.limitReached === true ? true : undefined,
   };
 }
 

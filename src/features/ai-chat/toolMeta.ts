@@ -6,6 +6,7 @@
 import type { TranslateFn, TranslationKey } from "@/src/lib/i18n";
 import {
   BookOpen,
+  Brain,
   Calendar,
   CalendarPlus,
   Compass,
@@ -106,6 +107,9 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   folders_update_many: Folder,
   folders_create_many: FolderPlus,
   collections_update_many: Library,
+  memory_list: Brain,
+  memory_save: Brain,
+  memory_forget: Brain,
 };
 
 export function normalizeToolName(name: string): string {

@@ -9,6 +9,7 @@ import { dispatchAiSettingsChanged } from "@/src/features/ai-chat";
 import { useI18n } from "@/src/lib/i18n";
 import { useCan } from "@/src/lib/permissions/client";
 import { KeyRound, Loader2, Lock, Save, Sparkles, Trash2 } from "lucide-react";
+import { AiMemoryPanel } from "./AiMemoryPanel";
 import React, { useEffect, useMemo, useState } from "react";
 
 export interface AiSettingsTabProps {
@@ -51,6 +52,11 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
   const [enabled, setEnabled] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
+  const [maxToolCalls, setMaxToolCalls] = useState(12);
+  const [temperature, setTemperature] = useState<number | null>(null);
+  const [maxOutputTokens, setMaxOutputTokens] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [memoryEnabled, setMemoryEnabled] = useState(true);
 
   useEffect(() => {
     if (!active || !canManage) return;
@@ -65,6 +71,13 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
         setModel(data.model);
         setEnabled(data.enabled);
         setBaseUrl(data.baseUrl ?? "");
+        setMaxToolCalls(data.maxToolCalls);
+        setTemperature(data.temperature);
+        setMaxOutputTokens(
+          data.maxOutputTokens != null ? String(data.maxOutputTokens) : "",
+        );
+        setInstructions(data.instructions ?? "");
+        setMemoryEnabled(data.memoryEnabled);
         const presets = data.modelPresets[data.provider] ?? [];
         setCustomModel(!presets.includes(data.model));
       })
@@ -135,6 +148,13 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
         ...(needsBaseUrl
           ? { baseUrl: baseUrl.trim() || null }
           : { baseUrl: null }),
+        maxToolCalls,
+        temperature,
+        maxOutputTokens: maxOutputTokens.trim()
+          ? Number(maxOutputTokens.trim())
+          : null,
+        instructions: instructions.trim() || null,
+        memoryEnabled,
       });
       setSettings(data);
       setApiKey("");
@@ -332,6 +352,138 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
               />
             </label>
 
+            <div className="space-y-5 pt-5 border-t border-m3-border">
+              <div>
+                <h3 className="text-label text-m3-text">
+                  {t("ai.settings.behaviorTitle")}
+                </h3>
+                <p className="text-caption text-m3-secondary mt-0.5">
+                  {t("ai.settings.behaviorDesc")}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-label text-m3-text">
+                    {t("ai.settings.maxToolCalls")}
+                  </span>
+                  <span className="text-sm font-semibold tabular-nums text-m3-primary">
+                    {maxToolCalls}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  className="w-full accent-[var(--color-m3-primary)]"
+                  min={settings.limits.maxToolCalls.min}
+                  max={settings.limits.maxToolCalls.max}
+                  step={1}
+                  value={maxToolCalls}
+                  onChange={(e) =>
+                    setMaxToolCalls(Number(e.currentTarget.value))
+                  }
+                />
+                <span className="text-caption text-m3-secondary block">
+                  {t("ai.settings.maxToolCallsHint", {
+                    min: settings.limits.maxToolCalls.min,
+                    max: settings.limits.maxToolCalls.max,
+                  })}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-label text-m3-text">
+                    {t("ai.settings.temperature")}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm font-semibold tabular-nums text-m3-primary">
+                      {temperature == null
+                        ? t("ai.settings.temperatureDefault")
+                        : temperature.toFixed(1)}
+                    </span>
+                    {temperature != null ? (
+                      <button
+                        type="button"
+                        className="text-xs text-m3-primary hover:underline"
+                        onClick={() => setTemperature(null)}
+                      >
+                        {t("ai.settings.temperatureDefault")}
+                      </button>
+                    ) : null}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  className="w-full accent-[var(--color-m3-primary)]"
+                  min={settings.limits.temperature.min}
+                  max={settings.limits.temperature.max}
+                  step={0.1}
+                  value={temperature ?? 0.7}
+                  onChange={(e) =>
+                    setTemperature(Number(e.currentTarget.value))
+                  }
+                />
+                <span className="text-caption text-m3-secondary block">
+                  {t("ai.settings.temperatureHint")}
+                </span>
+              </div>
+
+              <label className="block space-y-1.5">
+                <span className="text-label text-m3-text">
+                  {t("ai.settings.maxOutputTokens")}
+                </span>
+                <input
+                  className={inputClass}
+                  type="number"
+                  inputMode="numeric"
+                  min={settings.limits.maxOutputTokens.min}
+                  max={settings.limits.maxOutputTokens.max}
+                  value={maxOutputTokens}
+                  onChange={(e) => setMaxOutputTokens(e.currentTarget.value)}
+                  placeholder={t("ai.settings.temperatureDefault")}
+                />
+                <span className="text-caption text-m3-secondary">
+                  {t("ai.settings.maxOutputTokensHint")}
+                </span>
+              </label>
+
+              <label className="block space-y-1.5">
+                <span className="text-label text-m3-text">
+                  {t("ai.settings.instructions")}
+                </span>
+                <textarea
+                  className={`${inputClass} min-h-24 resize-y`}
+                  value={instructions}
+                  maxLength={settings.limits.instructionsMaxChars}
+                  onChange={(e) => setInstructions(e.currentTarget.value)}
+                  placeholder={t("ai.settings.instructionsPlaceholder")}
+                />
+                <span className="text-caption text-m3-secondary flex justify-between gap-2">
+                  <span>{t("ai.settings.instructionsHint")}</span>
+                  <span className="tabular-nums shrink-0">
+                    {instructions.length}/{settings.limits.instructionsMaxChars}
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-m3-border px-3.5 py-3 cursor-pointer">
+                <div>
+                  <span className="text-sm font-medium text-m3-text block">
+                    {t("ai.settings.memoryEnabled")}
+                  </span>
+                  <span className="text-caption text-m3-secondary">
+                    {t("ai.settings.memoryEnabledDesc")}
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 accent-[var(--color-m3-primary)]"
+                  checked={memoryEnabled}
+                  onChange={(e) => setMemoryEnabled(e.currentTarget.checked)}
+                />
+              </label>
+            </div>
+
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-m3-border">
               {settings.configured && (
                 <Button
@@ -363,6 +515,10 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
           </div>
         )}
       </Surface>
+
+      {settings && memoryEnabled ? (
+        <AiMemoryPanel limits={settings.limits} showToast={showToast} />
+      ) : null}
     </div>
   );
 };
