@@ -95,7 +95,9 @@ function buildPageContext(
       artist: songBridge?.artist,
       updatedAt: songBridge?.updatedAt,
       folderId: songBridge?.folderId ?? explorer?.folderId ?? null,
-      contentExcerpt: truncated ? full.slice(0, EXCERPT_MAX) : full || undefined,
+      contentExcerpt: truncated
+        ? full.slice(0, EXCERPT_MAX)
+        : full || undefined,
       contentTruncated: truncated || undefined,
     };
   }
@@ -126,9 +128,7 @@ function buildPageContext(
       serviceId: params.id ?? serviceBridge?.serviceId,
       title: serviceBridge?.title,
       updatedAt: serviceBridge?.updatedAt,
-      contentExcerpt: truncated
-        ? excerpt!.slice(0, EXCERPT_MAX)
-        : excerpt,
+      contentExcerpt: truncated ? excerpt!.slice(0, EXCERPT_MAX) : excerpt,
       contentTruncated: truncated || undefined,
       serviceElementsSummary: summary,
     };
@@ -187,7 +187,10 @@ function upsertToolPart(
   return [...parts, { type: "tool", tool }];
 }
 
-function appendTextDelta(parts: AiMessagePart[], delta: string): AiMessagePart[] {
+function appendTextDelta(
+  parts: AiMessagePart[],
+  delta: string,
+): AiMessagePart[] {
   const next = [...parts];
   const last = next[next.length - 1];
   if (last?.type === "text") {
@@ -269,7 +272,8 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const onChanged = () => void refreshSettings();
     window.addEventListener(AI_SETTINGS_CHANGED_EVENT, onChanged);
-    return () => window.removeEventListener(AI_SETTINGS_CHANGED_EVENT, onChanged);
+    return () =>
+      window.removeEventListener(AI_SETTINGS_CHANGED_EVENT, onChanged);
   }, [refreshSettings]);
 
   useEffect(() => {
@@ -331,7 +335,9 @@ export const AiChatProvider: React.FC<{ children: React.ReactNode }> = ({
       abortRef.current = controller;
       const toolsById = new Map<string, AiToolCallState>();
 
-      const patchParts = (updater: (parts: AiMessagePart[]) => AiMessagePart[]) => {
+      const patchParts = (
+        updater: (parts: AiMessagePart[]) => AiMessagePart[],
+      ) => {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, parts: updater(m.parts) } : m,

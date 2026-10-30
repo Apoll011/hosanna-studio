@@ -114,10 +114,7 @@ export const AiChatPanel: React.FC = () => {
                 <div className="px-3 py-2 space-y-1">
                   {msg.parts.map((part, i) =>
                     part.type === "tool" ? (
-                      <AiToolCard
-                        key={part.tool.toolCallId}
-                        tool={part.tool}
-                      />
+                      <AiToolCard key={part.tool.toolCallId} tool={part.tool} />
                     ) : part.text.trim() ? (
                       <div
                         key={`t-${i}`}

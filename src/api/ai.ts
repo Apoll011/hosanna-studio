@@ -6,11 +6,7 @@
 import { getApiClient } from "./http";
 
 export type AiProvider =
-  | "openai"
-  | "anthropic"
-  | "google"
-  | "deepseek"
-  | "openai_compatible";
+  "openai" | "anthropic" | "google" | "deepseek" | "openai_compatible";
 
 export type NativeWebCapability = {
   search: boolean;

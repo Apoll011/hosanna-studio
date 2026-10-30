@@ -274,10 +274,7 @@ export const OrganizationPage: React.FC = () => {
               active={activeTab === "general"}
               showToast={showToast}
             />
-            <AiSettingsTab
-              active={activeTab === "ai"}
-              showToast={showToast}
-            />
+            <AiSettingsTab active={activeTab === "ai"} showToast={showToast} />
             {activeTab === "loginActivity" && canViewLoginActivity && (
               <div className="max-w-4xl mx-auto w-full">
                 <LoginHistorySection

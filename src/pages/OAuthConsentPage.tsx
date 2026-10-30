@@ -62,7 +62,9 @@ export const OAuthConsentPage: React.FC = () => {
       }
       setError(t("oauth.consent.genericError"));
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("oauth.consent.genericError"));
+      setError(
+        err instanceof Error ? err.message : t("oauth.consent.genericError"),
+      );
     } finally {
       setBusy(false);
     }
@@ -76,7 +78,9 @@ export const OAuthConsentPage: React.FC = () => {
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-title text-m3-text">{t("oauth.consent.title")}</h1>
+            <h1 className="text-title text-m3-text">
+              {t("oauth.consent.title")}
+            </h1>
             <p className="text-sm text-m3-secondary mt-1">
               {t("oauth.consent.desc", { client: clientId })}
             </p>

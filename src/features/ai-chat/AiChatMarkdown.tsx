@@ -84,7 +84,8 @@ const components = {
   },
   code(props) {
     const { className, children, ...rest } = props;
-    const isBlock = typeof className === "string" && /language-/.test(className);
+    const isBlock =
+      typeof className === "string" && /language-/.test(className);
     if (isBlock) {
       return (
         <code
@@ -129,7 +130,9 @@ const components = {
     return <tbody {...props} className="divide-y divide-m3-border/70" />;
   },
   tr(props) {
-    return <tr {...props} className="border-b border-m3-border/70 last:border-0" />;
+    return (
+      <tr {...props} className="border-b border-m3-border/70 last:border-0" />
+    );
   },
   th(props) {
     return (

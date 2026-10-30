@@ -36,10 +36,8 @@ function parseToolJson(output: unknown): Record<string, unknown> | null {
     }
     if (typeof direct.text === "string") return parseToolJson(direct.text);
     if (Array.isArray(direct.content)) {
-      const text = (
-        direct.content as Array<{ type?: string; text?: string }>
-      )
-        .map((c) => (c?.type === "text" ? c.text ?? "" : ""))
+      const text = (direct.content as Array<{ type?: string; text?: string }>)
+        .map((c) => (c?.type === "text" ? (c.text ?? "") : ""))
         .join("");
       return text ? parseToolJson(text) : null;
     }
@@ -47,17 +45,14 @@ function parseToolJson(output: unknown): Record<string, unknown> | null {
   return direct;
 }
 
-export function maybeDispatchStudioActions(
-  _toolName: string,
-  output: unknown,
-) {
+export function maybeDispatchStudioActions(_toolName: string, output: unknown) {
   const body = parseToolJson(output);
   if (!body) return;
 
   if (body.studioNavigate === true && typeof body.kind === "string") {
     const detail: AiNavigateDetail = {
       kind: body.kind,
-      id: typeof body.id === "string" ? body.id : (body.id as null) ?? null,
+      id: typeof body.id === "string" ? body.id : ((body.id as null) ?? null),
       route: typeof body.route === "string" ? body.route : undefined,
       reason: typeof body.reason === "string" ? body.reason : undefined,
     };

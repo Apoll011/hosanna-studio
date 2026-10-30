@@ -3,23 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  aiApi,
-  type AiProvider,
-  type AiSettingsPublic,
-} from "@/src/api/ai";
+import { aiApi, type AiProvider, type AiSettingsPublic } from "@/src/api/ai";
 import { Button, Spinner, Surface } from "@/src/components/common";
 import { dispatchAiSettingsChanged } from "@/src/features/ai-chat";
 import { useI18n } from "@/src/lib/i18n";
 import { useCan } from "@/src/lib/permissions/client";
-import {
-  KeyRound,
-  Loader2,
-  Lock,
-  Save,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
+import { KeyRound, Loader2, Lock, Save, Sparkles, Trash2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 
 export interface AiSettingsTabProps {
@@ -111,7 +100,9 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
     return (
       <Surface className="max-w-4xl mx-auto w-full text-center p-8">
         <Lock className="w-8 h-8 text-m3-secondary mx-auto mb-3" />
-        <h3 className="text-title text-m3-text">{t("ai.settings.noAccessTitle")}</h3>
+        <h3 className="text-title text-m3-text">
+          {t("ai.settings.noAccessTitle")}
+        </h3>
         <p className="text-muted mt-1">{t("ai.settings.noAccessDesc")}</p>
       </Surface>
     );
@@ -183,7 +174,9 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-title text-m3-text">{t("ai.settings.title")}</h2>
+            <h2 className="text-title text-m3-text">
+              {t("ai.settings.title")}
+            </h2>
             <p className="text-muted mt-1 text-sm">{t("ai.settings.desc")}</p>
           </div>
         </div>
@@ -215,9 +208,7 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
                 {(settings.providers ?? []).map((p) => {
                   const cap = settings.nativeWebCapabilities?.[p];
                   const badge =
-                    cap?.search || cap?.fetch
-                      ? " · web search/fetch"
-                      : "";
+                    cap?.search || cap?.fetch ? " · web search/fetch" : "";
                   return (
                     <option key={p} value={p}>
                       {PROVIDER_LABELS[p]}

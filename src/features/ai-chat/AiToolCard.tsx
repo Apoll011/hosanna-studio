@@ -33,7 +33,9 @@ export const AiToolCard: React.FC<{ tool: AiToolCallState }> = ({ tool }) => {
 
   const confirmation = useMemo(
     () =>
-      tool.status === "done" ? extractDestructiveConfirmation(tool.output) : null,
+      tool.status === "done"
+        ? extractDestructiveConfirmation(tool.output)
+        : null,
     [tool.output, tool.status],
   );
 
@@ -122,9 +124,6 @@ export const AiToolCard: React.FC<{ tool: AiToolCallState }> = ({ tool }) => {
 
 function AlertPending() {
   return (
-    <span
-      className="w-3 h-3 rounded-full bg-amber-500 shrink-0"
-      aria-hidden
-    />
+    <span className="w-3 h-3 rounded-full bg-amber-500 shrink-0" aria-hidden />
   );
 }

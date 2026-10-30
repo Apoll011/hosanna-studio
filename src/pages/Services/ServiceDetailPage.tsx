@@ -78,7 +78,8 @@ import { MessageModal } from "./modals/Message";
 import { WelcomeModal } from "./modals/Welcome";
 
 function arrayMove<T>(array: T[], fromIndex: number, toIndex: number): T[] {
-  const newArray = [...array];  const [removed] = newArray.splice(fromIndex, 1);
+  const newArray = [...array];
+  const [removed] = newArray.splice(fromIndex, 1);
   newArray.splice(toIndex, 0, removed);
   return newArray;
 }
@@ -978,7 +979,8 @@ export const ServiceDetailPage: React.FC = () => {
     const onStage = (event: Event) => {
       const detail = (event as CustomEvent<AiStageServiceDetail>).detail;
       if (!detail?.elements) return;
-      if (detail.serviceId && service && detail.serviceId !== service.id) return;
+      if (detail.serviceId && service && detail.serviceId !== service.id)
+        return;
       setStagedProposal(detail);
     };
     window.addEventListener(AI_STAGE_SERVICE_EVENT, onStage);

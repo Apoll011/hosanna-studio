@@ -89,8 +89,12 @@ export const MainLayout: React.FC = () => {
     [updateSetting],
   );
 
-  const { events: agendaEvents, categories: agendaCategories, upcomingEventCount, addEvent } =
-    useAgenda();
+  const {
+    events: agendaEvents,
+    categories: agendaCategories,
+    upcomingEventCount,
+    addEvent,
+  } = useAgenda();
   const {
     printSong,
     printSongs,

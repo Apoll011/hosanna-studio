@@ -2459,7 +2459,8 @@ export const en: typeof pt = {
       saved: "AI settings saved.",
       keyCleared: "API key removed.",
       noAccessTitle: "No access",
-      noAccessDesc: "Only owners and admins can manage organization AI settings.",
+      noAccessDesc:
+        "Only owners and admins can manage organization AI settings.",
       encryptionMissing:
         "Server is missing AI_SETTINGS_ENCRYPTION_KEY. Ask an admin to configure it before saving keys.",
       provider: "Provider",
@@ -2492,7 +2493,8 @@ export const en: typeof pt = {
       open: "Open AI chat",
       close: "Close AI chat",
       clear: "Clear conversation",
-      empty: "Ask about ChordPro, songs, or service planning. Quick actions adapt to the page you are on.",
+      empty:
+        "Ask about ChordPro, songs, or service planning. Quick actions adapt to the page you are on.",
       placeholder: "Ask Hosanna AI…",
       send: "Send",
       stop: "Stop",

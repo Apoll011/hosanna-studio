@@ -57,7 +57,10 @@ export const AiProposalBanner: React.FC<AiProposalBannerProps> = ({
         </div>
         {diffPreview && (
           <div className="max-h-40 overflow-auto">
-            <AiDiffView preview={diffPreview} className="border-0 rounded-none" />
+            <AiDiffView
+              preview={diffPreview}
+              className="border-0 rounded-none"
+            />
           </div>
         )}
       </div>

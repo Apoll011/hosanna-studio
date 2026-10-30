@@ -48,10 +48,8 @@ function outputRequestsSync(output: unknown): boolean {
   if (o.studioSync === true) return true;
   if (typeof o.text === "string") return outputRequestsSync(o.text);
   if (Array.isArray(o.content)) {
-    const text = (
-      o.content as Array<{ type?: string; text?: string }>
-    )
-      .map((c) => (c?.type === "text" ? c.text ?? "" : ""))
+    const text = (o.content as Array<{ type?: string; text?: string }>)
+      .map((c) => (c?.type === "text" ? (c.text ?? "") : ""))
       .join("");
     return text ? outputRequestsSync(text) : false;
   }

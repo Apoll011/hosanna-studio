@@ -15,8 +15,7 @@ export type AiToolCallState = {
 };
 
 export type AiMessagePart =
-  | { type: "text"; text: string }
-  | { type: "tool"; tool: AiToolCallState };
+  { type: "text"; text: string } | { type: "tool"; tool: AiToolCallState };
 
 export type AiChatMessage = {
   id: string;
@@ -35,7 +34,9 @@ export type PageContextSnapshot = AiChatContext;
 
 export function messageText(msg: AiChatMessage): string {
   return msg.parts
-    .filter((p): p is Extract<AiMessagePart, { type: "text" }> => p.type === "text")
+    .filter(
+      (p): p is Extract<AiMessagePart, { type: "text" }> => p.type === "text",
+    )
     .map((p) => p.text)
     .join("");
 }
