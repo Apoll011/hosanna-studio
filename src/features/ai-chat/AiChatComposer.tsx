@@ -201,7 +201,10 @@ export const AiChatComposer = forwardRef<AiChatComposerHandle, Props>(
             }}
             placeholder={t("ai.chat.placeholder")}
             aria-label={t("ai.chat.placeholder")}
-            className="flex-1 min-w-0 resize-none bg-transparent text-m3-text text-[13px] leading-relaxed focus:outline-none placeholder:text-m3-secondary/70"
+            // The wrapper draws the focus ring; the global textarea:focus-visible
+            // outline would otherwise add a second, mis-sized box.
+            style={{ outline: "none", boxShadow: "none" }}
+            className="flex-1 min-w-0 block min-h-8 m-0 py-1.5 px-0 border-0 resize-none bg-transparent text-m3-text text-[13px] leading-5 placeholder:text-m3-secondary/70"
           />
           {streaming ? (
             <button
