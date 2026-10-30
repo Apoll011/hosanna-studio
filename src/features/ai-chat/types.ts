@@ -89,7 +89,12 @@ export type LogosMood =
   | "celebrating"
   | "sleeping"
   | "helping"
-  | "oops";
+  | "oops"
+  /* Reaction-only moods (triggered by poking / petting the mascot). */
+  | "surprised"
+  | "love"
+  | "wink"
+  | "dizzy";
 
 /** Tools whose cards are noise for the user (hidden from the tool list). */
 export const SILENT_TOOLS = new Set(["studio_sync", "suggest_followups"]);

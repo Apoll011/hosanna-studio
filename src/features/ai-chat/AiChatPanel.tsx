@@ -96,6 +96,21 @@ export const AiChatPanel: React.FC<PanelProps> = ({ wide, onToggleWide }) => {
   const [showJump, setShowJump] = useState(false);
   const contextLabel = useContextLabel(pageContext);
   const empty = messages.length === 0;
+  // Say out loud what the mascot's face is already showing.
+  const moodStatus =
+    mood === "thinking"
+      ? t("ai.chat.status.thinking")
+      : mood === "working"
+        ? t("ai.chat.status.working")
+        : mood === "singing"
+          ? t("ai.chat.status.singing")
+          : mood === "happy"
+            ? t("ai.chat.status.happy")
+            : mood === "celebrating"
+              ? t("ai.chat.status.celebrating")
+              : mood === "oops"
+                ? t("ai.chat.status.oops")
+                : null;
 
   const scrollToBottom = useCallback((smooth = false) => {
     const el = scrollRef.current;
@@ -161,17 +176,27 @@ export const AiChatPanel: React.FC<PanelProps> = ({ wide, onToggleWide }) => {
       }}
     >
       <header className="flex items-center gap-2 pl-3 pr-2 py-2 border-b border-m3-border shrink-0">
-        <LogosMascot flat size={32} mood={mood} />
+        <LogosMascot flat interactive size={40} mood={mood} />
         <div className="flex-1 min-w-0">
           <h2 className="text-sm font-semibold text-m3-text truncate m-0 leading-tight">
             {t("ai.chat.title")}
           </h2>
-          <p
-            className="m-0 text-[11px] text-m3-secondary truncate leading-tight"
-            title={t("ai.chat.contextHint")}
-          >
-            {includeContext ? contextLabel : t("ai.chat.subtitle")}
-          </p>
+          {moodStatus ? (
+            <p
+              key={mood}
+              className="logos-msg-in m-0 text-[11px] font-medium text-m3-primary truncate leading-tight"
+              role="status"
+            >
+              {moodStatus}
+            </p>
+          ) : (
+            <p
+              className="m-0 text-[11px] text-m3-secondary truncate leading-tight"
+              title={t("ai.chat.contextHint")}
+            >
+              {includeContext ? contextLabel : t("ai.chat.subtitle")}
+            </p>
+          )}
         </div>
         <button
           type="button"

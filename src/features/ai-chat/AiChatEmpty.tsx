@@ -20,7 +20,10 @@ function firstName(name: string | undefined | null): string {
   return (name ?? "").trim().split(/\s+/)[0] ?? "";
 }
 
-/** Empty conversation: animated Logos, greeting and localized suggestions. */
+/**
+ * Empty conversation: Logos (poke, pet or wake him), greeting and localized
+ * suggestions.
+ */
 export const AiChatEmpty: React.FC<Props> = ({
   chips,
   mood,
@@ -46,8 +49,9 @@ export const AiChatEmpty: React.FC<Props> = ({
     <div className="min-h-full flex flex-col items-center justify-center px-4 py-6 text-center">
       <LogosMascot
         track
+        interactive
         size={132}
-        mood={mood === "idle" ? "helping" : mood}
+        mood={mood}
         label={t("ai.chat.mascotLabel")}
       />
       <p className="mt-3 mb-0 text-[11px] font-medium uppercase tracking-wider text-m3-primary">

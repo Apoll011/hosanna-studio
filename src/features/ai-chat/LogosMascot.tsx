@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import "./logos.css";
 import type { LogosMood } from "./types";
 
@@ -13,6 +13,17 @@ type Props = {
   size?: number;
   /** Eyes follow the pointer; falls asleep after a while without input. */
   track?: boolean;
+  /**
+   * Poke (click), pet (hover for a while) and wake him. Gives the mascot a
+   * button role when a `label` is provided.
+   */
+  interactive?: boolean;
+  /**
+   * Little unprompted behaviours while resting: glancing around, flapping,
+   * stretching, humming… `"calm"` keeps to rare, subtle ones (toolbar use).
+   * Defaults to on whenever `track` is on.
+   */
+  antics?: boolean | "calm";
   className?: string;
   label?: string;
   /** Hide the ground shadow (small avatars). */
@@ -23,6 +34,47 @@ const MAX_LOOK = 3.4;
 const SLEEP_AFTER_MS = 45_000;
 /** Below this the musical extras are dropped so the silhouette stays clean. */
 const COMPACT_BELOW = 56;
+/** Hovering this long without leaving counts as petting. */
+const PET_AFTER_MS = 2_000;
+/** This many pokes inside the window makes him dizzy. */
+const DIZZY_POKES = 5;
+const DIZZY_WINDOW_MS = 2_200;
+
+/** Unprompted behaviours; the CSS keys off `data-act`. */
+type Act = "look" | "tilt" | "flap" | "hop" | "stretch" | "hum" | "ruffle";
+const ACT_MS: Record<Act, number> = {
+  look: 2400,
+  tilt: 2200,
+  flap: 1300,
+  hop: 1500,
+  stretch: 2500,
+  hum: 3300,
+  ruffle: 1100,
+};
+const ALL_ACTS = Object.keys(ACT_MS) as Act[];
+const CALM_ACTS: Act[] = ["look", "tilt", "flap"];
+
+/** What a poke can turn into (never the same twice in a row). */
+const POKE_REACTIONS: { mood: LogosMood; ms: number }[] = [
+  { mood: "surprised", ms: 1300 },
+  { mood: "wink", ms: 1800 },
+  { mood: "love", ms: 2400 },
+  { mood: "excited", ms: 1800 },
+  { mood: "happy", ms: 1700 },
+  { mood: "singing", ms: 2600 },
+];
+
+/** Moods where nothing else is going on, so he is free to fidget. */
+const isResting = (m: LogosMood) => m === "idle" || m === "helping";
+/** Moods a poke may interrupt (never real work or an error). */
+const isPokeable = (m: LogosMood) =>
+  isResting(m) || m === "happy" || m === "sleeping";
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+
+const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
 /* Brand palette (fixed — the mascot looks the same in every theme). */
 const SKY = "#36A9E8";
@@ -67,6 +119,41 @@ function Note({
   );
 }
 
+function Heart({
+  x,
+  y,
+  s = 1,
+  className,
+}: {
+  x: number;
+  y: number;
+  s?: number;
+  className: string;
+}) {
+  return (
+    <g className={`logos-heart ${className}`}>
+      <g transform={`translate(${x} ${y}) scale(${s})`}>
+        <path
+          d="M0 5 C-10 -1 -6.5 -9.5 0 -4.6 C6.5 -9.5 10 -1 0 5 Z"
+          fill="#FF5C86"
+        />
+        <ellipse
+          cx="-3.2"
+          cy="-3.4"
+          rx="1.6"
+          ry="1.1"
+          fill="#fff"
+          opacity="0.7"
+          transform="rotate(-30 -3.2 -3.4)"
+        />
+      </g>
+    </g>
+  );
+}
+
+/** A 4-point sparkle centred on the origin. */
+const SPARK = "M0 -5 L1.4 -1.4 L5 0 L1.4 1.4 L0 5 L-1.4 1.4 L-5 0 L-1.4 -1.4 Z";
+
 /**
  * Logos — the Hosanna AI mascot: a plump sky-blue songbird in golden
  * over-ear headphones. Pure SVG + CSS (see `logos.css`), so it scales from a
@@ -78,6 +165,8 @@ export const LogosMascot: React.FC<Props> = ({
   mood = "idle",
   size = 120,
   track = false,
+  interactive = false,
+  antics = track,
   className = "",
   label,
   flat = false,
@@ -85,12 +174,45 @@ export const LogosMascot: React.FC<Props> = ({
   const rootRef = useRef<HTMLDivElement>(null);
   const gid = useId().replace(/:/g, "");
   const [asleep, setAsleep] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  /** A short-lived mood from poking / petting; wins over `mood`. */
+  const [reaction, setReaction] = useState<LogosMood | null>(null);
+  /** Current unprompted behaviour. */
+  const [act, setAct] = useState<Act | null>(null);
+
+  const asleepRef = useRef(false);
+  const reactTimer = useRef(0);
+  const actTimer = useRef(0);
+  const petTimer = useRef(0);
+  const pokes = useRef<number[]>([]);
+  const lastPoke = useRef<LogosMood | null>(null);
+  /** Latest "free to fidget / may be poked" flags for timers and handlers. */
+  const freeRef = useRef({ fidget: false, pokeable: false });
+
+  const playAct = useCallback((next: Act) => {
+    window.clearTimeout(actTimer.current);
+    setAct(next);
+    actTimer.current = window.setTimeout(() => setAct(null), ACT_MS[next]);
+  }, []);
+
+  const react = useCallback((next: LogosMood, ms: number) => {
+    window.clearTimeout(reactTimer.current);
+    setReaction(next);
+    reactTimer.current = window.setTimeout(() => setReaction(null), ms);
+  }, []);
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(reactTimer.current);
+      window.clearTimeout(actTimer.current);
+      window.clearTimeout(petTimer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!track || typeof window === "undefined") return;
-    const reduced = window.matchMedia?.(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const reduced = prefersReducedMotion();
     const el = rootRef.current;
     if (!el) return;
     let raf = 0;
@@ -100,7 +222,10 @@ export const LogosMascot: React.FC<Props> = ({
 
     const arm = () => {
       window.clearTimeout(sleepTimer);
-      sleepTimer = window.setTimeout(() => setAsleep(true), SLEEP_AFTER_MS);
+      sleepTimer = window.setTimeout(() => {
+        asleepRef.current = true;
+        setAsleep(true);
+      }, SLEEP_AFTER_MS);
     };
     const apply = () => {
       raf = 0;
@@ -108,7 +233,12 @@ export const LogosMascot: React.FC<Props> = ({
       el.style.setProperty("--ly", `${ly.toFixed(2)}px`);
     };
     const onActivity = () => {
-      setAsleep(false);
+      if (asleepRef.current) {
+        // Waking up: a big stretch and a yawn.
+        asleepRef.current = false;
+        setAsleep(false);
+        if (!reduced) playAct("stretch");
+      }
       arm();
     };
     const onMove = (e: PointerEvent) => {
@@ -135,13 +265,79 @@ export const LogosMascot: React.FC<Props> = ({
       window.clearTimeout(sleepTimer);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [track]);
+  }, [track, playAct]);
 
-  const shown: LogosMood =
-    track && asleep && (mood === "idle" || mood === "helping")
-      ? "sleeping"
-      : mood;
+  const resting: LogosMood =
+    track && asleep && isResting(mood) ? "sleeping" : mood;
+  const shown: LogosMood = reaction ?? resting;
+  const fidget = !reaction && isResting(shown);
+  const pokeable = isPokeable(resting);
   const compact = size < COMPACT_BELOW;
+
+  useEffect(() => {
+    freeRef.current = { fidget, pokeable: pokeable && reaction !== "dizzy" };
+  });
+
+  // Unprompted behaviours: every so often, while he has nothing else to do.
+  useEffect(() => {
+    if (!antics || prefersReducedMotion()) return;
+    const calm = antics === "calm";
+    const pool = calm ? CALM_ACTS : ALL_ACTS;
+    const gap = () => (calm ? rand(9000, 18000) : rand(4500, 9500));
+    let timer = 0;
+    let last: Act | null = null;
+
+    const loop = () => {
+      if (freeRef.current.fidget && !document.hidden) {
+        const options = pool.filter((a) => a !== last);
+        const next = options[Math.floor(Math.random() * options.length)];
+        last = next;
+        playAct(next);
+        timer = window.setTimeout(loop, ACT_MS[next] + gap());
+      } else {
+        timer = window.setTimeout(loop, gap());
+      }
+    };
+    timer = window.setTimeout(loop, gap());
+    return () => window.clearTimeout(timer);
+  }, [antics, playAct]);
+
+  const poke = useCallback(() => {
+    if (!interactive || !freeRef.current.pokeable) return;
+    window.clearTimeout(petTimer.current);
+    const now = performance.now();
+    pokes.current = [
+      ...pokes.current.filter((at) => now - at < DIZZY_WINDOW_MS),
+      now,
+    ];
+    if (pokes.current.length >= DIZZY_POKES) {
+      pokes.current = [];
+      lastPoke.current = "dizzy";
+      react("dizzy", 3200);
+      return;
+    }
+    const options = POKE_REACTIONS.filter((r) => r.mood !== lastPoke.current);
+    const pick = options[Math.floor(Math.random() * options.length)];
+    lastPoke.current = pick.mood;
+    react(pick.mood, pick.ms);
+  }, [interactive, react]);
+
+  const onPointerEnter = () => {
+    setHovered(true);
+    window.clearTimeout(petTimer.current);
+    petTimer.current = window.setTimeout(() => {
+      if (freeRef.current.pokeable) {
+        lastPoke.current = "love";
+        react("love", 2600);
+      }
+    }, PET_AFTER_MS);
+  };
+  const onPointerLeave = () => {
+    setHovered(false);
+    window.clearTimeout(petTimer.current);
+  };
+
+  const asButton = interactive && Boolean(label);
 
   const u = (name: string) => `${gid}-${name}`;
   const ref = (name: string) => `url(#${u(name)})`;
@@ -166,6 +362,22 @@ export const LogosMascot: React.FC<Props> = ({
         strokeWidth="1.6"
       />
       <ellipse cx="20" cy="78" rx="4" ry="8" fill="#FFD27A" opacity="0.5" />
+      {/* tiny equalizer — dances while he listens, works or sings */}
+      <g className="logos-eq">
+        {[17.4, 20, 22.6].map((x, i) => (
+          <rect
+            key={x}
+            className={`logos-eq-bar logos-eq-${i}`}
+            x={x - 0.8}
+            y="73"
+            width="1.6"
+            height="11"
+            rx="0.8"
+            fill="#B5611B"
+            opacity="0.6"
+          />
+        ))}
+      </g>
       <ellipse
         cx="17.5"
         cy="66"
@@ -207,12 +419,30 @@ export const LogosMascot: React.FC<Props> = ({
   return (
     <div
       ref={rootRef}
-      className={`logos ${compact ? "logos-compact" : ""} ${className}`}
+      className={`logos ${compact ? "logos-compact" : ""} ${
+        interactive ? "logos-interactive" : ""
+      } ${className}`}
       data-mood={shown}
+      data-act={fidget && act ? act : undefined}
+      data-hover={interactive && hovered ? "true" : undefined}
       style={{ width: size, height: size }}
-      role={label ? "img" : undefined}
+      role={asButton ? "button" : label ? "img" : undefined}
+      tabIndex={asButton ? 0 : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
+      onPointerEnter={interactive ? onPointerEnter : undefined}
+      onPointerLeave={interactive ? onPointerLeave : undefined}
+      onClick={interactive ? poke : undefined}
+      onKeyDown={
+        asButton
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                poke();
+              }
+            }
+          : undefined
+      }
     >
       <svg viewBox="0 0 160 160" width="100%" height="100%" focusable="false">
         <defs>
@@ -352,11 +582,20 @@ export const LogosMascot: React.FC<Props> = ({
             strokeWidth="2.4"
           />
         </g>
+        <g className="logos-hearts">
+          <Heart x={26} y={44} s={1.1} className="logos-heart-a" />
+          <Heart x={136} y={38} s={0.95} className="logos-heart-b" />
+          <Heart x={146} y={92} s={0.8} className="logos-heart-c" />
+        </g>
         <path
           className="logos-sparkle"
           d="M147 56 l2.4 7 7 2.4 -7 2.4 -2.4 7 -2.4 -7 -7 -2.4 7 -2.4 z"
           fill={GOLD}
         />
+        <g className="logos-bang" fill={ORANGE}>
+          <rect x="136" y="8" width="6.4" height="19" rx="3.2" />
+          <circle cx="139.2" cy="34" r="3.6" />
+        </g>
         <path
           className="logos-drop"
           d="M121 46 q5.5 8 0 12 q-5.5 -4 0 -12 z"
@@ -440,6 +679,17 @@ export const LogosMascot: React.FC<Props> = ({
             />
             <g clipPath={`url(#${u("clip")})`}>
               <ellipse cx="80" cy="106" rx="38" ry="26" fill={ref("belly")} />
+              {/* soft chest feathers */}
+              <g
+                fill="none"
+                stroke="#fff"
+                strokeOpacity="0.34"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              >
+                <path d="M66 107 q7 5.4 14 0 q7 5.4 14 0" />
+                <path d="M73 116.5 q7 5 14 0" />
+              </g>
               <rect x="20" y="24" width="120" height="110" fill={ref("ao")} />
             </g>
             {/* glossy highlights */}
@@ -501,6 +751,40 @@ export const LogosMascot: React.FC<Props> = ({
 
             {/* face */}
             <g className="logos-face">
+              {/* rosy cheeks */}
+              <g fill="#FF8CA8">
+                <ellipse
+                  className="logos-blush"
+                  cx="46"
+                  cy="92"
+                  rx="7.4"
+                  ry="4.4"
+                />
+                <ellipse
+                  className="logos-blush"
+                  cx="114"
+                  cy="92"
+                  rx="7.4"
+                  ry="4.4"
+                />
+              </g>
+              {/* eyebrows — only visible when the mood needs them */}
+              <g
+                className="logos-brows"
+                fill="none"
+                stroke="#123A63"
+                strokeWidth="3.2"
+                strokeLinecap="round"
+              >
+                <path
+                  className="logos-brow logos-brow-l"
+                  d="M53.5 60 Q62 55.5 70.5 60"
+                />
+                <path
+                  className="logos-brow logos-brow-r"
+                  d="M89.5 60 Q98 55.5 106.5 60"
+                />
+              </g>
               <g className="logos-eyes">
                 <g className="logos-look">
                   {[62, 98].map((cx, i) => (
@@ -544,6 +828,51 @@ export const LogosMascot: React.FC<Props> = ({
               >
                 <path d="M53 73 Q62 82 71 73" />
                 <path d="M89 73 Q98 82 107 73" />
+              </g>
+              {/* wink: the right eye closes into a happy arc */}
+              <path
+                className="logos-eye-wink"
+                d="M88.5 78 Q98 63 107.5 78"
+                fill="none"
+                stroke={INK}
+                strokeWidth="4.6"
+                strokeLinecap="round"
+              />
+              {/* heart eyes */}
+              <g className="logos-eyes-love">
+                {[62, 98].map((cx) => (
+                  <g key={cx} className="logos-heart-eye">
+                    <path
+                      d={`M${cx} 83 C${cx - 12} 74 ${cx - 7} 63 ${cx} 69.5 C${cx + 7} 63 ${cx + 12} 74 ${cx} 83 Z`}
+                      fill="#FF4D7A"
+                    />
+                    <ellipse
+                      cx={cx - 3.6}
+                      cy="69.8"
+                      rx="2.2"
+                      ry="1.5"
+                      fill="#fff"
+                      opacity="0.75"
+                      transform={`rotate(-30 ${cx - 3.6} 69.8)`}
+                    />
+                  </g>
+                ))}
+              </g>
+              {/* dizzy spiral eyes */}
+              <g
+                className="logos-eyes-dizzy"
+                fill="none"
+                stroke={INK}
+                strokeWidth="1.9"
+                strokeLinecap="round"
+              >
+                {[62, 98].map((cx) => (
+                  <path
+                    key={cx}
+                    className="logos-spiral"
+                    d={`M${cx} 75 a1.5 1.5 0 0 1 3 0 a3 3 0 0 1 -6 0 a4.5 4.5 0 0 1 9 0 a6 6 0 0 1 -12 0 a7.5 7.5 0 0 1 15 0`}
+                  />
+                ))}
               </g>
 
               {/* beak */}
@@ -590,6 +919,28 @@ export const LogosMascot: React.FC<Props> = ({
             <g className="logos-wing logos-wing-l">{wing(false)}</g>
             <g className="logos-wing logos-wing-r">{wing(true)}</g>
           </g>
+        </g>
+
+        {/* dizzy stars circling the head (front layer) */}
+        <g className="logos-dizzy-stars">
+          {[0, 1, 2].map((i) => (
+            <g
+              key={i}
+              className="logos-star-x"
+              style={{ animationDelay: `${-i * 0.8}s` }}
+            >
+              <g
+                className="logos-star-y"
+                style={{ animationDelay: `${-0.6 - i * 0.8}s` }}
+              >
+                <path
+                  d={SPARK}
+                  transform="translate(80 22)"
+                  fill={i === 1 ? CYAN : GOLD}
+                />
+              </g>
+            </g>
+          ))}
         </g>
       </svg>
     </div>
