@@ -2508,7 +2508,8 @@ export const pt = {
       enabled: "Ativar assistente",
       enabledDesc: "Membros com acesso a IA podem abrir o painel de chat.",
       advanced: "Avançado",
-      advancedDesc: "Limite de ferramentas, criatividade e tamanho máximo da resposta.",
+      advancedDesc:
+        "Limite de ferramentas, criatividade e tamanho máximo da resposta.",
       behaviorTitle: "Comportamento",
       behaviorDesc: "Controle como o Logos trabalha em cada resposta.",
       maxToolCalls: "Máximo de chamadas de ferramentas por resposta",

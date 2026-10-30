@@ -2519,7 +2519,8 @@ export const es: typeof pt = {
       enabled: "Activar asistente",
       enabledDesc: "Los miembros con acceso a IA pueden abrir el chat.",
       advanced: "Avanzado",
-      advancedDesc: "Límite de herramientas, creatividad y longitud máxima de la respuesta.",
+      advancedDesc:
+        "Límite de herramientas, creatividad y longitud máxima de la respuesta.",
       behaviorTitle: "Comportamiento",
       behaviorDesc: "Controla cómo trabaja Logos en cada respuesta.",
       maxToolCalls: "Máximo de llamadas a herramientas por respuesta",
