@@ -2747,7 +2747,7 @@ export const es: typeof pt = {
         transpose:
           "Ayúdame a transponer esta canción. Pregunta el tono de destino si no está claro y luego propón el ChordPro transpuesto.",
         completeChords:
-          "Completar acordes: usa chordpro_propagate_chords en la canción actual. Copia los marcadores de acordes de la primera estrofa con acordes a las demás estrofas en los mismos puntos de la letra — NO inventes acordes nuevos. Muestra el diff y propón aplicarlo en el editor; no guardes todavía.",
+          "Completar acordes: usa chordpro_propagate_chords en la canción actual. Copia los marcadores de acordes de la primera estrofa con acordes a las demás estrofas en los mismos puntos de la letra — NO inventes acordes nuevos. La herramienta devuelve un borrador: revisa cada línea marcada `check`, corrige tú mismo la posición de los acordes y luego propón el resultado corregido en el editor con songs_propose_edit; no guardes todavía.",
         completeMeta:
           "Completa los metadatos que faltan de la canción (título, artista, tono, tempo, etiquetas) según el contenido ChordPro. Solo propón ediciones.",
         explainSelection:
@@ -2832,7 +2832,7 @@ export const es: typeof pt = {
         songs_propose_edit: "Proponer edición",
         songs_propose_fix: "Proponer corrección",
         songs_propose_transpose: "Proponer transposición",
-        songs_propose_propagate_chords: "Proponer copia de acordes",
+        songs_draft_propagate_chords: "Borrador de copia de acordes",
         songs_save: "Guardar canción",
         songs_move: "Mover canción",
         songs_delete: "Eliminar canción",

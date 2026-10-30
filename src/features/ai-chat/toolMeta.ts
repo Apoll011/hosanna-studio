@@ -91,7 +91,7 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   songs_propose_edit: WandSparkles,
   songs_propose_fix: WandSparkles,
   songs_propose_transpose: Languages,
-  songs_propose_propagate_chords: WandSparkles,
+  songs_draft_propagate_chords: WandSparkles,
   songs_save: Save,
   songs_move: Music,
   songs_delete: Trash2,

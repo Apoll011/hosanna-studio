@@ -2712,7 +2712,7 @@ export const en: typeof pt = {
         transpose:
           "Help me transpose this song. Ask which target key if unclear, then propose the transposed ChordPro.",
         completeChords:
-          "Complete chords: use chordpro_propagate_chords on the current song. Copy chord markers from the first chorded verse onto the other verses at the same lyric places — do NOT invent new chords. Show the diff and propose applying to the editor; do not save yet.",
+          "Complete chords: use chordpro_propagate_chords on the current song. Copy chord markers from the first chorded verse onto the other verses at the same lyric places — do NOT invent new chords. The tool returns a draft: check every line it marks `check`, fix chord placement yourself, then propose the corrected result in the editor with songs_propose_edit; do not save yet.",
         completeMeta:
           "Complete missing song metadata (title, artist, key, tempo, tags) based on the ChordPro content. Propose edits only.",
         explainSelection:
@@ -2796,7 +2796,7 @@ export const en: typeof pt = {
         songs_propose_edit: "Propose edit",
         songs_propose_fix: "Propose fix",
         songs_propose_transpose: "Propose transposition",
-        songs_propose_propagate_chords: "Propose chord copy",
+        songs_draft_propagate_chords: "Draft chord copy",
         songs_save: "Save song",
         songs_move: "Move song",
         songs_delete: "Delete song",
