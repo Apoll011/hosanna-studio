@@ -62,6 +62,12 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
 import { useSync } from "../../contexts/SyncContext";
+import {
+  AI_STAGE_SERVICE_EVENT,
+  AiProposalBanner,
+  aiContextBridge,
+  type AiStageServiceDetail,
+} from "../../features/ai-chat";
 import { useOrgSettings } from "../../hooks/useOrgSettings";
 import { useService, useServices } from "../../hooks/useServices";
 import { useSearchableSongs, useSong, useSongs } from "../../hooks/useSongs";
@@ -880,6 +886,8 @@ export const ServiceDetailPage: React.FC = () => {
   const [elements, setElements] = useState<ServiceElement[]>([]);
   const elementsRef = useRef<ServiceElement[]>([]);
   const [generalNotes, setGeneralNotes] = useState("");
+  const [stagedProposal, setStagedProposal] =
+    useState<AiStageServiceDetail | null>(null);
   const [librarySearch, setLibrarySearch] = useState("");
   const [pendingSongIds, setPendingSongIds] = useState<Record<string, number>>(
     {},
@@ -943,6 +951,58 @@ export const ServiceDetailPage: React.FC = () => {
   useEffect(() => {
     elementsRef.current = elements;
   }, [elements]);
+
+  useEffect(() => {
+    if (!service) {
+      aiContextBridge.setService(null);
+      return;
+    }
+    aiContextBridge.setService({
+      serviceId: service.id,
+      title: service.name,
+      elements,
+      updatedAt: service.updatedAt,
+      notes: generalNotes,
+      date:
+        typeof service.date === "string"
+          ? service.date
+          : service.date
+            ? new Date(service.date).toISOString()
+            : undefined,
+    });
+    return () => {
+      aiContextBridge.setService(null);
+    };
+  }, [service, elements, generalNotes]);
+
+  useEffect(() => {
+    const onStage = (event: Event) => {
+      const detail = (event as CustomEvent<AiStageServiceDetail>).detail;
+      if (!detail?.elements) return;
+      if (detail.serviceId && service && detail.serviceId !== service.id)
+        return;
+      setStagedProposal(detail);
+    };
+    window.addEventListener(AI_STAGE_SERVICE_EVENT, onStage);
+    return () => window.removeEventListener(AI_STAGE_SERVICE_EVENT, onStage);
+  }, [service]);
+
+  const acceptStagedProposal = () => {
+    if (!stagedProposal?.elements) return;
+    const next = stagedProposal.elements.map((el, index) => ({
+      ...el,
+      position: el.position ?? index,
+    }));
+    setElements(next);
+    elementsRef.current = next;
+    if (stagedProposal.notes != null) setGeneralNotes(stagedProposal.notes);
+    setStagedProposal(null);
+    showToast(t("ai.chat.appliedToEditor"), "success");
+  };
+
+  const declineStagedProposal = () => {
+    setStagedProposal(null);
+  };
 
   // Auto-save general notes after a short debounce when the org autoSave is on
   useEffect(() => {
@@ -1475,8 +1535,15 @@ export const ServiceDetailPage: React.FC = () => {
   return (
     <div
       data-tour="service-builder"
-      className="flex-1 flex flex-col h-full overflow-hidden bg-m3-sidebar/10"
+      className="flex-1 flex flex-col h-full overflow-hidden bg-m3-sidebar/10 relative"
     >
+      {stagedProposal && (
+        <AiProposalBanner
+          title={stagedProposal.name || service.name}
+          onAccept={acceptStagedProposal}
+          onDecline={declineStagedProposal}
+        />
+      )}
       {/* ── Top Header ────────────────────────────────────────────── */}
       <div className="h-14 bg-m3-sidebar border-b border-m3-border flex items-center justify-between px-4 shrink-0 gap-4">
         <div className="flex items-center gap-3">

@@ -1,4 +1,12 @@
 export { ApiClient, ApiError } from "./client";
+export {
+  aiApi,
+  type AiChatContext,
+  type AiProvider,
+  type AiSettingsPublic,
+  type AiUiMessage,
+  type UpdateAiSettingsInput,
+} from "./ai";
 export { backupApi } from "./backup";
 export { foldersApi } from "./folders";
 export {

@@ -32,22 +32,36 @@ import {
   ExplorerModals,
   ExplorerToolbar,
 } from "../components/layout";
-import { ProductTourController } from "../components/tour/ProductTourController";
 import { ToastContainer } from "../components/Toast";
+import { ProductTourController } from "../components/tour/ProductTourController";
 import { useAuth } from "../contexts/AuthContext";
-import { emitOnboardingEvent, getActiveOnboardingWaitFor } from "../lib/tour";
 import { usePrint } from "../contexts/PrintContext";
 import { useSync } from "../contexts/SyncContext";
 import { getDatabase, purgeExpiredTrash } from "../db";
+import {
+  AI_LIBRARY_CHANGED_EVENT,
+  AI_NAVIGATE_EVENT,
+  AI_PRINT_EVENT,
+  AiChatDock,
+  AiChatProvider,
+  aiContextBridge,
+  type AiNavigateDetail,
+  type AiPrintDetail,
+} from "../features/ai-chat";
 import { useAgenda } from "../hooks/useAgenda";
 import { useAppNavigate } from "../hooks/useAppNavigate";
 import { useCollections } from "../hooks/useCollections";
 import { useFolders } from "../hooks/useFolders";
 import { usePersonalSettings } from "../hooks/usePersonalSettings";
 import { useServices } from "../hooks/useServices";
-import { useSearchableSongs, useSongs } from "../hooks/useSongs";
+import {
+  invalidateSongsCache,
+  useSearchableSongs,
+  useSongs,
+} from "../hooks/useSongs";
 import { useTrash } from "../hooks/useTrash";
 import { songImportRegistry } from "../lib/import";
+import { emitOnboardingEvent, getActiveOnboardingWaitFor } from "../lib/tour";
 import { filterSearchableSongsWithLiqe } from "../utils";
 import { ProviderImportResult } from "../utils/import";
 import { deriveView } from "./view";
@@ -75,9 +89,23 @@ export const MainLayout: React.FC = () => {
     [updateSetting],
   );
 
-  const { upcomingEventCount, addEvent } = useAgenda();
-  const { printSong, printSongs, printFolder, printFolders, printBatch } =
-    usePrint();
+  const {
+    events: agendaEvents,
+    categories: agendaCategories,
+    upcomingEventCount,
+    addEvent,
+  } = useAgenda();
+  const {
+    printSong,
+    printSongs,
+    printFolder,
+    printFolders,
+    printBatch,
+    printService,
+    printServices,
+    printCollection,
+    printEvent,
+  } = usePrint();
 
   // Service Worker & Sync
   const { showToast, triggerSyncCheck } = useSync();
@@ -171,6 +199,27 @@ export const MainLayout: React.FC = () => {
     useSongs();
 
   const { items: trashItems } = useTrash();
+
+  useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const onLibraryChanged = () => {
+      // Coalesce bursts (e.g. several folders_update in one chat turn).
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        void triggerSyncCheck().finally(() => {
+          invalidateSongsCache();
+          void foldersQuery.refetch();
+          void songsQuery.refetch();
+        });
+      }, 150);
+    };
+    window.addEventListener(AI_LIBRARY_CHANGED_EVENT, onLibraryChanged);
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      window.removeEventListener(AI_LIBRARY_CHANGED_EVENT, onLibraryChanged);
+    };
+  }, [foldersQuery, songsQuery, triggerSyncCheck]);
 
   // Folder & Navigation State
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -794,8 +843,165 @@ export const MainLayout: React.FC = () => {
   const [dropTargetFolderId, setDropTargetFolderId] = useState<string | null>(
     null,
   );
-  const { collections, createCollection, addSongsToCollection } =
-    useCollections();
+  const {
+    collections,
+    createCollection,
+    addSongsToCollection,
+    getCollectionSongs,
+  } = useCollections();
+
+  // Studio AI: navigate / open print-PDF modal from tool directives
+  useEffect(() => {
+    const onNavigate = (ev: Event) => {
+      const detail = (ev as CustomEvent<AiNavigateDetail>).detail;
+      if (!detail?.kind) return;
+      const id = detail.id ?? undefined;
+      switch (detail.kind) {
+        case "song":
+          if (id) navigate(`${slugPrefix}/songs/${id}`);
+          break;
+        case "service":
+          if (id) navigate(`${slugPrefix}/services/${id}`);
+          break;
+        case "collection":
+          if (id) navigate(`${slugPrefix}/collections/${id}`);
+          break;
+        case "folder":
+          setCurrentFolderId(id ?? null);
+          navigate(`${slugPrefix}/folders`);
+          break;
+        case "agenda":
+          navigate(`${slugPrefix}/agenda`);
+          break;
+        case "songs":
+          navigate(`${slugPrefix}/songs`);
+          break;
+        case "services":
+          navigate(`${slugPrefix}/services`);
+          break;
+        case "folders":
+          navigate(`${slugPrefix}/folders`);
+          break;
+        case "collections":
+          navigate(`${slugPrefix}/collections`);
+          break;
+        case "trash":
+          navigate(`${slugPrefix}/trash`);
+          break;
+        case "teams":
+          navigate(`${slugPrefix}/teams`);
+          break;
+        case "settings":
+          navigate(`${slugPrefix}/settings`);
+          break;
+        case "route":
+          if (detail.route) {
+            const path = detail.route.startsWith("/")
+              ? detail.route
+              : `/${detail.route}`;
+            navigate(
+              path.startsWith(slugPrefix) || !slugPrefix
+                ? path
+                : `${slugPrefix}${path}`,
+            );
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    const onPrint = (ev: Event) => {
+      const detail = (ev as CustomEvent<AiPrintDetail>).detail;
+      if (!detail?.kind || !detail.ids?.length) return;
+      const options = detail.options as Parameters<typeof printSong>[1];
+      const songs = songsQuery.data?.songs ?? [];
+      const folders = foldersQuery.data?.folders ?? [];
+      const services = allServices;
+
+      void (async () => {
+        try {
+          if (detail.kind === "song") {
+            const matched = detail.ids
+              .map((sid) => songs.find((s) => s.id === sid))
+              .filter(Boolean) as Song[];
+            if (!matched.length) return;
+            if (matched.length === 1) printSong(matched[0], options);
+            else printSongs(matched, detail.title, options);
+            return;
+          }
+          if (detail.kind === "folder") {
+            const folder = folders.find((f) => f.id === detail.ids[0]);
+            if (!folder) return;
+            const folderSongs = songs.filter((s) => s.folderId === folder.id);
+            printFolder(folder, folderSongs, options);
+            return;
+          }
+          if (detail.kind === "service") {
+            const matched = detail.ids
+              .map((sid) => services.find((s) => s.id === sid))
+              .filter(Boolean) as Service[];
+            if (!matched.length) return;
+            if (matched.length === 1) {
+              printService(matched[0], undefined, options);
+            } else {
+              printServices(
+                matched.map((service) => ({ service })),
+                detail.title,
+                options,
+              );
+            }
+            return;
+          }
+          if (detail.kind === "collection") {
+            const collection = collections.find((c) => c.id === detail.ids[0]);
+            if (!collection) return;
+            const collectionSongs = await getCollectionSongs(collection.id);
+            printCollection(collection, collectionSongs, options);
+            return;
+          }
+          if (detail.kind === "event") {
+            const event = agendaEvents.find((e) => e.id === detail.ids[0]);
+            if (!event) return;
+            printEvent(event, agendaCategories, options);
+          }
+        } catch (err) {
+          console.warn("[MainLayout] AI print failed:", err);
+          showToast({
+            type: "error",
+            title: t("ai.chat.confirmError"),
+          });
+        }
+      })();
+    };
+
+    window.addEventListener(AI_NAVIGATE_EVENT, onNavigate);
+    window.addEventListener(AI_PRINT_EVENT, onPrint);
+    return () => {
+      window.removeEventListener(AI_NAVIGATE_EVENT, onNavigate);
+      window.removeEventListener(AI_PRINT_EVENT, onPrint);
+    };
+  }, [
+    agendaCategories,
+    agendaEvents,
+    allServices,
+    collections,
+    foldersQuery.data?.folders,
+    getCollectionSongs,
+    navigate,
+    printCollection,
+    printEvent,
+    printFolder,
+    printService,
+    printServices,
+    printSong,
+    printSongs,
+    showToast,
+    slugPrefix,
+    songsQuery.data?.songs,
+    t,
+  ]);
+
   const currentCollectionId =
     view === "collection-detail" ? location.pathname.split("/").pop() : null;
   const currentCollectionName = useMemo(
@@ -803,6 +1009,23 @@ export const MainLayout: React.FC = () => {
       collections.find((c) => c.id === currentCollectionId)?.name ?? undefined,
     [collections, currentCollectionId],
   );
+
+  useEffect(() => {
+    aiContextBridge.setExplorer({
+      folderId: currentFolderId,
+      collectionId: currentCollectionId ?? null,
+      selectedSongIds: Array.from(selectedSongIds).slice(0, 50),
+      selectedFolderIds: Array.from(selectedFolderIds).slice(0, 50),
+    });
+    return () => {
+      aiContextBridge.setExplorer(null);
+    };
+  }, [
+    currentFolderId,
+    currentCollectionId,
+    selectedSongIds,
+    selectedFolderIds,
+  ]);
   const [addToCollectionTarget, setAddToCollectionTarget] =
     useState<Song | null>(null);
 
@@ -1521,8 +1744,8 @@ export const MainLayout: React.FC = () => {
           logout={logout}
         />
 
-        {/* Main Container (Toolbar + Content) */}
-        <div className="flex-1 flex flex-col p-2 sm:p-4 md:p-0 h-full w-full overflow-hidden">
+        {/* Main Container (Toolbar + Content) — shrinks when AI dock opens */}
+        <div className="flex-1 min-w-0 flex flex-col p-2 sm:p-4 md:p-0 h-full overflow-hidden">
           {/* Hidden File Input for Multiple ChordPro Uploads */}
           <input
             type="file"
@@ -1535,7 +1758,7 @@ export const MainLayout: React.FC = () => {
 
           {/* Window Container */}
           <div
-            className="bg-m3-card border md:border-none border-m3-border rounded-[var(--radius-xl)] md:rounded-none shadow-[var(--shadow-lg)] md:shadow-none overflow-hidden flex flex-col flex-1 h-full transition-colors duration-300"
+            className="bg-m3-card border md:border-none border-m3-border rounded-xl md:rounded-none shadow-lg md:shadow-none overflow-hidden flex flex-col flex-1 h-full transition-colors duration-300"
             role="main"
           >
             <ExplorerAddressBar
@@ -1648,7 +1871,7 @@ export const MainLayout: React.FC = () => {
               <div className="h-10 bg-m3-sidebar/40 border-t border-m3-border px-6 flex items-center justify-between text-caption select-none">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-m3-primary shadow-[var(--shadow-sm)]" />
+                    <span className="w-2 h-2 rounded-full bg-m3-primary shadow-sm" />
                     {currentFolder
                       ? `/${currentFolder.name}`
                       : t("layout.rootLocation")}
@@ -1671,6 +1894,8 @@ export const MainLayout: React.FC = () => {
             )}
           </div>
         </div>
+
+        <AiChatDock />
       </div>
 
       <ToastContainer />
@@ -1880,88 +2105,92 @@ export const MainLayout: React.FC = () => {
             pointerEvents: "none",
             zIndex: 100,
           }}
-          className="border-2 border-m3-primary bg-m3-primary/25 rounded-[var(--radius-md)] shadow-[var(--shadow-md)] backdrop-blur-[1px]"
+          className="border-2 border-m3-primary bg-m3-primary/25 rounded-md shadow-md backdrop-blur-[1px]"
         />
       )}
     </>
   );
 
   return (
-    <HosannaCommandPalette
-      slugPrefix={organization?.slug || ""}
-      isDataLoading={
-        songsQuery.isLoading ||
-        foldersQuery.isLoading ||
-        servicesQuery.isLoading
-      }
-      searchSongsDb={async (query) => {
-        if (songsQuery.isLoading || !songsQuery.data?.songs) return [];
-        const lowerQuery = query.toLowerCase().trim();
-        const allSongsList = songsQuery.data.songs;
-        const matches: Song[] = [];
-        for (const song of allSongsList) {
-          const matchTitle = song.title?.toLowerCase().includes(lowerQuery);
-          const matchArtist = song.artist?.toLowerCase().includes(lowerQuery);
-          const matchTags = song.tags?.some((t: string) =>
-            t.toLowerCase().includes(lowerQuery),
-          );
+    <AiChatProvider>
+      <HosannaCommandPalette
+        slugPrefix={organization?.slug || ""}
+        isDataLoading={
+          songsQuery.isLoading ||
+          foldersQuery.isLoading ||
+          servicesQuery.isLoading
+        }
+        searchSongsDb={async (query) => {
+          if (songsQuery.isLoading || !songsQuery.data?.songs) return [];
+          const lowerQuery = query.toLowerCase().trim();
+          const allSongsList = songsQuery.data.songs;
+          const matches: Song[] = [];
+          for (const song of allSongsList) {
+            const matchTitle = song.title?.toLowerCase().includes(lowerQuery);
+            const matchArtist = song.artist?.toLowerCase().includes(lowerQuery);
+            const matchTags = song.tags?.some((t: string) =>
+              t.toLowerCase().includes(lowerQuery),
+            );
 
-          if (matchTitle || matchArtist || matchTags) {
-            matches.push(song);
-            if (matches.length >= 8) break;
+            if (matchTitle || matchArtist || matchTags) {
+              matches.push(song);
+              if (matches.length >= 8) break;
+            }
           }
-        }
-        return matches;
-      }}
-      searchFoldersDb={async (query) => {
-        if (foldersQuery.isLoading || !foldersQuery.data?.folders) return [];
-        const lowerQuery = query.toLowerCase().trim();
-        const allFoldersList = foldersQuery.data.folders;
-        const matches: Folder[] = [];
-        for (const folder of allFoldersList) {
-          if (folder.name?.toLowerCase().includes(lowerQuery)) {
-            matches.push(folder);
-            if (matches.length >= 5) break;
+          return matches;
+        }}
+        searchFoldersDb={async (query) => {
+          if (foldersQuery.isLoading || !foldersQuery.data?.folders) return [];
+          const lowerQuery = query.toLowerCase().trim();
+          const allFoldersList = foldersQuery.data.folders;
+          const matches: Folder[] = [];
+          for (const folder of allFoldersList) {
+            if (folder.name?.toLowerCase().includes(lowerQuery)) {
+              matches.push(folder);
+              if (matches.length >= 5) break;
+            }
           }
-        }
-        return matches;
-      }}
-      searchServicesDb={async (query) => {
-        const rawServices = servicesQuery.data;
-        if (servicesQuery.isLoading || !Array.isArray(rawServices)) return [];
-        const lowerQuery = query.toLowerCase().trim();
-        const matches: Service[] = [];
-        for (const service of rawServices) {
-          const matchName = service.name?.toLowerCase().includes(lowerQuery);
-          const matchNotes = service.notes?.toLowerCase().includes(lowerQuery);
+          return matches;
+        }}
+        searchServicesDb={async (query) => {
+          const rawServices = servicesQuery.data;
+          if (servicesQuery.isLoading || !Array.isArray(rawServices)) return [];
+          const lowerQuery = query.toLowerCase().trim();
+          const matches: Service[] = [];
+          for (const service of rawServices) {
+            const matchName = service.name?.toLowerCase().includes(lowerQuery);
+            const matchNotes = service.notes
+              ?.toLowerCase()
+              .includes(lowerQuery);
 
-          if (matchName || matchNotes) {
-            matches.push(service);
-            if (matches.length >= 5) break;
+            if (matchName || matchNotes) {
+              matches.push(service);
+              if (matches.length >= 5) break;
+            }
           }
-        }
-        return matches;
-      }}
-      getFolderPathString={getFolderPathString}
-      navigate={navigate}
-      logout={logout}
-      currentFolderId={currentFolderId}
-      currentSong={currentSong}
-      currentService={currentService}
-      view={view}
-      isSidebarCollapsed={isSidebarCollapsed}
-      setIsSidebarCollapsed={setIsSidebarCollapsed}
-      setCurrentFolderId={setCurrentFolderId}
-      openModal={openModal}
-      handleViewModeChange={handleViewModeChange}
-      handlePrintSong={() => {}}
-      setMoveSongTarget={setMoveSongTarget}
-      setTargetSongFolderId={setTargetSongFolderId}
-      setDeleteSongTarget={setDeleteSongTarget}
-      deleteService={deleteService}
-      fileInputRef={fileInputRef}
-    >
-      {layoutContent}
-    </HosannaCommandPalette>
+          return matches;
+        }}
+        getFolderPathString={getFolderPathString}
+        navigate={navigate}
+        logout={logout}
+        currentFolderId={currentFolderId}
+        currentSong={currentSong}
+        currentService={currentService}
+        view={view}
+        isSidebarCollapsed={isSidebarCollapsed}
+        setIsSidebarCollapsed={setIsSidebarCollapsed}
+        setCurrentFolderId={setCurrentFolderId}
+        openModal={openModal}
+        handleViewModeChange={handleViewModeChange}
+        handlePrintSong={() => {}}
+        setMoveSongTarget={setMoveSongTarget}
+        setTargetSongFolderId={setTargetSongFolderId}
+        setDeleteSongTarget={setDeleteSongTarget}
+        deleteService={deleteService}
+        fileInputRef={fileInputRef}
+      >
+        {layoutContent}
+      </HosannaCommandPalette>
+    </AiChatProvider>
   );
 };

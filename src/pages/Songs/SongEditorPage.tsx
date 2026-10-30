@@ -41,6 +41,13 @@ import { useParams } from "react-router-dom";
 import { HelpModal } from "../../components/modals/HelpModal";
 import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
+import { useSync } from "../../contexts/SyncContext";
+import {
+  AI_STAGE_SONG_EVENT,
+  AiProposalBanner,
+  aiContextBridge,
+  type AiStageSongDetail,
+} from "../../features/ai-chat";
 import { useSong, useSongs } from "../../hooks/useSongs";
 import { posthog } from "../../lib/posthog";
 
@@ -58,8 +65,11 @@ export const SongEditorPage: React.FC = () => {
   const { data: song, isLoading, isError, error } = useSong(id || null);
   const { updateSong, isUpdating } = useSongs();
   const { printSong } = usePrint();
+  const { showToast } = useSync();
 
   const [content, setContent] = useState("");
+  const [stagedProposal, setStagedProposal] =
+    useState<AiStageSongDetail | null>(null);
 
   const deferredContent = useDeferredValue(content);
 
@@ -137,6 +147,52 @@ export const SongEditorPage: React.FC = () => {
   useEffect(() => {
     setSelectedVariant(null);
   }, [song?.id, deferredContent]);
+
+  useEffect(() => {
+    setStagedProposal(null);
+  }, [song?.id]);
+
+  useEffect(() => {
+    if (!song) {
+      aiContextBridge.setSong(null);
+      return;
+    }
+    aiContextBridge.setSong({
+      songId: song.id,
+      title: song.title,
+      artist: song.artist,
+      content,
+      updatedAt: song.updatedAt,
+      folderId: song.folderId ?? null,
+    });
+    return () => {
+      aiContextBridge.setSong(null);
+    };
+  }, [song, content]);
+
+  useEffect(() => {
+    const onStage = (event: Event) => {
+      const detail = (event as CustomEvent<AiStageSongDetail>).detail;
+      if (!detail?.content) return;
+      if (detail.songId && song && detail.songId !== song.id) return;
+      if (!canUpdateSong) return;
+      setStagedProposal(detail);
+    };
+    window.addEventListener(AI_STAGE_SONG_EVENT, onStage);
+    return () => window.removeEventListener(AI_STAGE_SONG_EVENT, onStage);
+  }, [song, canUpdateSong]);
+
+  const acceptStagedProposal = useCallback(() => {
+    if (!stagedProposal?.content) return;
+    setContent(stagedProposal.content);
+    setHasUnsavedChanges(true);
+    setStagedProposal(null);
+    showToast(t("ai.chat.appliedToEditor"), "success");
+  }, [stagedProposal, showToast, t]);
+
+  const declineStagedProposal = useCallback(() => {
+    setStagedProposal(null);
+  }, []);
 
   const handleSave = useCallback(
     async (updatedContent: string) => {
@@ -356,6 +412,14 @@ export const SongEditorPage: React.FC = () => {
           />
 
           <div className="flex-1 overflow-hidden relative">
+            {stagedProposal && (
+              <AiProposalBanner
+                title={stagedProposal.title}
+                diffPreview={stagedProposal.diffPreview}
+                onAccept={acceptStagedProposal}
+                onDecline={declineStagedProposal}
+              />
+            )}
             <Editor
               value={content}
               onChange={(val) => {

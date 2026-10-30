@@ -35,6 +35,7 @@ import { ViewName } from "../../layouts/view";
 import { authClient } from "../../lib/authClient";
 import { Can, CanAny } from "../../lib/permissions/components";
 import { emitOnboardingEvent } from "../../lib/tour";
+import { AiChatToggle } from "@/src/features/ai-chat";
 import { InboxButton, InboxFetchClient } from "../Inbox";
 import { SearchSyntaxModal } from "../modals/SearchSyntaxModal";
 import { SyncStatusBadge } from "../SyncStatusBadge";
@@ -472,6 +473,8 @@ export const ExplorerAddressBar: React.FC<ExplorerAddressBarProps> = ({
           client={authClient as InboxFetchClient}
           className="shrink-0"
         />
+
+        <AiChatToggle />
 
         <CanAny
           permissions={[
