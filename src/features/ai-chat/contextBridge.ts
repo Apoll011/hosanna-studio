@@ -34,59 +34,47 @@ let songBridge: SongEditorBridge = null;
 let serviceBridge: ServiceEditorBridge = null;
 let explorerBridge: ExplorerBridge = null;
 
+const bridgeListeners = new Set<() => void>();
+
+function notifyBridge() {
+  bridgeListeners.forEach((fn) => fn());
+}
+
 export const aiContextBridge = {
   setSong(value: SongEditorBridge) {
     songBridge = value;
+    notifyBridge();
   },
   getSong() {
     return songBridge;
   },
   setService(value: ServiceEditorBridge) {
     serviceBridge = value;
+    notifyBridge();
   },
   getService() {
     return serviceBridge;
   },
   setExplorer(value: ExplorerBridge) {
     explorerBridge = value;
+    notifyBridge();
   },
   getExplorer() {
     return explorerBridge;
   },
+  /** Subscribe to any bridge change (editor typing, selection, navigation). */
+  subscribe(listener: () => void) {
+    bridgeListeners.add(listener);
+    return () => {
+      bridgeListeners.delete(listener);
+    };
+  },
 };
 
-/** Stage a proposal in the song editor (accept/decline UI). */
-export const AI_STAGE_SONG_EVENT = "hosanna:ai-stage-song";
-export const AI_STAGE_SERVICE_EVENT = "hosanna:ai-stage-service";
 export const AI_SETTINGS_CHANGED_EVENT = "hosanna:ai-settings-changed";
 export const AI_LIBRARY_CHANGED_EVENT = "hosanna:ai-library-changed";
 export const AI_NAVIGATE_EVENT = "hosanna:ai-navigate";
 export const AI_PRINT_EVENT = "hosanna:ai-print";
-
-export type AiStageSongDetail = {
-  songId?: string;
-  content: string;
-  title?: string;
-  artist?: string;
-  diffPreview?: string;
-  source?: string;
-};
-
-export type AiStageServiceDetail = {
-  serviceId?: string;
-  name?: string;
-  notes?: string;
-  elements: ServiceElement[];
-  source?: string;
-};
-
-export function dispatchStageSong(detail: AiStageSongDetail) {
-  window.dispatchEvent(new CustomEvent(AI_STAGE_SONG_EVENT, { detail }));
-}
-
-export function dispatchStageService(detail: AiStageServiceDetail) {
-  window.dispatchEvent(new CustomEvent(AI_STAGE_SERVICE_EVENT, { detail }));
-}
 
 export function dispatchAiSettingsChanged() {
   window.dispatchEvent(new CustomEvent(AI_SETTINGS_CHANGED_EVENT));
@@ -123,11 +111,3 @@ export function dispatchAiNavigate(detail: AiNavigateDetail) {
 export function dispatchAiPrint(detail: AiPrintDetail) {
   window.dispatchEvent(new CustomEvent(AI_PRINT_EVENT, { detail }));
 }
-
-// Back-compat aliases used by older imports
-export const AI_APPLY_SONG_EVENT = AI_STAGE_SONG_EVENT;
-export const AI_APPLY_SERVICE_EVENT = AI_STAGE_SERVICE_EVENT;
-export type AiApplySongDetail = AiStageSongDetail;
-export type AiApplyServiceDetail = AiStageServiceDetail;
-export const dispatchApplySong = dispatchStageSong;
-export const dispatchApplyService = dispatchStageService;

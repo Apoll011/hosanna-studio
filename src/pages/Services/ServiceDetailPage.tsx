@@ -63,10 +63,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
 import { useSync } from "../../contexts/SyncContext";
 import {
-  AI_STAGE_SERVICE_EVENT,
   AiProposalBanner,
+  aiProposals,
+  useServiceProposal,
   aiContextBridge,
-  type AiStageServiceDetail,
 } from "../../features/ai-chat";
 import { useOrgSettings } from "../../hooks/useOrgSettings";
 import { useService, useServices } from "../../hooks/useServices";
@@ -886,8 +886,7 @@ export const ServiceDetailPage: React.FC = () => {
   const [elements, setElements] = useState<ServiceElement[]>([]);
   const elementsRef = useRef<ServiceElement[]>([]);
   const [generalNotes, setGeneralNotes] = useState("");
-  const [stagedProposal, setStagedProposal] =
-    useState<AiStageServiceDetail | null>(null);
+  const stagedProposal = useServiceProposal(id);
   const [librarySearch, setLibrarySearch] = useState("");
   const [pendingSongIds, setPendingSongIds] = useState<Record<string, number>>(
     {},
@@ -975,18 +974,6 @@ export const ServiceDetailPage: React.FC = () => {
     };
   }, [service, elements, generalNotes]);
 
-  useEffect(() => {
-    const onStage = (event: Event) => {
-      const detail = (event as CustomEvent<AiStageServiceDetail>).detail;
-      if (!detail?.elements) return;
-      if (detail.serviceId && service && detail.serviceId !== service.id)
-        return;
-      setStagedProposal(detail);
-    };
-    window.addEventListener(AI_STAGE_SERVICE_EVENT, onStage);
-    return () => window.removeEventListener(AI_STAGE_SERVICE_EVENT, onStage);
-  }, [service]);
-
   const acceptStagedProposal = () => {
     if (!stagedProposal?.elements) return;
     const next = stagedProposal.elements.map((el, index) => ({
@@ -996,12 +983,12 @@ export const ServiceDetailPage: React.FC = () => {
     setElements(next);
     elementsRef.current = next;
     if (stagedProposal.notes != null) setGeneralNotes(stagedProposal.notes);
-    setStagedProposal(null);
+    aiProposals.resolve(stagedProposal.key, "accepted");
     showToast(t("ai.chat.appliedToEditor"), "success");
   };
 
   const declineStagedProposal = () => {
-    setStagedProposal(null);
+    if (stagedProposal) aiProposals.resolve(stagedProposal.key);
   };
 
   // Auto-save general notes after a short debounce when the org autoSave is on

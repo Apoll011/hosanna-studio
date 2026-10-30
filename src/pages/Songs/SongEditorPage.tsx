@@ -43,10 +43,11 @@ import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
 import { useSync } from "../../contexts/SyncContext";
 import {
-  AI_STAGE_SONG_EVENT,
-  AiProposalBanner,
+  DIFF_THEME_STYLE,
   aiContextBridge,
-  type AiStageSongDetail,
+  aiProposals,
+  useDiffLabels,
+  useSongProposal,
 } from "../../features/ai-chat";
 import { useSong, useSongs } from "../../hooks/useSongs";
 import { posthog } from "../../lib/posthog";
@@ -68,8 +69,10 @@ export const SongEditorPage: React.FC = () => {
   const { showToast } = useSync();
 
   const [content, setContent] = useState("");
-  const [stagedProposal, setStagedProposal] =
-    useState<AiStageSongDetail | null>(null);
+  // Pending AI edit for this song (lives in a global store, so it is here
+  // even if the AI proposed it while the user was somewhere else).
+  const aiProposal = useSongProposal(canUpdateSong ? id : null);
+  const diffLabels = useDiffLabels();
 
   const deferredContent = useDeferredValue(content);
 
@@ -148,9 +151,12 @@ export const SongEditorPage: React.FC = () => {
     setSelectedVariant(null);
   }, [song?.id, deferredContent]);
 
+  // A proposal needs the editor pane: leave "preview only" when one shows up.
   useEffect(() => {
-    setStagedProposal(null);
-  }, [song?.id]);
+    if (aiProposal) {
+      setLayoutMode((mode) => (mode === "preview" ? "split" : mode));
+    }
+  }, [aiProposal]);
 
   useEffect(() => {
     if (!song) {
@@ -170,29 +176,35 @@ export const SongEditorPage: React.FC = () => {
     };
   }, [song, content]);
 
-  useEffect(() => {
-    const onStage = (event: Event) => {
-      const detail = (event as CustomEvent<AiStageSongDetail>).detail;
-      if (!detail?.content) return;
-      if (detail.songId && song && detail.songId !== song.id) return;
-      if (!canUpdateSong) return;
-      setStagedProposal(detail);
-    };
-    window.addEventListener(AI_STAGE_SONG_EVENT, onStage);
-    return () => window.removeEventListener(AI_STAGE_SONG_EVENT, onStage);
-  }, [song, canUpdateSong]);
+  const acceptAiProposal = useCallback(
+    (next: string) => {
+      if (!aiProposal) return;
+      setContent(next);
+      setHasUnsavedChanges(true);
+      aiProposals.resolve(aiProposal.key, "accepted");
+      showToast(t("ai.chat.appliedToEditor"), "success");
+    },
+    [aiProposal, showToast, t],
+  );
 
-  const acceptStagedProposal = useCallback(() => {
-    if (!stagedProposal?.content) return;
-    setContent(stagedProposal.content);
-    setHasUnsavedChanges(true);
-    setStagedProposal(null);
-    showToast(t("ai.chat.appliedToEditor"), "success");
-  }, [stagedProposal, showToast, t]);
+  const declineAiProposal = useCallback(() => {
+    if (aiProposal) aiProposals.resolve(aiProposal.key);
+  }, [aiProposal]);
 
-  const declineStagedProposal = useCallback(() => {
-    setStagedProposal(null);
-  }, []);
+  const editorProposal = useMemo(
+    () =>
+      aiProposal
+        ? {
+            content: aiProposal.content,
+            title: t("ai.chat.proposalTitle"),
+            labels: diffLabels,
+            style: DIFF_THEME_STYLE,
+            onAccept: acceptAiProposal,
+            onReject: declineAiProposal,
+          }
+        : null,
+    [aiProposal, diffLabels, acceptAiProposal, declineAiProposal, t],
+  );
 
   const handleSave = useCallback(
     async (updatedContent: string) => {
@@ -412,14 +424,6 @@ export const SongEditorPage: React.FC = () => {
           />
 
           <div className="flex-1 overflow-hidden relative">
-            {stagedProposal && (
-              <AiProposalBanner
-                title={stagedProposal.title}
-                diffPreview={stagedProposal.diffPreview}
-                onAccept={acceptStagedProposal}
-                onDecline={declineStagedProposal}
-              />
-            )}
             <Editor
               value={content}
               onChange={(val) => {
@@ -429,6 +433,7 @@ export const SongEditorPage: React.FC = () => {
               settings={editorSettings}
               readOnly={!canUpdateSong}
               onSave={handleSave}
+              proposal={editorProposal}
               mode="chordpro"
               fallback={
                 <div className="h-full w-full flex items-center justify-center">
