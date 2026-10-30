@@ -114,8 +114,10 @@ export function CommandPaletteProvider({
   });
 
   const allActions = useMemo(() => {
-    const dynamic = Object.values(dynamicActionGroups).flat();
-    return [...staticActions, ...dynamic];
+    // Logos AI actions first so “Ask …” is easy to pick when typing a prompt
+    const { "ai-palette": aiActions = [], ...restGroups } = dynamicActionGroups;
+    const otherDynamic = Object.values(restGroups).flat();
+    return [...aiActions, ...staticActions, ...otherDynamic];
   }, [staticActions, dynamicActionGroups]);
 
   useEffect(() => {

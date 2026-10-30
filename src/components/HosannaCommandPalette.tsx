@@ -31,6 +31,7 @@ import {
   useCommandPalette,
 } from "../contexts/CommandPaletteContext";
 import { ViewName } from "../layouts/view";
+import { useAiCommandPaletteActions } from "../features/ai-chat/useAiCommandPaletteActions";
 import { useRxDbSearch } from "../hooks/useRxDbSearch";
 import { ActiveModal } from "./layout";
 import { CommandPaletteModal } from "./modals/CommandPaletteModal";
@@ -65,6 +66,7 @@ export interface HosannaCommandPaletteProps {
 }
 
 function InnerPalette(props: HosannaCommandPaletteProps) {
+  useAiCommandPaletteActions();
   const { isSearching } = useRxDbSearch({
     slugPrefix: props.slugPrefix,
     navigate: props.navigate,

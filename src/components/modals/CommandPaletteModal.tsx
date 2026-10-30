@@ -104,8 +104,10 @@ export function CommandPaletteModal({
       return currentPool;
     }
 
-    // Match query against Name, Keywords, Subtitle, and Section
+    // Match query against Name, Keywords, Subtitle, and Section.
+    // Logos “Ask …” always matches so a free-form prompt can be sent from the palette.
     return currentPool.filter((action) => {
+      if (action.id === "ai-ask") return true;
       const matchName = action.name.toLowerCase().includes(q);
       const matchKeywords = action.keywords?.toLowerCase().includes(q);
       const matchSub = action.subtitle?.toLowerCase().includes(q);

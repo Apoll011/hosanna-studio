@@ -7,6 +7,7 @@ export { AiChatDock } from "./AiChatDock";
 export { AiChatProvider, useAiChat, useAiChatOptional } from "./AiChatProvider";
 export { AiChatToggle } from "./AiChatToggle";
 export { LogosMascot } from "./LogosMascot";
+export { useAiCommandPaletteActions } from "./useAiCommandPaletteActions";
 export { AiProposalBanner } from "./AiProposalBanner";
 export { AiConfirmCard } from "./AiConfirmCard";
 export {
