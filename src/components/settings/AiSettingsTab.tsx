@@ -17,6 +17,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+import { AiBillingCard } from "./AiBillingCard";
 import { AiMemoryPanel } from "./AiMemoryPanel";
 import React, { useEffect, useMemo, useState } from "react";
 
@@ -66,6 +67,7 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
   const [instructions, setInstructions] = useState("");
   const [memoryEnabled, setMemoryEnabled] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [billingRefreshKey, setBillingRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!active || !canManage) return;
@@ -167,6 +169,7 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
       });
       setSettings(data);
       setApiKey("");
+      setBillingRefreshKey((k) => k + 1);
       dispatchAiSettingsChanged();
       showToast?.(t("ai.settings.saved"), "success");
     } catch (err: unknown) {
@@ -360,6 +363,15 @@ export const AiSettingsTab: React.FC<AiSettingsTabProps> = ({
                 onChange={(e) => setEnabled(e.currentTarget.checked)}
               />
             </label>
+
+            {settings.configured &&
+            settings.provider === "deepseek" &&
+            provider === "deepseek" ? (
+              <AiBillingCard
+                refreshKey={billingRefreshKey}
+                showToast={showToast}
+              />
+            ) : null}
 
             <div className="space-y-5 pt-5 border-t border-m3-border">
               <div>

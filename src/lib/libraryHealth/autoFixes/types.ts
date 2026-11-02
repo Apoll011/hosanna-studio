@@ -8,9 +8,16 @@ import type { Song } from "../../../types";
 
 export type ScoreMissingCriterion = SongScore["missing"][number];
 
+export type LibraryHealthAutoFixPatch = Partial<
+  Pick<Song, "content" | "title" | "artist" | "song_number">
+>;
+
 /**
  * One auto-fix strategy for a library-health criterion.
  * Add new fixers here as more criteria become mechanically solvable.
+ *
+ * `canFix` stays sync so the health UI can mark rows without network I/O.
+ * `apply` may be async (e.g. YouTube duration lookup).
  */
 export interface LibraryHealthAutoFix {
   /** Stable id for logging / UI keys. */
@@ -25,5 +32,8 @@ export interface LibraryHealthAutoFix {
    */
   apply(
     song: Song,
-  ): Partial<Pick<Song, "content" | "title" | "artist" | "song_number">> | null;
+  ):
+    | LibraryHealthAutoFixPatch
+    | null
+    | Promise<LibraryHealthAutoFixPatch | null>;
 }

@@ -24,3 +24,4 @@ export { configureApiClient, getApiClient } from "./http";
 export { servicesApi } from "./services";
 export { parseSong, songsApi } from "./songs";
 export { syncApi } from "./sync";
+export { youtubeApi, type YouTubeDurationResponse } from "./youtube";

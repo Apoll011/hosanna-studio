@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Service, ServiceElement, Song } from "@/src/types";
 import { useI18n } from "@/src/lib/i18n";
+import { Service, ServiceElement, Song } from "@/src/types";
 import React, { useMemo } from "react";
-import { PrintOptions } from "../types";
+import { PrintBrand, PrintOptions } from "../types";
+import { PrintSheet } from "./PrintSheet";
 import { SongPrintView } from "./SongPrintView";
 import { TemplateFooter } from "./TemplateFooter";
 import { TemplateHeader } from "./TemplateHeader";
@@ -15,77 +16,77 @@ interface ServicePrintViewProps {
   service: Service;
   songs?: Song[];
   options: PrintOptions;
-  churchName?: string;
-  churchLogo?: string | null;
-  churchShortName?: string;
-  accentColor?: string;
+  brand: PrintBrand;
+}
+
+export function formatPrintDate(date: string, locale: string): string {
+  if (!date) return "";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return date;
+  return d.toLocaleDateString(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 const formatDuration = (seconds?: number) => {
-  if (!seconds || seconds <= 0) return "—";
-  const m = Math.floor(seconds / 60);
+  if (!seconds || seconds <= 0) return "";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
-  return `${m}m ${s > 0 ? `${s}s` : ""}`;
+  if (h) return `${h}h ${String(m).padStart(2, "0")}m`;
+  return s ? `${m}m ${s}s` : `${m} min`;
+};
+
+const formatOffset = (seconds: number) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}:${String(m).padStart(2, "0")}`;
 };
 
 export const ServicePrintView: React.FC<ServicePrintViewProps> = ({
   service,
   songs = [],
   options,
-  churchName,
-  churchLogo,
-  churchShortName,
-  accentColor,
+  brand,
 }) => {
   const { t } = useI18n();
-  const { templateFamily, includeServiceSongs } = options;
-
-  // Format date
-  const formattedDate = useMemo(() => {
-    if (!service.date) return "";
-    try {
-      const d = new Date(service.date);
-      return d.toLocaleDateString("pt-PT", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-    } catch {
-      return service.date;
-    }
-  }, [service.date]);
 
   const elements = useMemo(() => service.elements || [], [service.elements]);
-  const totalDurationSeconds = elements.reduce(
+  const totalSeconds = elements.reduce(
     (acc, el) => acc + (el.duration || 0),
     0,
   );
+  const hasTiming = totalSeconds > 0;
+  const hasPassages = elements.some((el) => el.passage);
 
-  // Map songs in service
-  const serviceSongMap = useMemo(() => {
-    const map = new Map<string, Song>();
-    for (const song of songs) {
-      map.set(song.id, song);
-    }
-    return map;
-  }, [songs]);
+  const startOffsets = useMemo(() => {
+    let acc = 0;
+    return elements.map((el) => {
+      const start = acc;
+      acc += el.duration || 0;
+      return start;
+    });
+  }, [elements]);
 
   const songsToPrint = useMemo(() => {
-    if (!includeServiceSongs) return [];
+    if (!options.includeSongs) return [];
+    const byId = new Map(songs.map((s) => [s.id, s]));
+    const seen = new Set<string>();
     const result: Song[] = [];
     for (const el of elements) {
-      if (el.type === "song" && el.songId) {
-        const found = serviceSongMap.get(el.songId);
-        if (found) {
-          result.push(found);
-        }
+      const song = el.type === "song" && el.songId && byId.get(el.songId);
+      if (song && !seen.has(song.id)) {
+        seen.add(song.id);
+        result.push(song);
       }
     }
     return result;
-  }, [elements, serviceSongMap, includeServiceSongs]);
+  }, [elements, songs, options.includeSongs]);
 
-  const getElementTypeLabel = (type: ServiceElement["type"]) => {
+  const typeLabel = (type: ServiceElement["type"]) => {
     switch (type) {
       case "welcome":
         return t("print.service.types.welcome");
@@ -102,204 +103,131 @@ export const ServicePrintView: React.FC<ServicePrintViewProps> = ({
     }
   };
 
-  /** Trim text to 3 lines for scripture/passage content */
-  const trimToThreeLines = (text?: string) => {
-    if (!text) return null;
-    const lines = text.split("\n");
-    if (lines.length <= 3) return text;
-    return lines.slice(0, 3).join("\n") + "…";
-  };
-
   return (
-    <div className="service-print-container">
-      {/* ── ORDER OF SERVICE RUNDOWN ── */}
-      <div
-        className={`print-sheet print:break-inside-auto print:page-break-after-always bg-white text-slate-900 print:text-black p-6 sm:p-8 max-w-4xl mx-auto ${
-          templateFamily === "classic"
-            ? "font-serif"
-            : templateFamily === "contemporary"
-              ? "font-sans"
-              : templateFamily === "compact"
-                ? "p-4 sm:p-5"
-                : "font-sans"
-        }`}
+    <>
+      <PrintSheet
+        className="hp-sheet--service"
+        footer={<TemplateFooter options={options} brand={brand} />}
       >
-        <div>
-          <TemplateHeader
-            churchName={churchName}
-            churchLogo={churchLogo}
-            churchShortName={churchShortName}
-            accentColor={accentColor}
-            title={service.name}
-            subtitle={formattedDate}
-            metaBadge={t("print.service.badge")}
-            options={options}
-          />
+        <TemplateHeader
+          title={service.name}
+          subtitle={formatPrintDate(service.date, brand.locale)}
+          badge={t("print.service.badge")}
+          options={options}
+          brand={brand}
+        />
 
-          {/* SERVICE NOTES */}
-          {service.notes && (
-            <div
-              className={`p-3 rounded-lg mb-5 text-xs ${
-                templateFamily === "classic"
-                  ? "border border-slate-300 italic bg-slate-50 font-serif"
-                  : templateFamily === "contemporary"
-                    ? "border-2 border-slate-950 bg-slate-100 font-mono"
-                    : "bg-slate-50 border border-slate-200 text-slate-700"
-              }`}
-            >
-              <span className="font-bold block uppercase text-[10px] tracking-wider mb-1">
-                {t("print.service.notes")}
+        <section className="hp-block">
+          <h2 className="hp-h2">
+            <span>{t("print.service.order")}</span>
+            {hasTiming && (
+              <span className="hp-h2-aside">
+                {t("print.service.totalDuration", {
+                  duration: formatDuration(totalSeconds),
+                })}
               </span>
-              <p className="whitespace-pre-wrap">{service.notes}</p>
-            </div>
-          )}
+            )}
+          </h2>
 
-          {/* ELEMENTS TABLE / TIMELINE */}
-          <div className="my-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2
-                className={`text-sm font-bold uppercase tracking-wider ${
-                  templateFamily === "classic"
-                    ? "font-serif text-slate-900"
-                    : templateFamily === "contemporary"
-                      ? "font-mono font-black text-slate-950"
-                      : "text-slate-700"
-                }`}
-              >
-                {t("print.service.orderAndSchedule")}
-              </h2>
-              {totalDurationSeconds > 0 && (
-                <span className="text-xs text-slate-500 font-medium">
-                  {t("print.service.estimatedDuration", {
-                    duration: formatDuration(totalDurationSeconds),
-                  })}
-                </span>
-              )}
-            </div>
-
-            {elements.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-4 text-center">
-                {t("print.service.noElements")}
-              </p>
-            ) : (
-              <table className="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr
-                    className={`border-b ${
-                      templateFamily === "contemporary"
-                        ? "border-slate-950 text-slate-950 font-mono font-bold"
-                        : "border-slate-200 text-slate-500 font-semibold"
-                    }`}
-                  >
-                    <th className="py-2 px-2 w-10 text-center">
-                      {t("print.service.numberCol")}
-                    </th>
-                    <th className="py-2 px-2 w-28">
-                      {t("print.service.momentCol")}
-                    </th>
-                    <th className="py-2 px-2">
-                      {t("print.service.titleDescCol")}
-                    </th>
-                    <th className="py-2 px-2">
-                      {t("print.service.passageNotesCol")}
-                    </th>
-                    <th className="py-2 px-2 w-20 text-right">
+          {elements.length === 0 ? (
+            <p className="hp-empty">{t("print.service.noElements")}</p>
+          ) : (
+            <table className="hp-table">
+              <thead>
+                <tr>
+                  <th className="hp-num">#</th>
+                  {hasTiming && (
+                    <th className="hp-right">{t("print.service.startCol")}</th>
+                  )}
+                  <th>{t("print.service.momentCol")}</th>
+                  <th>{t("print.service.itemCol")}</th>
+                  {hasPassages && <th>{t("print.service.passageCol")}</th>}
+                  {hasTiming && (
+                    <th className="hp-right">
                       {t("print.service.durationCol")}
                     </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {elements.map((el, idx) => (
+                  <tr key={el.id || idx}>
+                    <td className="hp-num">{idx + 1}</td>
+                    {hasTiming && (
+                      <td className="hp-right hp-mono">
+                        {formatOffset(startOffsets[idx])}
+                      </td>
+                    )}
+                    <td>
+                      <span className={`hp-tag hp-tag--${el.type}`}>
+                        {typeLabel(el.type)}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="hp-cell-title">{el.title}</div>
+                      {el.type === "scripture" && el.content ? (
+                        <div className="hp-cell-quote">{el.content}</div>
+                      ) : (
+                        el.content && (
+                          <div className="hp-cell-sub">{el.content}</div>
+                        )
+                      )}
+                      {el.notes && (
+                        <div className="hp-cell-sub">
+                          <em>{el.notes}</em>
+                        </div>
+                      )}
+                    </td>
+                    {hasPassages && (
+                      <td className="hp-cell-title">{el.passage || ""}</td>
+                    )}
+                    {hasTiming && (
+                      <td className="hp-right">
+                        {formatDuration(el.duration) || (
+                          <span className="hp-dim">—</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {elements.map((el, idx) => (
-                    <tr
-                      key={el.id || idx}
-                      className={
-                        templateFamily === "classic" ? "font-serif" : undefined
-                      }
-                    >
-                      <td className="py-2.5 px-2 text-center font-mono text-slate-400">
-                        {idx + 1}
-                      </td>
-                      <td className="py-2.5 px-2">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
-                            templateFamily === "contemporary"
-                              ? "border border-slate-900 text-slate-900 uppercase font-mono text-[10px]"
-                              : templateFamily === "classic"
-                                ? "italic text-slate-700 font-serif"
-                                : el.type === "song"
-                                  ? "bg-sky-50 text-sky-700 border border-sky-200"
-                                  : el.type === "message"
-                                    ? "bg-purple-50 text-purple-700 border border-purple-200"
-                                    : "bg-slate-100 text-slate-700"
-                          }`}
-                        >
-                          {getElementTypeLabel(el.type)}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-2 font-bold text-slate-900">
-                        {el.title}
-                        {el.content && el.type !== "scripture" && (
-                          <div className="font-normal text-slate-500 text-[11px] mt-0.5">
-                            {el.content}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-2 text-slate-600">
-                        {el.passage && (
-                          <span className="font-medium text-slate-800 mr-2">
-                            {el.passage}
-                          </span>
-                        )}
-                        {el.type === "scripture" && el.content && (
-                          <span
-                            className="italic text-slate-600 text-[11px] block mt-0.5"
-                            style={{
-                              display: "-webkit-box",
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {trimToThreeLines(el.content)}
-                          </span>
-                        )}
-                        {el.type !== "scripture" && el.notes && (
-                          <span className="italic text-slate-500">
-                            {el.notes}
-                          </span>
-                        )}
-                        {!el.passage &&
-                          !el.notes &&
-                          el.type !== "scripture" &&
-                          "—"}
-                      </td>
-                      <td className="py-2.5 px-2 text-right font-mono text-slate-600">
-                        {formatDuration(el.duration)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        {service.notes && (
+          <section className="hp-block hp-note">
+            <div className="hp-note-label">{t("print.service.notes")}</div>
+            <p>{service.notes}</p>
+          </section>
+        )}
+      </PrintSheet>
+
+      {songsToPrint.length > 0 &&
+        (!options.pageBreakBetweenItems ? (
+          <div className="hp-song-pack">
+            {songsToPrint.map((song, index) => (
+              <SongPrintView
+                key={song.id}
+                song={song}
+                options={options}
+                brand={brand}
+                packed
+                showChurchIdentity={index === 0}
+              />
+            ))}
           </div>
-        </div>
-
-        <TemplateFooter options={options} churchName={churchName} />
-      </div>
-
-      {/* ── FULL SONGS ATTACHED TO THIS SERVICE (IF ENABLED) ── */}
-      {includeServiceSongs &&
-        songsToPrint.map((song) => (
-          <SongPrintView
-            key={song.id}
-            song={song}
-            options={options}
-            churchName={churchName}
-            churchLogo={churchLogo}
-            churchShortName={churchShortName}
-            accentColor={accentColor}
-          />
+        ) : (
+          songsToPrint.map((song) => (
+            <SongPrintView
+              key={song.id}
+              song={song}
+              options={options}
+              brand={brand}
+              showChurchIdentity={false}
+            />
+          ))
         ))}
-    </div>
+    </>
   );
 };

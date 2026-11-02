@@ -112,6 +112,28 @@ export type UpdateAiSettingsInput = {
   memoryEnabled?: boolean;
 };
 
+export type AiBalanceInfo = {
+  currency: string;
+  totalBalance: string;
+  grantedBalance: string;
+  toppedUpBalance: string;
+};
+
+export type AiBillingResponse =
+  | {
+      supported: true;
+      provider: "deepseek";
+      kind: "balance";
+      isAvailable: boolean;
+      balances: AiBalanceInfo[];
+      fetchedAt: string;
+    }
+  | {
+      supported: false;
+      provider: AiProvider;
+      reason: "unsupported_provider" | "not_configured" | "disabled_crypto";
+    };
+
 export type AiConfirmAction = {
   action:
     | "delete_song"
@@ -137,6 +159,9 @@ export const aiApi = {
     getApiClient().request<AiSettingsPublic>("/ai/settings/key", {
       method: "DELETE",
     }),
+
+  getBilling: (): Promise<AiBillingResponse> =>
+    getApiClient().request<AiBillingResponse>("/ai/billing"),
 
   listMemory: (): Promise<{ items: AiMemoryItem[] }> =>
     getApiClient().request<{ items: AiMemoryItem[] }>("/ai/memory"),

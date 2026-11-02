@@ -57,7 +57,7 @@ export async function applyLibraryHealthAutoFixes(
 
     for (const fixer of fixers) {
       if (!fixer.canFix(working)) continue;
-      const patch = fixer.apply(working);
+      const patch = await Promise.resolve(fixer.apply(working));
       if (!patch) continue;
 
       if (patch.content !== undefined) {

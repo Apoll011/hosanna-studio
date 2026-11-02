@@ -5,13 +5,41 @@
 
 import { Button } from "@/src/components/common";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { useSync } from "@/src/contexts/SyncContext";
 import { useI18n } from "@/src/lib/i18n";
-import { Columns, Minus, Plus, Printer, X } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Maximize2,
+  Printer,
+  RotateCcw,
+  Save,
+  SeparatorHorizontal,
+  SlidersHorizontal,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { PRINT_BRAND_ACCENT } from "./brand";
+import {
+  mmToPx,
+  PAGE_MARGINS_MM,
+  PAPER_SIZES,
+  resolvePrintOptions,
+} from "./options";
+import { PrintOptionsPanel } from "./PrintOptionsPanel";
 import { triggerPrint } from "./printEngine";
-import { TEMPLATE_FAMILIES } from "./templateFamilies";
-import { BatchPrintView } from "./templates/BatchPrintView";
-import { PrintOptions, PrintPayload, PrintTemplateFamily } from "./types";
+import { ensurePrintStyles } from "./printStyles";
+import { PrintDocument } from "./templates/PrintDocument";
+import { PrintBrand, PrintOptions, PrintPayload } from "./types";
+import { usePrintDefaults } from "./usePrintDefaults";
 
 interface PrintModalProps {
   isOpen: boolean;
@@ -20,400 +48,416 @@ interface PrintModalProps {
   defaultOptions?: Partial<PrintOptions>;
 }
 
+interface PageGuide {
+  top: number;
+  left: number;
+  width: number;
+  page: number;
+}
+
+const ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5];
+const CANVAS_PADDING_PX = 48;
+
 export const PrintModal: React.FC<PrintModalProps> = ({
   isOpen,
   onClose,
   payload,
-  defaultOptions = {},
+  defaultOptions,
 }) => {
-  const { organization } = useAuth();
-  const { t } = useI18n();
-  const previewRef = useRef<HTMLDivElement>(null);
-
-  const orgMetadata = (organization?.metadata as Record<string, unknown>) || {};
-  const orgSettings = (orgMetadata.settings as Record<string, unknown>) || {};
-  const savedPrintSettings = useMemo(() => {
-    const meta = (organization?.metadata as Record<string, unknown>) || {};
-    const settings = (meta.settings as Record<string, unknown>) || {};
-    return (settings.print as Partial<PrintOptions>) || {};
-  }, [organization?.metadata]);
-
-  // Active options state initialized from org settings + payload overrides
-  const [options, setOptions] = useState<PrintOptions>({
-    templateFamily:
-      payload?.options?.templateFamily ||
-      savedPrintSettings.templateFamily ||
-      defaultOptions.templateFamily ||
-      "modern",
-    showChords:
-      payload?.options?.showChords ??
-      savedPrintSettings.showChords ??
-      defaultOptions.showChords ??
-      true,
-    twoColumnLayout:
-      payload?.options?.twoColumnLayout ??
-      savedPrintSettings.twoColumnLayout ??
-      defaultOptions.twoColumnLayout ??
-      false,
-    fontSize:
-      payload?.options?.fontSize ??
-      savedPrintSettings.fontSize ??
-      defaultOptions.fontSize ??
-      13,
-    showChurchHeader:
-      payload?.options?.showChurchHeader ??
-      savedPrintSettings.showChurchHeader ??
-      defaultOptions.showChurchHeader ??
-      true,
-    showChurchLogo:
-      payload?.options?.showChurchLogo ??
-      savedPrintSettings.showChurchLogo ??
-      defaultOptions.showChurchLogo ??
-      true,
-    showMetadata:
-      payload?.options?.showMetadata ??
-      savedPrintSettings.showMetadata ??
-      defaultOptions.showMetadata ??
-      true,
-    includeServiceSongs:
-      payload?.options?.includeServiceSongs ??
-      defaultOptions.includeServiceSongs ??
-      true,
-    includeFolderSongs:
-      payload?.options?.includeFolderSongs ??
-      defaultOptions.includeFolderSongs ??
-      true,
-    includeCollectionSongs:
-      payload?.options?.includeCollectionSongs ??
-      defaultOptions.includeCollectionSongs ??
-      true,
-    pageBreakBetweenItems:
-      payload?.options?.pageBreakBetweenItems ??
-      savedPrintSettings.pageBreakBetweenItems ??
-      defaultOptions.pageBreakBetweenItems ??
-      true,
-    customFooter:
-      payload?.options?.customFooter ??
-      savedPrintSettings.customFooter ??
-      defaultOptions.customFooter ??
-      "",
-  });
-
-  // Re-sync options when payload opens
-  useEffect(() => {
-    if (payload && isOpen) {
-      setOptions((prev) => ({
-        ...prev,
-        templateFamily:
-          payload.options?.templateFamily ||
-          savedPrintSettings.templateFamily ||
-          prev.templateFamily,
-        showChords:
-          payload.options?.showChords ??
-          savedPrintSettings.showChords ??
-          prev.showChords,
-        twoColumnLayout:
-          payload.options?.twoColumnLayout ??
-          savedPrintSettings.twoColumnLayout ??
-          prev.twoColumnLayout,
-        fontSize:
-          payload.options?.fontSize ??
-          savedPrintSettings.fontSize ??
-          prev.fontSize,
-        showChurchHeader:
-          payload.options?.showChurchHeader ??
-          savedPrintSettings.showChurchHeader ??
-          prev.showChurchHeader,
-        showChurchLogo:
-          payload.options?.showChurchLogo ??
-          savedPrintSettings.showChurchLogo ??
-          prev.showChurchLogo,
-        showMetadata:
-          payload.options?.showMetadata ??
-          savedPrintSettings.showMetadata ??
-          prev.showMetadata,
-        includeServiceSongs:
-          payload.options?.includeServiceSongs ?? prev.includeServiceSongs,
-        includeFolderSongs:
-          payload.options?.includeFolderSongs ?? prev.includeFolderSongs,
-        includeCollectionSongs:
-          payload.options?.includeCollectionSongs ??
-          prev.includeCollectionSongs,
-        pageBreakBetweenItems:
-          payload.options?.pageBreakBetweenItems ??
-          savedPrintSettings.pageBreakBetweenItems ??
-          prev.pageBreakBetweenItems,
-        customFooter:
-          payload.options?.customFooter ??
-          savedPrintSettings.customFooter ??
-          prev.customFooter,
-      }));
-    }
-  }, [payload, isOpen, savedPrintSettings]);
-
   if (!isOpen || !payload || payload.items.length === 0) return null;
+  return (
+    <PrintModalContent
+      payload={payload}
+      onClose={onClose}
+      defaultOptions={defaultOptions}
+    />
+  );
+};
 
-  const churchName = organization?.name || "";
-  const churchLogo = organization?.logo || null;
-  const churchShortName =
-    (orgMetadata.shortName as string) || organization?.slug || "";
-  const appearance = (orgSettings.appearance as Record<string, unknown>) || {};
-  const accentColor = (appearance.accentColor as string) || "#0284c7";
+const PrintModalContent: React.FC<{
+  payload: PrintPayload;
+  onClose: () => void;
+  defaultOptions?: Partial<PrintOptions>;
+}> = ({ payload, onClose, defaultOptions }) => {
+  const { organization } = useAuth();
+  const { t, tc, locale } = useI18n();
+  const { showToast } = useSync();
+  const { defaults, canSave, save } = usePrintDefaults();
+  const titleId = useId();
+  useLayoutEffect(ensurePrintStyles, []);
+
+  const [initialOptions] = useState(() =>
+    resolvePrintOptions(defaultOptions, defaults, payload.options),
+  );
+  const [options, setOptions] = useState<PrintOptions>(initialOptions);
+  const updateOptions = useCallback(
+    (patch: Partial<PrintOptions>) =>
+      setOptions((prev) => ({ ...prev, ...patch })),
+    [],
+  );
+  const isDirty = JSON.stringify(options) !== JSON.stringify(initialOptions);
+
+  const [mobileView, setMobileView] = useState<"preview" | "options">(
+    "preview",
+  );
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showGuides, setShowGuides] = useState(true);
+
+  const brand = useMemo<PrintBrand>(() => {
+    const meta = (organization?.metadata as Record<string, unknown>) || {};
+    return {
+      churchName: organization?.name || "",
+      churchShortName:
+        (meta.shortName as string) || organization?.slug || undefined,
+      churchLogo: organization?.logo || null,
+      // Print uses the Hosana brand sky from index.css, not workspace accent.
+      accentColor: PRINT_BRAND_ACCENT,
+      locale,
+    };
+  }, [organization, locale]);
 
   const title = payload.title || t("print.documentDefaultTitle");
+  const context = useMemo(() => {
+    const items = payload.items;
+    const hasSongContainers = items.some(
+      (i) =>
+        i.type === "folder" || i.type === "collection" || i.type === "service",
+    );
+    const hasSongs = items.some(
+      (i) =>
+        i.type === "song" ||
+        ((i.type === "folder" ||
+          i.type === "collection" ||
+          i.type === "service") &&
+          (i.songs?.length ?? 0) > 0),
+    );
+    return {
+      hasSongs: hasSongs || hasSongContainers,
+      hasSongContainers,
+    };
+  }, [payload.items]);
 
-  const hasSongs = payload.items.some(
-    (i) =>
-      i.type === "song" ||
-      (i.type === "folder" && (i.songs?.length ?? 0) > 0) ||
-      (i.type === "collection" && (i.songs?.length ?? 0) > 0) ||
-      (i.type === "service" && (i.songs?.length ?? 0) > 0),
-  );
+  /* ── Zoom ── */
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const stackRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState<number | "fit">("fit");
+  const [fitZoom, setFitZoom] = useState(1);
+  const paper = PAPER_SIZES[options.paperSize];
+  const paperWidthPx = mmToPx(paper.w);
 
-  const hasFolderOrService = payload.items.some(
-    (i) =>
-      i.type === "folder" || i.type === "collection" || i.type === "service",
-  );
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const measure = () => {
+      const available = canvas.clientWidth - CANVAS_PADDING_PX;
+      if (available > 0) {
+        setFitZoom(Math.min(1.25, Math.max(0.35, available / paperWidthPx)));
+      }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [paperWidthPx, mobileView]);
 
-  const handlePrint = () => {
-    if (previewRef.current) {
-      triggerPrint(previewRef.current, title);
+  const effectiveZoom = zoom === "fit" ? fitZoom : zoom;
+  const stepZoom = (direction: 1 | -1) => {
+    const current = effectiveZoom;
+    const next =
+      direction > 0
+        ? ZOOM_STEPS.find((z) => z > current + 0.001)
+        : [...ZOOM_STEPS].reverse().find((z) => z < current - 0.001);
+    if (next) setZoom(next);
+  };
+
+  /* ── Page guides & page estimate ── */
+  const [guides, setGuides] = useState<PageGuide[]>([]);
+  const [pageCount, setPageCount] = useState(1);
+
+  useLayoutEffect(() => {
+    const stack = stackRef.current;
+    const doc = previewRef.current?.firstElementChild as HTMLElement | null;
+    if (!stack || !doc) return;
+    const margin = mmToPx(PAGE_MARGINS_MM[options.margins]);
+    const contentHeight = mmToPx(paper.h) - margin * 2;
+
+    // Rects are in zoomed screen pixels; guides live inside the zoomed stack.
+    const measure = () => {
+      const origin = stack.getBoundingClientRect();
+      const papers = doc.classList.contains("hp-breaks")
+        ? (Array.from(doc.children) as HTMLElement[])
+        : [doc];
+      const next: PageGuide[] = [];
+      let total = 0;
+      for (const sheet of papers) {
+        const rect = sheet.getBoundingClientRect();
+        const top = (rect.top - origin.top) / effectiveZoom;
+        const inner = rect.height / effectiveZoom - margin * 2;
+        const pages = Math.max(1, Math.ceil((inner - 1) / contentHeight));
+        for (let k = 1; k < pages; k++) {
+          next.push({
+            top: top + margin + k * contentHeight,
+            left: (rect.left - origin.left) / effectiveZoom,
+            width: rect.width / effectiveZoom,
+            page: total + k + 1,
+          });
+        }
+        total += pages;
+      }
+      setGuides(next);
+      setPageCount(total);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(doc);
+    return () => observer.disconnect();
+  }, [options, paper.h, payload.items, effectiveZoom]);
+
+  /* ── Actions ── */
+  const handlePrint = useCallback(async () => {
+    if (!previewRef.current || isPrinting) return;
+    setIsPrinting(true);
+    try {
+      await triggerPrint(previewRef.current, title, options);
+    } finally {
+      setIsPrinting(false);
+    }
+  }, [isPrinting, options, title]);
+
+  const handleSaveDefault = async () => {
+    setIsSaving(true);
+    try {
+      await save(options);
+      showToast(t("print.modal.savedDefault"), "success");
+    } catch {
+      showToast(t("print.modal.saveDefaultError"), "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        void handlePrint();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handlePrint, onClose]);
+
+  const iconButton =
+    "inline-flex items-center justify-center min-h-9 min-w-9 rounded-[var(--radius-md)] text-m3-secondary hover:text-m3-text hover:bg-m3-hover transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
+  const pillButton =
+    "inline-flex items-center justify-center h-8 min-w-8 px-1.5 rounded-full text-m3-secondary hover:text-m3-text hover:bg-m3-hover transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-m3-card border border-m3-border rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)] flex flex-col w-full max-w-6xl h-[94vh] overflow-hidden">
-        {/* ── MODAL TOP BAR ── */}
-        <div className="px-5 py-3.5 border-b border-m3-border flex items-center justify-between bg-m3-sidebar/50 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-[var(--radius-md)] bg-m3-primary/10 text-m3-primary">
-              <Printer className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-m3-text flex items-center gap-2">
-                <span>{t("print.modalTitle")}</span>
-                <span className="text-xs font-normal text-m3-secondary">
-                  (
-                  {payload.items.length === 1
-                    ? t("print.itemsCount", { count: payload.items.length })
-                    : t("print.itemsCountPlural", {
-                        count: payload.items.length,
-                      })}
-                  )
-                </span>
-              </h2>
-              <p className="text-xs text-m3-secondary truncate max-w-md">
-                {title}
-              </p>
-            </div>
+    <div
+      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center sm:p-4 bg-slate-950/60 backdrop-blur-sm"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bg-m3-card sm:border border-m3-border sm:rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)] flex flex-col w-full max-w-[1440px] h-full sm:h-[94vh] overflow-hidden"
+      >
+        {/* ── Top bar ── */}
+        <div className="px-3 sm:px-5 py-2.5 border-b border-m3-border flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="hidden sm:flex p-2 rounded-[var(--radius-md)] bg-m3-primary/10 text-m3-primary shrink-0">
+            <Printer className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2
+              id={titleId}
+              className="text-[15px] font-semibold text-m3-text truncate"
+            >
+              {title}
+            </h2>
+            <p className="text-xs text-m3-secondary truncate">
+              {[
+                tc("print.modal.itemCount", payload.items.length),
+                tc("print.modal.pageEstimate", pageCount),
+                t(`print.templates.${options.templateFamily}.name`),
+              ].join(" · ")}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="text-m3-secondary"
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Printer className="w-4 h-4" />}
-              onClick={handlePrint}
-              className="shadow-[var(--shadow-sm)]"
-            >
-              {t("common.print")}
-            </Button>
-            <button
-              onClick={onClose}
-              className="inline-flex items-center justify-center min-h-10 min-w-10 rounded-[var(--radius-md)] text-m3-secondary hover:text-m3-text hover:bg-m3-hover transition-colors ml-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setMobileView((v) => (v === "preview" ? "options" : "preview"))
+            }
+            className={`lg:hidden ${iconButton} ${mobileView === "options" ? "bg-m3-primary/10 text-m3-primary" : ""}`}
+            aria-pressed={mobileView === "options"}
+            aria-label={t("print.modal.options")}
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+          </button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="hidden sm:inline-flex"
+          >
+            {t("common.cancel")}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<Printer className="w-4 h-4" />}
+            onClick={() => void handlePrint()}
+            isLoading={isPrinting}
+            title={t("print.modal.printShortcut")}
+          >
+            {t("print.modal.print")}
+          </Button>
+          <button
+            type="button"
+            onClick={onClose}
+            className={iconButton}
+            aria-label={t("common.close")}
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* ── TOOLBAR / CONTROLS ── */}
-        <div className="px-5 py-3 border-b border-m3-border bg-m3-card flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
-          {/* Template Family Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-label flex items-center gap-1">
-              {t("print.template")}
-            </span>
-            <div className="inline-flex bg-m3-sidebar p-1 rounded-[var(--radius-md)]">
-              {TEMPLATE_FAMILIES.map((family) => {
-                const active = options.templateFamily === family.id;
-                const badge =
-                  family.id === "modern"
-                    ? t("print.templates.modern.badge")
-                    : family.id === "classic"
-                      ? t("print.templates.classic.badge")
-                      : family.id === "contemporary"
-                        ? t("print.templates.contemporary.badge")
-                        : t("print.templates.compact.badge");
-                const desc =
-                  family.id === "modern"
-                    ? t("print.templates.modern.description")
-                    : family.id === "classic"
-                      ? t("print.templates.classic.description")
-                      : family.id === "contemporary"
-                        ? t("print.templates.contemporary.description")
-                        : t("print.templates.compact.description");
-                return (
-                  <button
-                    key={family.id}
-                    onClick={() =>
-                      setOptions((prev) => ({
-                        ...prev,
-                        templateFamily: family.id as PrintTemplateFamily,
-                      }))
-                    }
-                    className={`px-3 py-1.5 min-h-10 rounded-[var(--radius-sm)] font-medium transition-colors cursor-pointer text-xs ${
-                      active
-                        ? "bg-m3-card text-m3-text shadow-[var(--shadow-sm)] font-semibold"
-                        : "text-m3-secondary hover:text-m3-text"
-                    }`}
-                    title={desc}
-                  >
-                    {badge}
-                  </button>
-                );
-              })}
+        <div className="flex-1 min-h-0 flex">
+          {/* ── Preview ── */}
+          <div
+            className={`${mobileView === "preview" ? "flex" : "hidden"} lg:flex flex-1 min-w-0 flex-col relative bg-slate-200/70 dark:bg-slate-950`}
+          >
+            <div
+              ref={canvasRef}
+              className="flex-1 overflow-auto px-6 pt-6 pb-20"
+            >
+              <div
+                ref={stackRef}
+                className="relative mx-auto w-fit"
+                style={{ zoom: String(effectiveZoom) } as React.CSSProperties}
+              >
+                <div ref={previewRef} className="hp-screen">
+                  <PrintDocument
+                    items={payload.items}
+                    title={payload.title}
+                    options={options}
+                    brand={brand}
+                  />
+                </div>
+                {showGuides &&
+                  guides.map((g) => (
+                    <div
+                      key={g.page}
+                      className="absolute pointer-events-none"
+                      style={{ top: g.top, left: g.left, width: g.width }}
+                      aria-hidden="true"
+                    >
+                      <div className="border-t border-dashed border-sky-500/70" />
+                      <span className="absolute right-2 -top-2.5 px-1.5 rounded bg-sky-500 text-white text-[10px] font-semibold leading-5">
+                        {t("print.modal.pageN", { page: g.page })}
+                      </span>
+                    </div>
+                  ))}
+              </div>
             </div>
-          </div>
 
-          {/* Quick Toggles */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Chords toggle (only relevant if songs exist) */}
-            {hasSongs && (
-              <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-700 dark:text-slate-300 font-medium">
-                <input
-                  type="checkbox"
-                  checked={options.showChords}
-                  onChange={(e) =>
-                    setOptions((prev) => ({
-                      ...prev,
-                      showChords: e.target.checked,
-                    }))
-                  }
-                  className="rounded text-m3-primary focus:ring-m3-primary w-3.5 h-3.5"
-                />
-                <span>{t("print.chords")}</span>
-              </label>
-            )}
-
-            {/* Two Column Layout toggle */}
-            {hasSongs && (
-              <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-700 dark:text-slate-300 font-medium">
-                <input
-                  type="checkbox"
-                  checked={options.twoColumnLayout}
-                  onChange={(e) =>
-                    setOptions((prev) => ({
-                      ...prev,
-                      twoColumnLayout: e.target.checked,
-                    }))
-                  }
-                  className="rounded text-m3-primary focus:ring-m3-primary w-3.5 h-3.5"
-                />
-                <Columns className="w-3.5 h-3.5 text-slate-400" />
-                <span>{t("print.twoColumns")}</span>
-              </label>
-            )}
-
-            {/* Church Header toggle */}
-            <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-700 dark:text-slate-300 font-medium">
-              <input
-                type="checkbox"
-                checked={options.showChurchHeader}
-                onChange={(e) =>
-                  setOptions((prev) => ({
-                    ...prev,
-                    showChurchHeader: e.target.checked,
-                  }))
-                }
-                className="rounded text-m3-primary focus:ring-m3-primary w-3.5 h-3.5"
-              />
-              <span>{t("print.churchHeader")}</span>
-            </label>
-
-            {/* Include Songs toggle (when printing folder, collection, or service) */}
-            {hasFolderOrService && hasSongs && (
-              <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-700 dark:text-slate-300 font-medium">
-                <input
-                  type="checkbox"
-                  checked={
-                    options.includeServiceSongs &&
-                    options.includeFolderSongs &&
-                    (options.includeCollectionSongs ?? true) &&
-                    hasSongs
-                  }
-                  onChange={(e) =>
-                    setOptions((prev) => ({
-                      ...prev,
-                      includeServiceSongs: e.target.checked,
-                      includeFolderSongs: e.target.checked,
-                      includeCollectionSongs: e.target.checked,
-                    }))
-                  }
-                  className="rounded text-m3-primary focus:ring-m3-primary w-3.5 h-3.5"
-                />
-                <span>{t("print.includeChords")}</span>
-              </label>
-            )}
-
-            {/* Font Size Stepper */}
-            <div className="flex items-center gap-1 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5">
-              <span className="text-[10px] text-slate-400 uppercase font-bold mr-1">
-                {t("print.fontSize")}
-              </span>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-1.5 py-1 rounded-full bg-m3-card/95 border border-m3-border shadow-[var(--shadow-md)] backdrop-blur">
               <button
-                onClick={() =>
-                  setOptions((prev) => ({
-                    ...prev,
-                    fontSize: Math.max(10, prev.fontSize - 1),
-                  }))
-                }
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300"
-                title={t("print.decreaseFont")}
+                type="button"
+                className={pillButton}
+                onClick={() => stepZoom(-1)}
+                disabled={effectiveZoom <= ZOOM_STEPS[0]}
+                aria-label={t("print.modal.zoomOut")}
               >
-                <Minus className="w-3 h-3" />
+                <ZoomOut className="w-4 h-4" />
               </button>
-              <span className="font-mono text-xs font-bold w-6 text-center text-slate-800 dark:text-slate-200">
-                {options.fontSize}
-              </span>
               <button
-                onClick={() =>
-                  setOptions((prev) => ({
-                    ...prev,
-                    fontSize: Math.min(20, prev.fontSize + 1),
-                  }))
-                }
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300"
-                title={t("print.increaseFont")}
+                type="button"
+                className={`${pillButton} w-14 text-xs font-semibold tabular-nums text-m3-text`}
+                onClick={() => setZoom(1)}
+                title={t("print.modal.actualSize")}
               >
-                <Plus className="w-3 h-3" />
+                {Math.round(effectiveZoom * 100)}%
+              </button>
+              <button
+                type="button"
+                className={pillButton}
+                onClick={() => stepZoom(1)}
+                disabled={effectiveZoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+                aria-label={t("print.modal.zoomIn")}
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <span className="w-px h-5 bg-m3-border mx-1" />
+              <button
+                type="button"
+                className={`${pillButton} ${zoom === "fit" ? "text-m3-primary" : ""}`}
+                onClick={() => setZoom("fit")}
+                aria-pressed={zoom === "fit"}
+                title={t("print.modal.fitWidth")}
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                className={`${pillButton} ${showGuides ? "text-m3-primary" : ""}`}
+                onClick={() => setShowGuides((v) => !v)}
+                aria-pressed={showGuides}
+                title={t("print.modal.pageGuides")}
+              >
+                <SeparatorHorizontal className="w-4 h-4" />
               </button>
             </div>
           </div>
-        </div>
 
-        {/* ── PREVIEW CANVAS (SCROLLABLE) ── */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-slate-100 dark:bg-slate-950 flex justify-center">
-          <div className="w-full max-w-4xl shadow-xl rounded-xl overflow-hidden bg-white border border-slate-200">
-            <div ref={previewRef} className="hosana-print-container">
-              <BatchPrintView
-                items={payload.items}
-                title={payload.title}
+          {/* ── Options sidebar ── */}
+          <div
+            className={`${mobileView === "options" ? "flex" : "hidden"} lg:flex w-full lg:w-[360px] shrink-0 flex-col border-l border-m3-border bg-m3-card min-h-0`}
+          >
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+              <PrintOptionsPanel
                 options={options}
-                churchName={churchName}
-                churchLogo={churchLogo}
-                churchShortName={churchShortName}
-                accentColor={accentColor}
+                onChange={updateOptions}
+                brand={brand}
+                context={context}
               />
+            </div>
+            <div className="shrink-0 border-t border-m3-border px-4 py-3 space-y-2 bg-m3-sidebar/40">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<RotateCcw className="w-3.5 h-3.5" />}
+                  onClick={() => setOptions(initialOptions)}
+                  disabled={!isDirty}
+                >
+                  {t("print.modal.reset")}
+                </Button>
+                {canSave && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<Save className="w-3.5 h-3.5" />}
+                    onClick={() => void handleSaveDefault()}
+                    isLoading={isSaving}
+                    className="ml-auto"
+                  >
+                    {t("print.modal.saveDefault")}
+                  </Button>
+                )}
+              </div>
+              <p className="text-[11px] text-m3-secondary leading-snug">
+                {t("print.modal.pdfHint")}
+              </p>
             </div>
           </div>
         </div>
