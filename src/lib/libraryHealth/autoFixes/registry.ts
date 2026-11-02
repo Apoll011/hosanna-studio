@@ -4,6 +4,7 @@
  */
 
 import type { ScoreMissingCriterion } from "./types";
+import { durationAutoFix } from "./duration";
 import { keyAutoFix } from "./key";
 import type { LibraryHealthAutoFix } from "./types";
 
@@ -13,6 +14,7 @@ import type { LibraryHealthAutoFix } from "./types";
  */
 export const LIBRARY_HEALTH_AUTO_FIXES: readonly LibraryHealthAutoFix[] = [
   keyAutoFix,
+  durationAutoFix,
 ];
 
 export function getAutoFixForCriterion(
