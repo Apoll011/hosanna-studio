@@ -2563,6 +2563,23 @@ export const es: typeof pt = {
       memoryCount: "{count}/{max} notas",
       memoryError: "No se pudo actualizar la memoria.",
       clearKey: "Quitar clave",
+      billing: {
+        title: "Saldo DeepSeek",
+        desc: "Saldo en vivo de tu clave de API de DeepSeek.",
+        loading: "Obteniendo saldo…",
+        loadError: "No se pudo cargar el saldo de DeepSeek.",
+        refresh: "Actualizar saldo",
+        total: "Total disponible",
+        granted: "Concedido",
+        toppedUp: "Recargado",
+        available: "Suficiente para llamadas a la API",
+        unavailable: "El saldo puede ser insuficiente",
+        refreshedAt: "Actualizado {time}",
+        notConfigured: "Guarda una clave de API para ver el saldo.",
+        cryptoMissing:
+          "El cifrado del servidor no está configurado; no se puede obtener el saldo.",
+        unsupported: "El saldo solo está disponible para DeepSeek.",
+      },
     },
     chat: {
       title: "Logos AI",

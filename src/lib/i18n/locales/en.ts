@@ -2527,6 +2527,23 @@ export const en: typeof pt = {
       memoryCount: "{count}/{max} notes",
       memoryError: "Could not update memory.",
       clearKey: "Remove key",
+      billing: {
+        title: "DeepSeek balance",
+        desc: "Live balance from your DeepSeek API key.",
+        loading: "Fetching balance…",
+        loadError: "Could not load DeepSeek balance.",
+        refresh: "Refresh balance",
+        total: "Total available",
+        granted: "Granted",
+        toppedUp: "Topped up",
+        available: "Sufficient for API calls",
+        unavailable: "Balance may be insufficient",
+        refreshedAt: "Updated {time}",
+        notConfigured: "Save an API key to see your balance.",
+        cryptoMissing:
+          "Server encryption is not configured, so balance cannot be fetched.",
+        unsupported: "Balance is only available for DeepSeek.",
+      },
     },
     chat: {
       title: "Logos AI",
