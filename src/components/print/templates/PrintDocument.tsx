@@ -70,7 +70,7 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({
 
   const body: React.ReactNode[] = [];
   let songOrdinal = 0;
-  for (let index = 0; index < items.length; ) {
+  for (let index = 0; index < items.length;) {
     const item = items[index];
     const key = `${item.type}-${item.data.id || index}`;
 
