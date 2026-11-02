@@ -204,15 +204,16 @@ export const ServicePrintView: React.FC<ServicePrintViewProps> = ({
       </PrintSheet>
 
       {songsToPrint.length > 0 &&
-        (options.packSongsOnPage ? (
+        (!options.pageBreakBetweenItems ? (
           <div className="hp-song-pack">
-            {songsToPrint.map((song) => (
+            {songsToPrint.map((song, index) => (
               <SongPrintView
                 key={song.id}
                 song={song}
                 options={options}
                 brand={brand}
                 packed
+                showChurchIdentity={index === 0}
               />
             ))}
           </div>
@@ -223,6 +224,7 @@ export const ServicePrintView: React.FC<ServicePrintViewProps> = ({
               song={song}
               options={options}
               brand={brand}
+              showChurchIdentity={false}
             />
           ))
         ))}

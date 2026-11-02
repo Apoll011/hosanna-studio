@@ -31,7 +31,6 @@ export const DEFAULT_PRINT_OPTIONS: PrintOptions = {
   useAccentColor: true,
   includeSongs: true,
   pageBreakBetweenItems: true,
-  packSongsOnPage: false,
   customFooter: "",
 };
 
@@ -63,7 +62,6 @@ const BOOLEAN_KEYS = [
   "useAccentColor",
   "includeSongs",
   "pageBreakBetweenItems",
-  "packSongsOnPage",
 ] as const satisfies ReadonlyArray<keyof PrintOptions>;
 
 /**
@@ -106,6 +104,14 @@ export function sanitizePrintOptions(raw: unknown): Partial<PrintOptions> {
       input.includeCollectionSongs,
     ].find((v) => typeof v === "boolean");
     if (typeof legacy === "boolean") out.includeSongs = legacy;
+  }
+
+  // Short-lived packSongsOnPage flag → inverted pageBreakBetweenItems.
+  if (
+    typeof input.packSongsOnPage === "boolean" &&
+    typeof input.pageBreakBetweenItems !== "boolean"
+  ) {
+    out.pageBreakBetweenItems = !input.packSongsOnPage;
   }
 
   return out;

@@ -2143,11 +2143,9 @@ export const en: typeof pt = {
       sectionLabelsHint: "Verse, Chorus, Bridge…",
       includeSongs: "Include full songs",
       includeSongsHint: "Prints each song after the index or service plan.",
-      packSongs: "Pack songs on each page",
-      packSongsHint:
-        "Fit as many songs as the page holds instead of one song per page.",
       churchHeader: "Church identity",
-      churchHeaderHint: "Organization name in the header.",
+      churchHeaderHint:
+        "Name and logo on covers, indexes and rundowns — not repeated on every song.",
       churchLogo: "Logo",
       fontSize: "Font size",
       decreaseFont: "Decrease text",
@@ -2160,8 +2158,10 @@ export const en: typeof pt = {
       columns: "Columns",
       oneColumn: "1 column",
       twoColumns: "2 columns",
-      pageBreak: "New page per item",
+      pageBreak: "One song per page",
       pageBreakHint: "Turn off to run items together and save paper.",
+      pageBreakSongsHint:
+        "Turn off to fit as many songs as each page holds. Index/rundown stay on their own page.",
       paper: "Paper",
       letter: "Letter",
       margins: "Margins",

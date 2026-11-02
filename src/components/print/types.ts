@@ -45,12 +45,12 @@ export interface PrintOptions {
   useAccentColor: boolean;
   /** Print the full songs after a folder / collection index or service rundown. */
   includeSongs: boolean;
-  pageBreakBetweenItems: boolean;
   /**
-   * Songbooks / services: flow as many songs as fit on each page instead of
-   * starting every song on a fresh page. Index/rundown still gets its own page.
+   * When true, each song/item starts on a new page.
+   * When false, songs share pages (as many as fit); index/rundown still
+   * get their own page.
    */
-  packSongsOnPage: boolean;
+  pageBreakBetweenItems: boolean;
   customFooter: string;
 }
 

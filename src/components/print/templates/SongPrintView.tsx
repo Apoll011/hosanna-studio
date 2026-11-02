@@ -20,12 +20,23 @@ interface SongPrintViewProps {
   brand: PrintBrand;
   /** When true, this song shares the page with neighbours (no full-page pin). */
   packed?: boolean;
+  /**
+   * Church name/logo on this song. Standalone songs default to the option;
+   * songbooks pass false (or true only on the first packed song).
+   */
+  showChurchIdentity?: boolean;
 }
 
 export { safeParseSong } from "../parseSong";
 
 export const SongPrintView = React.memo<SongPrintViewProps>(
-  function SongPrintView({ song, options, brand, packed = false }) {
+  function SongPrintView({
+    song,
+    options,
+    brand,
+    packed = false,
+    showChurchIdentity = true,
+  }) {
     const { t } = useI18n();
     const { showChords } = options;
     const cacheKey = `${song.id}:${song.updatedAt ?? ""}:${song.content.length}`;
@@ -80,6 +91,7 @@ export const SongPrintView = React.memo<SongPrintViewProps>(
           badge={number ? t("print.song.number", { number }) : undefined}
           options={options}
           brand={brand}
+          showChurchIdentity={showChurchIdentity}
         />
 
         {options.showMetadata && metaItems.length > 0 && (

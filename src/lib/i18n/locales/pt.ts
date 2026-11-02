@@ -2163,11 +2163,9 @@ export const pt = {
       sectionLabelsHint: "Verso, Coro, Ponte…",
       includeSongs: "Incluir cânticos completos",
       includeSongsHint: "Imprime cada cântico a seguir ao índice ou ao plano.",
-      packSongs: "Empilhar cânticos na página",
-      packSongsHint:
-        "Cabe quantos cânticos a página aguentar, em vez de um por página.",
       churchHeader: "Identidade da igreja",
-      churchHeaderHint: "Nome da organização no cabeçalho.",
+      churchHeaderHint:
+        "Nome e logótipo nas capas, índices e planos — sem repetir em cada cântico.",
       churchLogo: "Logótipo",
       fontSize: "Tamanho da letra",
       decreaseFont: "Diminuir texto",
@@ -2180,8 +2178,10 @@ export const pt = {
       columns: "Colunas",
       oneColumn: "1 coluna",
       twoColumns: "2 colunas",
-      pageBreak: "Nova página por item",
+      pageBreak: "Um cântico por página",
       pageBreakHint: "Desative para encadear itens e poupar papel.",
+      pageBreakSongsHint:
+        "Desative para caber quantos cânticos a página aguentar. O índice/plano fica na própria página.",
       paper: "Papel",
       letter: "Carta",
       margins: "Margens",

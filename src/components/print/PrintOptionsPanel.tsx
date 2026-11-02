@@ -329,23 +329,17 @@ export const PrintOptionsPanel: React.FC<PrintOptionsPanelProps> = ({
           <div className="divide-y divide-m3-border/50">
             <ToggleRow
               label={t("print.options.pageBreak")}
-              hint={t("print.options.pageBreakHint")}
+              hint={
+                context.hasSongs
+                  ? t("print.options.pageBreakSongsHint")
+                  : t("print.options.pageBreakHint")
+              }
               checked={options.pageBreakBetweenItems}
               onChange={(v) => onChange({ pageBreakBetweenItems: v })}
-              disabled={disabled}
+              disabled={
+                disabled || (context.hasSongContainers && !options.includeSongs)
+              }
             />
-            {context.hasSongs && (
-              <ToggleRow
-                label={t("print.options.packSongs")}
-                hint={t("print.options.packSongsHint")}
-                checked={options.packSongsOnPage}
-                onChange={(v) => onChange({ packSongsOnPage: v })}
-                disabled={
-                  disabled ||
-                  (context.hasSongContainers && !options.includeSongs)
-                }
-              />
-            )}
           </div>
         </div>
       </Group>

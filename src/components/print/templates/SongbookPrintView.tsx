@@ -34,7 +34,6 @@ export const SongbookPrintView: React.FC<SongbookPrintViewProps> = ({
 }) => {
   const { t, tc } = useI18n();
 
-  // Index uses Song fields only — never parse ChordPro for the TOC.
   const rows = useMemo(
     () =>
       songs.map((song, idx) => ({
@@ -46,15 +45,19 @@ export const SongbookPrintView: React.FC<SongbookPrintViewProps> = ({
   );
 
   const indexClass = rows.length > 48 ? "hp-index hp-index--dense" : "hp-index";
-  const pack = options.packSongsOnPage;
+  // Off = pack as many songs as each page holds (index still on its own page).
+  const pack = !options.pageBreakBetweenItems;
 
-  const songViews = songs.map((song) => (
+  const songViews = songs.map((song, index) => (
     <SongPrintView
       key={song.id}
       song={song}
       options={options}
       brand={brand}
       packed={pack}
+      // Index already carries church identity; when packing, show it once
+      // at the start of the song run — never on every song page.
+      showChurchIdentity={pack && index === 0}
     />
   ));
 
