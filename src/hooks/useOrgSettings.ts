@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {
+  DEFAULT_PRINT_OPTIONS,
+  resolveOrgPrintSettings,
+  toOrgPrintSettings,
+} from "@/src/components/print/options";
+import type { OrgPrintSettings } from "@/src/components/print/types";
 import { ResponsibilityCategory } from "@/src/types";
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -35,17 +41,7 @@ export interface OrgAgendaSettings {
   responsibilityCategories: ResponsibilityCategory[];
 }
 
-export interface OrgPrintSettings {
-  templateFamily: "modern" | "classic" | "contemporary" | "compact";
-  showChords: boolean;
-  twoColumnLayout: boolean;
-  fontSize: number;
-  showChurchHeader: boolean;
-  showChurchLogo: boolean;
-  showMetadata: boolean;
-  pageBreakBetweenItems: boolean;
-  customFooter: string;
-}
+export type { OrgPrintSettings };
 
 export interface OrgSettings {
   general: OrgGeneralSettings;
@@ -100,17 +96,7 @@ export const DEFAULT_ORG_SETTINGS: OrgSettings = {
   agenda: {
     responsibilityCategories: DEFAULT_RESPONSIBILITY_CATEGORIES,
   },
-  print: {
-    templateFamily: "modern",
-    showChords: true,
-    twoColumnLayout: false,
-    fontSize: 13,
-    showChurchHeader: true,
-    showChurchLogo: true,
-    showMetadata: true,
-    pageBreakBetweenItems: true,
-    customFooter: "",
-  },
+  print: toOrgPrintSettings(DEFAULT_PRINT_OPTIONS),
 };
 
 // ─── Helper to parse metadata → OrgSettings ──────────────────────────────────
@@ -121,7 +107,6 @@ function parseOrgSettings(metadata: OrgMetadataStructure): OrgSettings {
   const svc = s.services || {};
   const dur = svc.defaultDurations || {};
   const agenda = s.agenda || {};
-  const prt = s.print || {};
 
   return {
     general: {
@@ -144,23 +129,7 @@ function parseOrgSettings(metadata: OrgMetadataStructure): OrgSettings {
         agenda.responsibilityCategories ??
         DEFAULT_ORG_SETTINGS.agenda.responsibilityCategories,
     },
-    print: {
-      templateFamily:
-        prt.templateFamily ?? DEFAULT_ORG_SETTINGS.print.templateFamily,
-      showChords: prt.showChords ?? DEFAULT_ORG_SETTINGS.print.showChords,
-      twoColumnLayout:
-        prt.twoColumnLayout ?? DEFAULT_ORG_SETTINGS.print.twoColumnLayout,
-      fontSize: prt.fontSize ?? DEFAULT_ORG_SETTINGS.print.fontSize,
-      showChurchHeader:
-        prt.showChurchHeader ?? DEFAULT_ORG_SETTINGS.print.showChurchHeader,
-      showChurchLogo:
-        prt.showChurchLogo ?? DEFAULT_ORG_SETTINGS.print.showChurchLogo,
-      showMetadata: prt.showMetadata ?? DEFAULT_ORG_SETTINGS.print.showMetadata,
-      pageBreakBetweenItems:
-        prt.pageBreakBetweenItems ??
-        DEFAULT_ORG_SETTINGS.print.pageBreakBetweenItems,
-      customFooter: prt.customFooter ?? DEFAULT_ORG_SETTINGS.print.customFooter,
-    },
+    print: resolveOrgPrintSettings(s.print),
   };
 }
 
@@ -292,15 +261,7 @@ export function useOrgSettings(): UseOrgSettingsReturn {
               },
               print: {
                 ...currentMetadata.settings?.print,
-                templateFamily: settings.print.templateFamily,
-                showChords: settings.print.showChords,
-                twoColumnLayout: settings.print.twoColumnLayout,
-                fontSize: settings.print.fontSize,
-                showChurchHeader: settings.print.showChurchHeader,
-                showChurchLogo: settings.print.showChurchLogo,
-                showMetadata: settings.print.showMetadata,
-                pageBreakBetweenItems: settings.print.pageBreakBetweenItems,
-                customFooter: settings.print.customFooter,
+                ...settings.print,
               },
             },
           },

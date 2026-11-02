@@ -30,10 +30,8 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { usePrint } from "../../contexts/PrintContext";
-import {
-  DEFAULT_ORG_SETTINGS,
-  OrgPrintSettings,
-} from "../../hooks/useOrgSettings";
+import { resolveOrgPrintSettings } from "../print/options";
+import { OrgPrintSettings } from "../print/types";
 import { authClient } from "../../lib/authClient";
 import { compressImage } from "../../utils/settingsUtils";
 import { PrintingSettingsCard } from "./PrintingSettingsCard";
@@ -121,36 +119,10 @@ export const WorkspaceTab: React.FC<WorkspaceTabProps> = ({
   });
 
   const { printSong } = usePrint();
-  const rawPrintSettings =
-    (orgMetadata.settings?.print as Partial<OrgPrintSettings>) || {};
   const [currentPrintSettings, setCurrentPrintSettings] =
-    useState<OrgPrintSettings>({
-      templateFamily:
-        rawPrintSettings.templateFamily ||
-        DEFAULT_ORG_SETTINGS.print.templateFamily,
-      showChords:
-        rawPrintSettings.showChords ?? DEFAULT_ORG_SETTINGS.print.showChords,
-      twoColumnLayout:
-        rawPrintSettings.twoColumnLayout ??
-        DEFAULT_ORG_SETTINGS.print.twoColumnLayout,
-      fontSize:
-        rawPrintSettings.fontSize ?? DEFAULT_ORG_SETTINGS.print.fontSize,
-      showChurchHeader:
-        rawPrintSettings.showChurchHeader ??
-        DEFAULT_ORG_SETTINGS.print.showChurchHeader,
-      showChurchLogo:
-        rawPrintSettings.showChurchLogo ??
-        DEFAULT_ORG_SETTINGS.print.showChurchLogo,
-      showMetadata:
-        rawPrintSettings.showMetadata ??
-        DEFAULT_ORG_SETTINGS.print.showMetadata,
-      pageBreakBetweenItems:
-        rawPrintSettings.pageBreakBetweenItems ??
-        DEFAULT_ORG_SETTINGS.print.pageBreakBetweenItems,
-      customFooter:
-        rawPrintSettings.customFooter ??
-        DEFAULT_ORG_SETTINGS.print.customFooter,
-    });
+    useState<OrgPrintSettings>(() =>
+      resolveOrgPrintSettings(orgMetadata.settings?.print),
+    );
 
   // --- Draft State (Edit Mode) ---
   const [isEditing, setIsEditing] = useState(false);
@@ -183,30 +155,7 @@ export const WorkspaceTab: React.FC<WorkspaceTabProps> = ({
           meta.settings?.appearance?.accentColor || DEFAULT_ACCENT_COLOR,
         showBranding: meta.settings?.appearance?.showBranding ?? true,
       };
-      const rawPrint =
-        (meta.settings?.print as Partial<OrgPrintSettings>) || {};
-      const parsedPrint: OrgPrintSettings = {
-        templateFamily:
-          rawPrint.templateFamily || DEFAULT_ORG_SETTINGS.print.templateFamily,
-        showChords:
-          rawPrint.showChords ?? DEFAULT_ORG_SETTINGS.print.showChords,
-        twoColumnLayout:
-          rawPrint.twoColumnLayout ??
-          DEFAULT_ORG_SETTINGS.print.twoColumnLayout,
-        fontSize: rawPrint.fontSize ?? DEFAULT_ORG_SETTINGS.print.fontSize,
-        showChurchHeader:
-          rawPrint.showChurchHeader ??
-          DEFAULT_ORG_SETTINGS.print.showChurchHeader,
-        showChurchLogo:
-          rawPrint.showChurchLogo ?? DEFAULT_ORG_SETTINGS.print.showChurchLogo,
-        showMetadata:
-          rawPrint.showMetadata ?? DEFAULT_ORG_SETTINGS.print.showMetadata,
-        pageBreakBetweenItems:
-          rawPrint.pageBreakBetweenItems ??
-          DEFAULT_ORG_SETTINGS.print.pageBreakBetweenItems,
-        customFooter:
-          rawPrint.customFooter ?? DEFAULT_ORG_SETTINGS.print.customFooter,
-      };
+      const parsedPrint = resolveOrgPrintSettings(meta.settings?.print);
 
       setCurrentName(name);
       setCurrentLogo(logo);
