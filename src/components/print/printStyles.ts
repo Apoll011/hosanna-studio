@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { PRINT_BRAND_ACCENT } from "./brand";
 import { PAGE_MARGINS_MM, PAPER_SIZES } from "./options";
 import { PrintOptions } from "./types";
 
@@ -21,15 +22,16 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
   --hp-sans: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --hp-serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --hp-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --hp-accent: #0284c7;
-  --hp-ink: #0f172a;
-  --hp-text: #1e293b;
-  --hp-muted: #64748b;
+  --hp-accent: ${PRINT_BRAND_ACCENT};
+  --hp-ink: #1a1d24;
+  --hp-text: #1a1d24;
+  --hp-muted: #5c6570;
   --hp-faint: #94a3b8;
-  --hp-rule: #e2e8f0;
-  --hp-soft: #f1f5f9;
-  --hp-tint: color-mix(in srgb, var(--hp-accent) 9%, #fff);
-  --hp-chord: color-mix(in srgb, var(--hp-accent) 82%, #000);
+  --hp-rule: #d0d7e0;
+  --hp-soft: #eef1f4;
+  --hp-tint: #e0f2fe;
+  --hp-chord: #0369a1;
+  --hp-footer-space: 2.4em;
   --hp-body-font: var(--hp-sans);
   --hp-display-font: var(--hp-sans);
   --hp-chord-font: var(--hp-sans);
@@ -52,12 +54,12 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
   print-color-adjust: exact;
   font-kerning: normal;
 }
-.hp-doc *, .hp-doc *::before, .hp-doc *::after { box-sizing: border-box; }
-.hp-doc h1, .hp-doc h2, .hp-doc h3, .hp-doc p, .hp-doc ol, .hp-doc ul, .hp-doc dl, .hp-doc dd, .hp-doc figure, .hp-doc pre {
+:where(.hp-doc) *, :where(.hp-doc) *::before, :where(.hp-doc) *::after { box-sizing: border-box; }
+:where(.hp-doc) :where(h1, h2, h3, p, ol, ul, dl, dd, figure, pre) {
   margin: 0; padding: 0; font: inherit; color: inherit;
 }
-.hp-doc ol, .hp-doc ul { list-style: none; }
-.hp-doc img { display: block; max-width: 100%; }
+:where(.hp-doc) :where(ol, ul) { list-style: none; }
+:where(.hp-doc) img { display: block; max-width: 100%; }
 
 .hp-density-tight {
   --hp-lh: 1.2; --hp-chord-lh: 1; --hp-line-gap: 0em; --hp-stanza-gap: 0.35em;
@@ -67,8 +69,20 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
   --hp-lh: 1.45; --hp-chord-lh: 1.1; --hp-line-gap: 0.14em; --hp-stanza-gap: 0.7em;
   --hp-section-gap: 1.15em; --hp-block-gap: 1.3em; --hp-cell-y: 0.5em;
 }
-/* ── Sheets & page flow ─────────────────────────────────────────── */
-.hp-sheet { display: flow-root; }
+/* ── Sheets & page flow ───────────────────────────────────────────
+ * With page-breaks on, each sheet is at least one page tall so the
+ * footer can sit on the page bottom (margin-top: auto) when content
+ * is short. The body flexes into the leftover space; two-column songs
+ * fill that box so column 1 never runs into the footer before wrapping. */
+.hp-sheet {
+  display: flex; flex-direction: column; box-sizing: border-box;
+}
+.hp-sheet-body {
+  flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
+}
+.hp-breaks > .hp-sheet {
+  min-height: calc(var(--hp-paper-h) - 2 * var(--hp-margin));
+}
 .hp-breaks > .hp-sheet:not(:last-child) { break-after: page; }
 .hp-doc:not(.hp-breaks) > .hp-sheet + .hp-sheet {
   margin-top: 1.4em; padding-top: 1.1em; border-top: 1px dashed var(--hp-rule);
@@ -112,7 +126,15 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 
 /* ── Song body ──────────────────────────────────────────────────── */
 .hp-song { font-size: 1em; }
-.hp-cols-2 { column-count: 2; column-gap: 2em; column-fill: balance; }
+.hp-cols-2 {
+  column-count: 2; column-gap: 2em;
+  /* Grow into the leftover height in .hp-sheet-body (below header/meta,
+   * above the footer). That gives columns a definite box so col 1
+   * stops before the footer and then wraps to col 2. Long songs still
+   * grow the sheet via the default min-height:auto content minimum. */
+  flex: 1 1 auto;
+  column-fill: auto;
+}
 .hp-section { break-inside: avoid; }
 .hp-section + .hp-section { margin-top: var(--hp-section-gap); }
 .hp-section-label {
@@ -216,8 +238,9 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 /* ── Footer ─────────────────────────────────────────────────────── */
 .hp-footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25em 1em;
-  margin-top: var(--hp-block-gap); padding-top: 0.4em; border-top: 1px solid var(--hp-rule);
-  font-size: 0.68em; color: var(--hp-muted); break-inside: avoid;
+  margin-top: auto; padding-top: 0.4em; border-top: 1px solid var(--hp-rule);
+  font-size: 0.68em; color: var(--hp-muted); break-inside: avoid; flex-shrink: 0;
+  min-height: var(--hp-footer-space); box-sizing: border-box;
 }
 .hp-footer-left { display: flex; flex-wrap: wrap; gap: 0 0.9em; }
 
@@ -298,7 +321,7 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 .hp-theme-elegant .hp-meta-item { background: none; border: 0; padding: 0; }
 .hp-theme-elegant .hp-meta-label { font-variant: small-caps; text-transform: lowercase; letter-spacing: 0.08em; }
 .hp-theme-elegant .hp-meta-value { color: var(--hp-accent); }
-.hp-theme-elegant .hp-section-label { font-variant: small-caps; text-transform: lowercase; letter-spacing: 0.1em; font-size: 0.82em; font-weight: 600; color: var(--hp-accent); }
+.hp-theme-elegant .hp-section-label { font-variant: small-caps; text-transform: lowercase; letter-spacing: 0.1em; font-size: 0.95em; font-weight: 600; color: var(--hp-accent); }
 .hp-theme-elegant .hp-section--chorus .hp-section-body { font-family: var(--hp-serif); font-style: italic; font-weight: 400; font-size: 1.04em; }
 .hp-theme-elegant .hp-h2 { font-family: var(--hp-serif); font-variant: small-caps; text-transform: lowercase; letter-spacing: 0.1em; font-size: 0.95em; font-weight: 600; color: var(--hp-accent); border-bottom-color: color-mix(in srgb, var(--hp-accent) 35%, #fff); }
 .hp-theme-elegant .hp-table th { font-variant: small-caps; text-transform: lowercase; letter-spacing: 0.06em; font-size: 0.9em; }
@@ -348,7 +371,8 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 .hp-theme-leadsheet .hp-section-body { grid-column: 2; border-left: 1px solid var(--hp-rule); padding-left: 0.7em; }
 .hp-theme-leadsheet .hp-section--chorus .hp-section-body { border-left: 3px solid var(--hp-ink); font-weight: 600; }
 .hp-theme-leadsheet .hp-section--ref .hp-section-body { display: none; }
-.hp-theme-leadsheet .hp-section--ref .hp-section-label { grid-column: 1 / -1; text-align: left; padding-left: 5.3em; }
+.hp-theme-leadsheet .hp-section--ref .hp-section-label { grid-column: 1 / -1; display: flex; padding-left: 7.4em; }
+.hp-theme-leadsheet .hp-section--ref .hp-repeat { display: inline; }
 .hp-theme-leadsheet .hp-h2 { font-family: var(--hp-mono); border-bottom: 2px solid var(--hp-ink); }
 .hp-theme-leadsheet .hp-table th { font-family: var(--hp-mono); text-transform: uppercase; color: var(--hp-ink); border-bottom: 1.5px solid var(--hp-ink); }
 .hp-theme-leadsheet .hp-tag { background: none; border: 1px solid var(--hp-rule); font-family: var(--hp-mono); font-size: 0.78em; }
@@ -365,9 +389,9 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 .hp-theme-hymnal .hp-badge { order: -1; background: none; border: 0; padding: 0; font-size: 1.5em; font-weight: 700; color: var(--hp-accent); }
 .hp-theme-hymnal .hp-meta { justify-content: center; font-style: italic; gap: 0 1em; }
 .hp-theme-hymnal .hp-meta-item { background: none; border: 0; padding: 0; }
-.hp-theme-hymnal .hp-song { counter-reset: hp-stanza; }
-.hp-theme-hymnal .hp-section { width: fit-content; max-width: 100%; margin-inline: auto; position: relative; }
-.hp-theme-hymnal .hp-cols-2 .hp-section { margin-inline: 0 auto; margin-left: 1.6em; }
+.hp-theme-hymnal .hp-song { counter-reset: hp-stanza; width: fit-content; max-width: 100%; margin-inline: auto; padding-left: 1.6em; }
+.hp-theme-hymnal .hp-song.hp-cols-2 { width: auto; }
+.hp-theme-hymnal .hp-section { position: relative; }
 .hp-theme-hymnal .hp-section--numbered { counter-increment: hp-stanza; }
 .hp-theme-hymnal .hp-section--numbered .hp-section-label { display: none; }
 .hp-theme-hymnal .hp-section--numbered::before {
@@ -393,6 +417,11 @@ export const PRINT_SCREEN_CSS = /* css */ `
   box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.10);
   border-radius: 2px;
 }
+/* Preview sheets already pad to simulate @page margins, so drop the
+ * print-only content-box min-height (padding is inside border-box). */
+.hp-screen .hp-doc.hp-breaks > .hp-sheet {
+  min-height: var(--hp-paper-h);
+}
 .hp-screen .hp-doc.hp-breaks > .hp-sheet + .hp-sheet { margin-top: 24px; }
 .hp-screen .hp-doc.hp-breaks > .hp-sheet:not(:last-child) { break-after: auto; }
 .hp-thumb .hp-doc { pointer-events: none; }
@@ -403,11 +432,14 @@ const STYLE_ID = "hosana-print-styles";
 /** Injects the print stylesheet into the app document once. */
 export function ensurePrintStyles(): void {
   if (typeof document === "undefined") return;
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ID;
-  style.textContent = PRINT_DOCUMENT_CSS + PRINT_SCREEN_CSS;
-  document.head.appendChild(style);
+  const css = PRINT_DOCUMENT_CSS + PRINT_SCREEN_CSS;
+  let style = document.getElementById(STYLE_ID);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = STYLE_ID;
+    document.head.appendChild(style);
+  }
+  if (style.textContent !== css) style.textContent = css;
 }
 
 export function buildPageCss(
@@ -427,12 +459,15 @@ export function documentStyleVars(
     PrintOptions,
     "fontSize" | "paperSize" | "margins" | "useAccentColor"
   >,
-  accentColor: string,
+  _accentColor?: string,
 ): Record<string, string> {
   const paper = PAPER_SIZES[options.paperSize];
   return {
     "--hp-font-size": `${options.fontSize}px`,
-    "--hp-accent": options.useAccentColor ? accentColor : "#1e293b",
+    // Always the Hosana brand sky from index.css — never the workspace accent.
+    "--hp-accent": options.useAccentColor ? PRINT_BRAND_ACCENT : "#1a1d24",
+    "--hp-chord": options.useAccentColor ? "#0369a1" : "#1a1d24",
+    "--hp-tint": options.useAccentColor ? "#e0f2fe" : "#eef1f4",
     "--hp-paper-w": `${paper.w}mm`,
     "--hp-paper-h": `${paper.h}mm`,
     "--hp-margin": `${PAGE_MARGINS_MM[options.margins]}mm`,

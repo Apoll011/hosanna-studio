@@ -87,6 +87,7 @@ export function buildSongBlocks(
 ): SongBlock[] {
   const blocks: SongBlock[] = [];
   let pendingLabel: string | undefined;
+  let lastChorusLabel: string | undefined;
 
   const takeLabel = () => {
     const label = pendingLabel;
@@ -139,9 +140,15 @@ export function buildSongBlocks(
       case "chorus":
       case "bridge": {
         const lines = tidyLines(stripChordLines(section.lines));
-        const label = takeLabel() || section.label;
+        const isRef = lines.length === 0;
+        // A bare {chorus} repeat should reuse the name the song gave its chorus.
+        const label =
+          takeLabel() ||
+          (isRef && section.type === "chorus" ? lastChorusLabel : undefined) ||
+          section.label;
+        if (!isRef && section.type === "chorus") lastChorusLabel = label;
         blocks.push({
-          kind: lines.length ? section.type : "ref",
+          kind: isRef ? "ref" : section.type,
           label,
           repeat: section.repeat,
           lines,
@@ -167,13 +174,16 @@ export function buildSongBlocks(
           flushPending();
 
           const kind = kindFromLabel(label);
+          if (kind === "chorus") lastChorusLabel = label;
           blocks.push({
             kind,
             label,
             repeat: section.repeat,
             lines,
             numbered:
-              kind === "verse" && (!label || VERSE_LABEL.test(label.trim())),
+              kind === "verse" &&
+              lines.some((l) => l.type === "lyrics") &&
+              (!label || VERSE_LABEL.test(label.trim())),
           });
         }
       }

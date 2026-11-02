@@ -8,6 +8,7 @@ import React from "react";
 import { documentStyleVars } from "../printStyles";
 import { PrintBrand, PrintItem, PrintOptions } from "../types";
 import { EventPrintView } from "./EventPrintView";
+import { PrintSheet } from "./PrintSheet";
 import { ServicePrintView } from "./ServicePrintView";
 import { SongbookPrintView } from "./SongbookPrintView";
 import { SongPrintView } from "./SongPrintView";
@@ -67,7 +68,10 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({
       }
     >
       {showCover && (
-        <article className="hp-sheet hp-sheet--cover">
+        <PrintSheet
+          className="hp-sheet--cover"
+          footer={<TemplateFooter options={options} brand={brand} />}
+        >
           <TemplateHeader
             title={title}
             subtitle={tc("print.batch.itemCount", items.length)}
@@ -93,8 +97,7 @@ export const PrintDocument: React.FC<PrintDocumentProps> = ({
               })}
             </ol>
           </section>
-          <TemplateFooter options={options} brand={brand} />
-        </article>
+        </PrintSheet>
       )}
 
       {items.map((item, index) => {

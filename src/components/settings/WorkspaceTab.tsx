@@ -66,11 +66,13 @@ interface OrgMetadataStructure {
   [key: string]: unknown;
 }
 
-const DEFAULT_ACCENT_COLOR = "#4f46e5"; // Indigo 600
+/** Matches `--brand-500` / `--m3-primary` in `src/index.css`. */
+const DEFAULT_ACCENT_COLOR = "#0284c7";
 
 const PRESET_COLORS = [
-  { name: "Indigo", hex: "#4f46e5" },
+  { name: "Céu", hex: "#0284c7" },
   { name: "Azul Oceano", hex: "#5babdb" },
+  { name: "Índigo", hex: "#4f46e5" },
   { name: "Esmeralda", hex: "#059669" },
   { name: "Âmbar", hex: "#d97706" },
   { name: "Rosa", hex: "#e11d48" },
@@ -603,7 +605,7 @@ export const WorkspaceTab: React.FC<WorkspaceTabProps> = ({
                               accentColor: e.target.value,
                             })
                           }
-                          placeholder="#4F46E5"
+                          placeholder="#0284C7"
                           className="font-mono uppercase text-sm"
                         />
                       </div>

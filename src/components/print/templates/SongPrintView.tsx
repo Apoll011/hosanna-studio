@@ -9,6 +9,7 @@ import { parseChordPro, SongAST } from "@hosanna/chordpro";
 import React, { useMemo } from "react";
 import { buildSongBlocks } from "../songBlocks";
 import { PrintBrand, PrintOptions } from "../types";
+import { PrintSheet } from "./PrintSheet";
 import { PrintSongBody } from "./PrintSongBody";
 import { TemplateFooter } from "./TemplateFooter";
 import { TemplateHeader } from "./TemplateHeader";
@@ -63,7 +64,17 @@ export const SongPrintView: React.FC<SongPrintViewProps> = ({
   ].filter((item) => item.value);
 
   return (
-    <article className="hp-sheet hp-sheet--song">
+    <PrintSheet
+      className="hp-sheet--song"
+      footer={
+        <TemplateFooter
+          options={options}
+          brand={brand}
+          ccli={meta.ccli}
+          copyright={meta.copyright}
+        />
+      }
+    >
       <TemplateHeader
         title={title}
         subtitle={subtitle || undefined}
@@ -93,13 +104,6 @@ export const SongPrintView: React.FC<SongPrintViewProps> = ({
       ) : (
         <p className="hp-empty">{t("print.song.empty")}</p>
       )}
-
-      <TemplateFooter
-        options={options}
-        brand={brand}
-        ccli={meta.ccli}
-        copyright={meta.copyright}
-      />
-    </article>
+    </PrintSheet>
   );
 };

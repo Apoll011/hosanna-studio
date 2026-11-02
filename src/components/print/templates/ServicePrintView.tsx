@@ -7,6 +7,7 @@ import { useI18n } from "@/src/lib/i18n";
 import { Service, ServiceElement, Song } from "@/src/types";
 import React, { useMemo } from "react";
 import { PrintBrand, PrintOptions } from "../types";
+import { PrintSheet } from "./PrintSheet";
 import { SongPrintView } from "./SongPrintView";
 import { TemplateFooter } from "./TemplateFooter";
 import { TemplateHeader } from "./TemplateHeader";
@@ -104,7 +105,10 @@ export const ServicePrintView: React.FC<ServicePrintViewProps> = ({
 
   return (
     <>
-      <article className="hp-sheet hp-sheet--service">
+      <PrintSheet
+        className="hp-sheet--service"
+        footer={<TemplateFooter options={options} brand={brand} />}
+      >
         <TemplateHeader
           title={service.name}
           subtitle={formatPrintDate(service.date, brand.locale)}
@@ -197,9 +201,7 @@ export const ServicePrintView: React.FC<ServicePrintViewProps> = ({
             <p>{service.notes}</p>
           </section>
         )}
-
-        <TemplateFooter options={options} brand={brand} />
-      </article>
+      </PrintSheet>
 
       {songsToPrint.map((song) => (
         <SongPrintView

@@ -7,6 +7,7 @@ import { useI18n } from "@/src/lib/i18n";
 import { AgendaEvent, ResponsibilityCategory } from "@/src/types";
 import React, { useMemo } from "react";
 import { PrintBrand, PrintOptions } from "../types";
+import { PrintSheet } from "./PrintSheet";
 import { formatPrintDate } from "./ServicePrintView";
 import { TemplateFooter } from "./TemplateFooter";
 import { TemplateHeader } from "./TemplateHeader";
@@ -43,7 +44,10 @@ export const EventPrintView: React.FC<EventPrintViewProps> = ({
   const responsibilities = event.responsibilities || [];
 
   return (
-    <article className="hp-sheet hp-sheet--event">
+    <PrintSheet
+      className="hp-sheet--event"
+      footer={<TemplateFooter options={options} brand={brand} />}
+    >
       <TemplateHeader
         title={event.title}
         subtitle={formatPrintDate(event.date, brand.locale)}
@@ -119,8 +123,6 @@ export const EventPrintView: React.FC<EventPrintViewProps> = ({
           <p>{event.notes}</p>
         </section>
       )}
-
-      <TemplateFooter options={options} brand={brand} />
-    </article>
+    </PrintSheet>
   );
 };

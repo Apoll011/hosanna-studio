@@ -27,6 +27,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { PRINT_BRAND_ACCENT } from "./brand";
 import {
   mmToPx,
   PAGE_MARGINS_MM,
@@ -105,14 +106,13 @@ const PrintModalContent: React.FC<{
 
   const brand = useMemo<PrintBrand>(() => {
     const meta = (organization?.metadata as Record<string, unknown>) || {};
-    const settings = (meta.settings as Record<string, unknown>) || {};
-    const appearance = (settings.appearance as Record<string, unknown>) || {};
     return {
       churchName: organization?.name || "",
       churchShortName:
         (meta.shortName as string) || organization?.slug || undefined,
       churchLogo: organization?.logo || null,
-      accentColor: (appearance.accentColor as string) || "#0284c7",
+      // Print uses the Hosana brand sky from index.css, not workspace accent.
+      accentColor: PRINT_BRAND_ACCENT,
       locale,
     };
   }, [organization, locale]);

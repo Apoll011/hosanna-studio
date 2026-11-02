@@ -4,6 +4,7 @@
  */
 
 import { Button } from "@/src/components/common";
+import { PRINT_BRAND_ACCENT } from "@/src/components/print/brand";
 import { toOrgPrintSettings } from "@/src/components/print/options";
 import { PrintOptionsPanel } from "@/src/components/print/PrintOptionsPanel";
 import {
@@ -38,14 +39,11 @@ export const PrintingSettingsCard: React.FC<PrintingSettingsCardProps> = ({
 
   const brand = useMemo<PrintBrand>(() => {
     const meta = (organization?.metadata as Record<string, unknown>) || {};
-    const orgSettings = (meta.settings as Record<string, unknown>) || {};
-    const appearance =
-      (orgSettings.appearance as Record<string, unknown>) || {};
     return {
       churchName: organization?.name || "",
       churchShortName: (meta.shortName as string) || undefined,
       churchLogo: organization?.logo || null,
-      accentColor: (appearance.accentColor as string) || "#0284c7",
+      accentColor: PRINT_BRAND_ACCENT,
       locale,
     };
   }, [organization, locale]);

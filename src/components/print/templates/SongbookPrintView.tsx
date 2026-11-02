@@ -7,6 +7,7 @@ import { useI18n } from "@/src/lib/i18n";
 import { Song } from "@/src/types";
 import React, { useMemo } from "react";
 import { PrintBrand, PrintOptions } from "../types";
+import { PrintSheet } from "./PrintSheet";
 import { SongPrintView, safeParseSong } from "./SongPrintView";
 import { TemplateFooter } from "./TemplateFooter";
 import { TemplateHeader } from "./TemplateHeader";
@@ -51,7 +52,10 @@ export const SongbookPrintView: React.FC<SongbookPrintViewProps> = ({
 
   return (
     <>
-      <article className="hp-sheet hp-sheet--index">
+      <PrintSheet
+        className="hp-sheet--index"
+        footer={<TemplateFooter options={options} brand={brand} />}
+      >
         <TemplateHeader
           title={name}
           subtitle={tc("print.songbook.songCount", songs.length)}
@@ -99,9 +103,7 @@ export const SongbookPrintView: React.FC<SongbookPrintViewProps> = ({
             </table>
           )}
         </section>
-
-        <TemplateFooter options={options} brand={brand} />
-      </article>
+      </PrintSheet>
 
       {options.includeSongs &&
         songs.map((song) => (
