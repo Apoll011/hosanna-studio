@@ -46,6 +46,11 @@ export interface PrintOptions {
   /** Print the full songs after a folder / collection index or service rundown. */
   includeSongs: boolean;
   pageBreakBetweenItems: boolean;
+  /**
+   * Songbooks / services: flow as many songs as fit on each page instead of
+   * starting every song on a fresh page. Index/rundown still gets its own page.
+   */
+  packSongsOnPage: boolean;
   customFooter: string;
 }
 

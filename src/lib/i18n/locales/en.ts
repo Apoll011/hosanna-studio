@@ -2143,6 +2143,9 @@ export const en: typeof pt = {
       sectionLabelsHint: "Verse, Chorus, Bridge…",
       includeSongs: "Include full songs",
       includeSongsHint: "Prints each song after the index or service plan.",
+      packSongs: "Pack songs on each page",
+      packSongsHint:
+        "Fit as many songs as the page holds instead of one song per page.",
       churchHeader: "Church identity",
       churchHeaderHint: "Organization name in the header.",
       churchLogo: "Logo",
@@ -2168,7 +2171,8 @@ export const en: typeof pt = {
       pageNumbers: "Page numbers",
       pageNumbersHint: "In the bottom corner of each sheet.",
       accentColor: "Brand colour",
-      accentColorHint: "Hosana sky on headers and chords. Turn off for black & white.",
+      accentColorHint:
+        "Hosana sky on headers and chords. Turn off for black & white.",
       footer: "Footer note",
       footerPlaceholder: "e.g. CCLI License #12345",
     },

@@ -8,7 +8,7 @@ import { Song } from "@/src/types";
 import React, { useMemo } from "react";
 import { PrintBrand, PrintOptions } from "../types";
 import { PrintSheet } from "./PrintSheet";
-import { SongPrintView, safeParseSong } from "./SongPrintView";
+import { SongPrintView } from "./SongPrintView";
 import { TemplateFooter } from "./TemplateFooter";
 import { TemplateHeader } from "./TemplateHeader";
 
@@ -22,7 +22,7 @@ interface SongbookPrintViewProps {
   brand: PrintBrand;
 }
 
-/** Folder and collection printouts: an index sheet followed by the songs. */
+/** Folder and collection printouts: a compact index sheet, then the songs. */
 export const SongbookPrintView: React.FC<SongbookPrintViewProps> = ({
   name,
   description,
@@ -34,21 +34,29 @@ export const SongbookPrintView: React.FC<SongbookPrintViewProps> = ({
 }) => {
   const { t, tc } = useI18n();
 
+  // Index uses Song fields only — never parse ChordPro for the TOC.
   const rows = useMemo(
     () =>
-      songs.map((song, idx) => {
-        const meta = safeParseSong(song.content)?.metadata ?? {};
-        return {
-          song,
-          number: song.song_number ?? meta.songNumber ?? idx + 1,
-          title: meta.title || song.title,
-          artist: meta.artist || song.artist,
-          key: meta.key,
-        };
-      }),
+      songs.map((song, idx) => ({
+        id: song.id,
+        number: song.song_number ?? idx + 1,
+        title: song.title || "—",
+      })),
     [songs],
   );
-  const hasKeys = rows.some((r) => r.key);
+
+  const indexClass = rows.length > 48 ? "hp-index hp-index--dense" : "hp-index";
+  const pack = options.packSongsOnPage;
+
+  const songViews = songs.map((song) => (
+    <SongPrintView
+      key={song.id}
+      song={song}
+      options={options}
+      brand={brand}
+      packed={pack}
+    />
+  ));
 
   return (
     <>
@@ -77,43 +85,20 @@ export const SongbookPrintView: React.FC<SongbookPrintViewProps> = ({
           {rows.length === 0 ? (
             <p className="hp-empty">{emptyText}</p>
           ) : (
-            <table className="hp-table">
-              <thead>
-                <tr>
-                  <th className="hp-num">#</th>
-                  <th>{t("print.songbook.titleCol")}</th>
-                  <th>{t("print.songbook.artistCol")}</th>
-                  {hasKeys && (
-                    <th className="hp-center">{t("print.song.key")}</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.song.id}>
-                    <td className="hp-num">{row.number}</td>
-                    <td className="hp-cell-title">{row.title}</td>
-                    <td>{row.artist || <span className="hp-dim">—</span>}</td>
-                    {hasKeys && (
-                      <td className="hp-center hp-mono">{row.key || "—"}</td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className={indexClass}>
+              {rows.map((row) => (
+                <div key={row.id} className="hp-index-row">
+                  <span className="hp-index-num">{row.number}</span>
+                  <span className="hp-index-title">{row.title}</span>
+                </div>
+              ))}
+            </div>
           )}
         </section>
       </PrintSheet>
 
       {options.includeSongs &&
-        songs.map((song) => (
-          <SongPrintView
-            key={song.id}
-            song={song}
-            options={options}
-            brand={brand}
-          />
-        ))}
+        (pack ? <div className="hp-song-pack">{songViews}</div> : songViews)}
     </>
   );
 };

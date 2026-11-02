@@ -2163,6 +2163,9 @@ export const pt = {
       sectionLabelsHint: "Verso, Coro, Ponte…",
       includeSongs: "Incluir cânticos completos",
       includeSongsHint: "Imprime cada cântico a seguir ao índice ou ao plano.",
+      packSongs: "Empilhar cânticos na página",
+      packSongsHint:
+        "Cabe quantos cânticos a página aguentar, em vez de um por página.",
       churchHeader: "Identidade da igreja",
       churchHeaderHint: "Nome da organização no cabeçalho.",
       churchLogo: "Logótipo",
@@ -2188,7 +2191,8 @@ export const pt = {
       pageNumbers: "Números de página",
       pageNumbersHint: "No canto inferior de cada folha.",
       accentColor: "Cor da marca",
-      accentColorHint: "Azul Hosana nos cabeçalhos e cifras. Desative para preto e branco.",
+      accentColorHint:
+        "Azul Hosana nos cabeçalhos e cifras. Desative para preto e branco.",
       footer: "Nota de rodapé",
       footerPlaceholder: "Ex.: Licença CCLI #12345",
     },

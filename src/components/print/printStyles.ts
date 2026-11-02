@@ -31,7 +31,6 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
   --hp-soft: #eef1f4;
   --hp-tint: #e0f2fe;
   --hp-chord: #0369a1;
-  --hp-footer-space: 2.4em;
   --hp-body-font: var(--hp-sans);
   --hp-display-font: var(--hp-sans);
   --hp-chord-font: var(--hp-sans);
@@ -70,20 +69,22 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
   --hp-section-gap: 1.15em; --hp-block-gap: 1.3em; --hp-cell-y: 0.5em;
 }
 /* ── Sheets & page flow ───────────────────────────────────────────
- * With page-breaks on, each sheet is at least one page tall so the
- * footer can sit on the page bottom (margin-top: auto) when content
- * is short. The body flexes into the leftover space; two-column songs
- * fill that box so column 1 never runs into the footer before wrapping. */
-.hp-sheet {
-  display: flex; flex-direction: column; box-sizing: border-box;
-}
-.hp-sheet-body {
-  flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
-}
-.hp-breaks > .hp-sheet {
+ * One-song-per-page sheets are at least one page tall so the footer can
+ * sit on the page bottom (margin-top: auto). The body must NOT flex-grow —
+ * growing it made 2-column songs fill the page and orphaned the footer
+ * mid-page. Packed songbooks skip the min-height so songs share pages. */
+.hp-sheet { display: flow-root; box-sizing: border-box; }
+.hp-sheet-body { display: block; flex: 0 0 auto; }
+.hp-breaks > .hp-sheet:not(.hp-sheet--packed) {
+  display: flex; flex-direction: column;
   min-height: calc(var(--hp-paper-h) - 2 * var(--hp-margin));
 }
-.hp-breaks > .hp-sheet:not(:last-child) { break-after: page; }
+.hp-breaks > .hp-sheet:not(.hp-sheet--packed) > .hp-footer { margin-top: auto; }
+.hp-breaks > .hp-sheet:not(:last-child):not(.hp-sheet--packed) { break-after: page; }
+.hp-breaks > .hp-song-pack { break-before: page; }
+.hp-breaks > .hp-song-pack > .hp-sheet + .hp-sheet {
+  margin-top: 1.1em; padding-top: 0.85em; border-top: 1px solid var(--hp-rule);
+}
 .hp-doc:not(.hp-breaks) > .hp-sheet + .hp-sheet {
   margin-top: 1.4em; padding-top: 1.1em; border-top: 1px dashed var(--hp-rule);
 }
@@ -127,13 +128,7 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 /* ── Song body ──────────────────────────────────────────────────── */
 .hp-song { font-size: 1em; }
 .hp-cols-2 {
-  column-count: 2; column-gap: 2em;
-  /* Grow into the leftover height in .hp-sheet-body (below header/meta,
-   * above the footer). That gives columns a definite box so col 1
-   * stops before the footer and then wraps to col 2. Long songs still
-   * grow the sheet via the default min-height:auto content minimum. */
-  flex: 1 1 auto;
-  column-fill: auto;
+  column-count: 2; column-gap: 2em; column-fill: balance;
 }
 .hp-section { break-inside: avoid; }
 .hp-section + .hp-section { margin-top: var(--hp-section-gap); }
@@ -235,12 +230,29 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 .hp-toc-dots { flex: 1; border-bottom: 1px dotted var(--hp-faint); transform: translateY(-0.25em); min-width: 1em; }
 .hp-toc-type { font-size: 0.82em; color: var(--hp-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
+/* ── Compact multi-column song index ────────────────────────────── */
+.hp-index {
+  column-count: 2; column-gap: 1.6em; column-fill: balance;
+  font-size: 0.86em;
+}
+.hp-index--dense { column-count: 3; column-gap: 1.2em; font-size: 0.8em; }
+.hp-index-row {
+  display: flex; align-items: baseline; gap: 0.45em;
+  padding: 0.1em 0; break-inside: avoid;
+  border-bottom: 1px dotted color-mix(in srgb, var(--hp-faint) 55%, transparent);
+}
+.hp-index-num {
+  flex: 0 0 2.1em; text-align: right; font-variant-numeric: tabular-nums;
+  font-weight: 700; color: var(--hp-muted);
+}
+.hp-index-title { flex: 1; min-width: 0; color: var(--hp-ink); font-weight: 500; }
+
 /* ── Footer ─────────────────────────────────────────────────────── */
 .hp-footer {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25em 1em;
-  margin-top: auto; padding-top: 0.4em; border-top: 1px solid var(--hp-rule);
-  font-size: 0.68em; color: var(--hp-muted); break-inside: avoid; flex-shrink: 0;
-  min-height: var(--hp-footer-space); box-sizing: border-box;
+  margin-top: var(--hp-block-gap); padding-top: 0.4em; border-top: 1px solid var(--hp-rule);
+  font-size: 0.68em; color: var(--hp-muted); flex-shrink: 0;
+  break-inside: avoid; break-before: avoid;
 }
 .hp-footer-left { display: flex; flex-wrap: wrap; gap: 0 0.9em; }
 
@@ -265,6 +277,9 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 .hp-theme-classic .hp-tag { background: none; padding: 0; font-style: italic; color: var(--hp-text); }
 .hp-theme-classic .hp-footer { border-top: 3px double var(--hp-rule); font-style: italic; justify-content: center; text-align: center; }
 .hp-theme-classic .hp-cols-2 { column-rule: 1px solid var(--hp-rule); }
+.hp-theme-classic .hp-index-row { border-bottom-style: dotted; }
+.hp-theme-classic .hp-index-num { font-style: normal; font-weight: 600; color: var(--hp-text); }
+.hp-theme-classic .hp-index-title { font-weight: 400; }
 
 /* Contemporary / Stage — big, bold, high contrast for music stands. */
 .hp-theme-contemporary { --hp-chord: #000; --hp-ink: #000; --hp-text: #0a0a0a; --hp-chord-font: var(--hp-mono); }
@@ -410,20 +425,33 @@ export const PRINT_DOCUMENT_CSS = /* css */ `
 /** Screen-only chrome: paper sheets, shadows and page guides for the preview. */
 export const PRINT_SCREEN_CSS = /* css */ `
 .hp-screen .hp-doc { background: transparent; }
-.hp-screen .hp-doc.hp-breaks > .hp-sheet,
+.hp-screen .hp-doc.hp-breaks > .hp-sheet:not(.hp-sheet--packed),
 .hp-screen .hp-doc:not(.hp-breaks) {
   background: #fff; width: var(--hp-paper-w); min-height: var(--hp-paper-h);
   padding: var(--hp-margin); margin: 0 auto;
   box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.10);
   border-radius: 2px;
 }
-/* Preview sheets already pad to simulate @page margins, so drop the
- * print-only content-box min-height (padding is inside border-box). */
-.hp-screen .hp-doc.hp-breaks > .hp-sheet {
+/* Preview padding is inside the border-box, so pin against the full paper. */
+.hp-screen .hp-doc.hp-breaks > .hp-sheet:not(.hp-sheet--packed) {
   min-height: var(--hp-paper-h);
 }
-.hp-screen .hp-doc.hp-breaks > .hp-sheet + .hp-sheet { margin-top: 24px; }
+.hp-screen .hp-doc.hp-breaks > .hp-sheet:not(.hp-sheet--packed) + .hp-sheet:not(.hp-sheet--packed),
+.hp-screen .hp-doc.hp-breaks > .hp-sheet + .hp-song-pack,
+.hp-screen .hp-doc.hp-breaks > .hp-song-pack {
+  margin-top: 24px;
+}
+.hp-screen .hp-song-pack {
+  background: #fff; width: var(--hp-paper-w); min-height: var(--hp-paper-h);
+  padding: var(--hp-margin); margin: 0 auto;
+  box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.10);
+  border-radius: 2px;
+}
 .hp-screen .hp-doc.hp-breaks > .hp-sheet:not(:last-child) { break-after: auto; }
+.hp-screen .hp-breaks > .hp-sheet:not(.hp-sheet--packed) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--hp-paper-h);
+}
 .hp-thumb .hp-doc { pointer-events: none; }
 `;
 

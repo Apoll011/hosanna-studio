@@ -31,6 +31,7 @@ export const DEFAULT_PRINT_OPTIONS: PrintOptions = {
   useAccentColor: true,
   includeSongs: true,
   pageBreakBetweenItems: true,
+  packSongsOnPage: false,
   customFooter: "",
 };
 
@@ -62,6 +63,7 @@ const BOOLEAN_KEYS = [
   "useAccentColor",
   "includeSongs",
   "pageBreakBetweenItems",
+  "packSongsOnPage",
 ] as const satisfies ReadonlyArray<keyof PrintOptions>;
 
 /**

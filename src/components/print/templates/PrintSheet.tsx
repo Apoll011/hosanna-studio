@@ -11,7 +11,7 @@ interface PrintSheetProps {
   className?: string;
 }
 
-/** One printed page unit: body flexes, footer is pinned to the page bottom. */
+/** Sheet unit: with page-breaks on, short sheets pin the footer to the page bottom. */
 export const PrintSheet: React.FC<PrintSheetProps> = ({
   children,
   footer,

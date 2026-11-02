@@ -203,14 +203,29 @@ export const ServicePrintView: React.FC<ServicePrintViewProps> = ({
         )}
       </PrintSheet>
 
-      {songsToPrint.map((song) => (
-        <SongPrintView
-          key={song.id}
-          song={song}
-          options={options}
-          brand={brand}
-        />
-      ))}
+      {songsToPrint.length > 0 &&
+        (options.packSongsOnPage ? (
+          <div className="hp-song-pack">
+            {songsToPrint.map((song) => (
+              <SongPrintView
+                key={song.id}
+                song={song}
+                options={options}
+                brand={brand}
+                packed
+              />
+            ))}
+          </div>
+        ) : (
+          songsToPrint.map((song) => (
+            <SongPrintView
+              key={song.id}
+              song={song}
+              options={options}
+              brand={brand}
+            />
+          ))
+        ))}
     </>
   );
 };

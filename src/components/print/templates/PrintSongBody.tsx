@@ -87,103 +87,100 @@ const PrintLine: React.FC<{ line: LineAST; showChords: boolean }> = ({
   }
 };
 
-export const PrintSongBody: React.FC<PrintSongBodyProps> = ({
-  blocks,
-  showChords,
-  showLabels,
-  twoColumns,
-}) => {
-  const { t } = useI18n();
+export const PrintSongBody = React.memo<PrintSongBodyProps>(
+  function PrintSongBody({ blocks, showChords, showLabels, twoColumns }) {
+    const { t } = useI18n();
 
-  const defaultLabel = (kind: SongBlock["kind"]) => {
-    switch (kind) {
-      case "chorus":
-      case "ref":
-        return t("print.song.chorus");
-      case "bridge":
-        return t("print.song.bridge");
-      case "grid":
-        return t("print.song.instrumental");
-      case "tab":
-        return t("print.song.tab");
-      default:
-        return undefined;
-    }
-  };
+    const defaultLabel = (kind: SongBlock["kind"]) => {
+      switch (kind) {
+        case "chorus":
+        case "ref":
+          return t("print.song.chorus");
+        case "bridge":
+          return t("print.song.bridge");
+        case "grid":
+          return t("print.song.instrumental");
+        case "tab":
+          return t("print.song.tab");
+        default:
+          return undefined;
+      }
+    };
 
-  return (
-    <div className={twoColumns ? "hp-song hp-cols-2" : "hp-song"}>
-      {blocks.map((block, idx) => {
-        if (block.kind === "divider") {
-          return <div key={idx} className="hp-divider" />;
-        }
+    return (
+      <div className={twoColumns ? "hp-song hp-cols-2" : "hp-song"}>
+        {blocks.map((block, idx) => {
+          if (block.kind === "divider") {
+            return <div key={idx} className="hp-divider" />;
+          }
 
-        const className = [
-          "hp-section",
-          `hp-section--${block.kind}`,
-          block.numbered ? "hp-section--numbered" : "",
-        ]
-          .filter(Boolean)
-          .join(" ");
-        const label = block.label || defaultLabel(block.kind);
-        const repeat = formatRepeat(block.repeat);
+          const className = [
+            "hp-section",
+            `hp-section--${block.kind}`,
+            block.numbered ? "hp-section--numbered" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const label = block.label || defaultLabel(block.kind);
+          const repeat = formatRepeat(block.repeat);
 
-        if (block.kind === "ref") {
-          return (
-            <div key={idx} className={className}>
-              <div className="hp-section-label">
-                <span>{label}</span>
-                {repeat && <span className="hp-repeat">{repeat}</span>}
-                <span className="hp-ref-note">{t("print.song.repeat")}</span>
+          if (block.kind === "ref") {
+            return (
+              <div key={idx} className={className}>
+                <div className="hp-section-label">
+                  <span>{label}</span>
+                  {repeat && <span className="hp-repeat">{repeat}</span>}
+                  <span className="hp-ref-note">{t("print.song.repeat")}</span>
+                </div>
+                <div className="hp-section-body" />
               </div>
-              <div className="hp-section-body" />
-            </div>
-          );
-        }
+            );
+          }
 
-        if (block.kind === "comment") {
-          return (
-            <div key={idx} className={className}>
-              {block.lines.map((line, i) => (
-                <div key={i}>{line.text}</div>
-              ))}
-            </div>
-          );
-        }
+          if (block.kind === "comment") {
+            return (
+              <div key={idx} className={className}>
+                {block.lines.map((line, i) => (
+                  <div key={i}>{line.text}</div>
+                ))}
+              </div>
+            );
+          }
 
-        if (block.kind === "tab") {
+          if (block.kind === "tab") {
+            return (
+              <div key={idx} className={className}>
+                {showLabels && label && (
+                  <div className="hp-section-label">
+                    <span>{label}</span>
+                  </div>
+                )}
+                <div className="hp-section-body">
+                  <pre className="hp-tab">
+                    {block.lines.map((l) => l.text ?? "").join("\n")}
+                  </pre>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div key={idx} className={className}>
               {showLabels && label && (
                 <div className="hp-section-label">
                   <span>{label}</span>
+                  {repeat && <span className="hp-repeat">{repeat}</span>}
                 </div>
               )}
               <div className="hp-section-body">
-                <pre className="hp-tab">
-                  {block.lines.map((l) => l.text ?? "").join("\n")}
-                </pre>
+                {block.lines.map((line, i) => (
+                  <PrintLine key={i} line={line} showChords={showChords} />
+                ))}
               </div>
             </div>
           );
-        }
-
-        return (
-          <div key={idx} className={className}>
-            {showLabels && label && (
-              <div className="hp-section-label">
-                <span>{label}</span>
-                {repeat && <span className="hp-repeat">{repeat}</span>}
-              </div>
-            )}
-            <div className="hp-section-body">
-              {block.lines.map((line, i) => (
-                <PrintLine key={i} line={line} showChords={showChords} />
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+        })}
+      </div>
+    );
+  },
+);
