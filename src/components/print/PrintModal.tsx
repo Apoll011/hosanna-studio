@@ -132,7 +132,10 @@ const PrintModalContent: React.FC<{
           i.type === "service") &&
           (i.songs?.length ?? 0) > 0),
     );
-    return { hasSongs, hasSongContainers: hasSongContainers && hasSongs };
+    return {
+      hasSongs: hasSongs || hasSongContainers,
+      hasSongContainers,
+    };
   }, [payload.items]);
 
   /* ── Zoom ── */

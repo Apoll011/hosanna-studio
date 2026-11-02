@@ -25,7 +25,7 @@ interface PrintingSettingsCardProps {
   onTestPrint: () => void;
 }
 
-const SETTINGS_CONTEXT = { hasSongs: true, hasSongContainers: false };
+const SETTINGS_CONTEXT = { hasSongs: true, hasSongContainers: true };
 
 export const PrintingSettingsCard: React.FC<PrintingSettingsCardProps> = ({
   isEditing,

@@ -272,22 +272,13 @@ export const PrintOptionsPanel: React.FC<PrintOptionsPanelProps> = ({
             </>
           )}
           {context.hasSongContainers && (
-            <>
-              <ToggleRow
-                label={t("print.options.includeSongs")}
-                hint={t("print.options.includeSongsHint")}
-                checked={options.includeSongs}
-                onChange={(v) => onChange({ includeSongs: v })}
-                disabled={disabled}
-              />
-              <ToggleRow
-                label={t("print.options.packSongs")}
-                hint={t("print.options.packSongsHint")}
-                checked={options.packSongsOnPage}
-                onChange={(v) => onChange({ packSongsOnPage: v })}
-                disabled={disabled || !options.includeSongs}
-              />
-            </>
+            <ToggleRow
+              label={t("print.options.includeSongs")}
+              hint={t("print.options.includeSongsHint")}
+              checked={options.includeSongs}
+              onChange={(v) => onChange({ includeSongs: v })}
+              disabled={disabled}
+            />
           )}
           <ToggleRow
             label={t("print.options.churchHeader")}
@@ -343,6 +334,18 @@ export const PrintOptionsPanel: React.FC<PrintOptionsPanelProps> = ({
               onChange={(v) => onChange({ pageBreakBetweenItems: v })}
               disabled={disabled}
             />
+            {context.hasSongs && (
+              <ToggleRow
+                label={t("print.options.packSongs")}
+                hint={t("print.options.packSongsHint")}
+                checked={options.packSongsOnPage}
+                onChange={(v) => onChange({ packSongsOnPage: v })}
+                disabled={
+                  disabled ||
+                  (context.hasSongContainers && !options.includeSongs)
+                }
+              />
+            )}
           </div>
         </div>
       </Group>
