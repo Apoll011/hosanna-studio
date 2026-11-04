@@ -91,10 +91,9 @@ export async function fetchPlanPricing(
       : undefined) ??
     "/api";
   try {
-    const res = await fetch(
-      `${base.replace(/\/$/, "")}/billing/pricing`,
-      { credentials: "omit" },
-    );
+    const res = await fetch(`${base.replace(/\/$/, "")}/billing/pricing`, {
+      credentials: "omit",
+    });
     if (!res.ok) return PLAN_PRICING;
     const data = await res.json();
     cachedPricing = {
