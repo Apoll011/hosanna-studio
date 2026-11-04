@@ -54,7 +54,8 @@ import {
 } from "./dbNames";
 import { subscribeLocalChange, subscribePushBaseline } from "./engine/bus";
 import { HosanaCollection } from "./engine/collection";
-import { idbGet, idbPut, openIDB } from "./engine/idb";
+import { idbClear, idbGet, idbPut, openIDB } from "./engine/idb";
+import { orgScopeAllowsSync } from "./orgScope";
 
 // ─── Public types (unchanged interface) ──────────────────────────────────────
 
@@ -69,7 +70,7 @@ export interface StatusSubject {
 }
 
 export interface ReplicationManager {
-  start: () => void;
+  start: (opts?: { forceFullPull?: boolean }) => void;
   stop: () => void;
   replicateNow: () => Promise<void>;
   status$: StatusSubject;
@@ -761,7 +762,56 @@ export function resetReplication(): void {
   _cpDbName = null;
 }
 
-export function setupReplication(db: HosanaDatabase): ReplicationManager {
+/**
+ * Wipe durable replication state (checkpoints, server-state cache, population
+ * epoch). Call this when local domain data is cleared due to an org switch so
+ * the next sync cannot push/pull against the previous workspace's watermarks.
+ */
+export async function clearReplicationState(): Promise<void> {
+  serverStateCache.clear();
+  serverCacheHydrated.clear();
+
+  try {
+    localStorage.removeItem(getEpochLsKey());
+  } catch {
+    // non-fatal
+  }
+
+  try {
+    const prefix = `${getCheckpointLsPrefix()}_`;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(prefix)) keysToRemove.push(key);
+    }
+    for (const key of keysToRemove) localStorage.removeItem(key);
+  } catch {
+    // non-fatal
+  }
+
+  try {
+    const cpDb = await getCheckpointDb();
+    await Promise.all([
+      idbClear(cpDb, CP_STORE),
+      idbClear(cpDb, CACHE_STORE),
+    ]);
+  } catch {
+    _cpDb = null;
+    _cpDbName = null;
+    // Fall back to deleting the whole checkpoint DB if stores are unavailable.
+    try {
+      const { deleteIndexedDbByName } = await import("./dbNames");
+      await deleteIndexedDbByName(getCheckpointDbName());
+    } catch {
+      // non-fatal
+    }
+  }
+}
+
+export function setupReplication(
+  db: HosanaDatabase,
+  orgSlug: string,
+): ReplicationManager {
   if (replicationManagerInstance) return replicationManagerInstance;
 
   const status$ = makeStatusSubject();
@@ -770,6 +820,7 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
   let interval: ReturnType<typeof setInterval> | null = null;
   let onlineListener: (() => void) | null = null;
   let offlineListener: (() => void) | null = null;
+  const activeOrgSlug = orgSlug.trim();
 
   // Coalescing sync lock — callers of replicateNow always await until the
   // in-flight sync AND any follow-ups queued while it ran have finished.
@@ -835,6 +886,16 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
   const runSyncOnce = async (forceFullPull: boolean) => {
     if (!navigator.onLine) {
       updateStatus("offline");
+      return;
+    }
+
+    // Never push/pull when local data is stamped for a different org.
+    const scopeOk = await orgScopeAllowsSync(db, activeOrgSlug);
+    if (!scopeOk) {
+      console.warn(
+        `[hosana-repl] refusing sync — local org slug does not match "${activeOrgSlug}"`,
+      );
+      updateStatus("error");
       return;
     }
 
@@ -944,11 +1005,11 @@ export function setupReplication(db: HosanaDatabase): ReplicationManager {
     return currentRun;
   };
 
-  const start = () => {
+  const start = (opts?: { forceFullPull?: boolean }) => {
     if (running) return;
     running = true;
 
-    void doSync();
+    void doSync(Boolean(opts?.forceFullPull));
 
     interval = setInterval(() => {
       if (running) void doSync();

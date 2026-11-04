@@ -13,6 +13,7 @@ import { parseChordPro } from "@hosanna/chordpro";
 import { getMainDbName } from "./dbNames";
 import { HosanaCollection } from "./engine/collection";
 import { _registerResetDatabase, idbGetAll, openIDB } from "./engine/idb";
+import { META_STORE } from "./orgScope";
 import type {
   AgendaEventDocType,
   CollectionDocType,
@@ -23,12 +24,12 @@ import type {
 
 // ─── DB version ──────────────────────────────────────────────────────────────
 // Bump this number whenever store structure changes (new indexes etc.).
-// v3: Added `repl_checkpoints` object store for durable checkpoint persistence.
-// Old stores are left intact — no migrations needed per the spec.
+// v2: collections store.
+// v3: `meta` store — durable org-slug stamp for local data isolation.
 // Note: Checkpoints are stored in a SEPARATE dedicated IDB ("hosana_checkpoints")
-// so they survive even if the main data IDB is wiped. No version bump needed.
+// so they survive even if the main data IDB is wiped.
 // Demo/onboarding uses `hosana_idb_demo` via getMainDbName().
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // ─── Store names ─────────────────────────────────────────────────────────────
 const STORE_SONGS = "songs";
@@ -59,7 +60,10 @@ export interface HosanaDatabaseCollections {
   agendaEvents: HosanaCollection<AsAgendaDoc>;
 }
 
-export type HosanaDatabase = HosanaDatabaseCollections;
+export type HosanaDatabase = HosanaDatabaseCollections & {
+  /** @internal underlying IndexedDB handle (meta store, health checks). */
+  readonly _idb: IDBDatabase;
+};
 
 // ─── Automatic Count Calculation Functions ───────────────────────────────────
 
@@ -280,6 +284,12 @@ async function _open(): Promise<HosanaDatabase> {
         collectionsStore.createIndex("isDeleted", "isDeleted");
       }
     }
+
+    if (oldVersion < 3) {
+      if (!db.objectStoreNames.contains(META_STORE)) {
+        db.createObjectStore(META_STORE, { keyPath: "key" });
+      }
+    }
   });
 
   // Hydrate all collections in parallel — single read pass per store
@@ -300,6 +310,7 @@ async function _open(): Promise<HosanaDatabase> {
   );
 
   const db: HosanaDatabase = {
+    _idb: idb,
     songs: new HosanaCollection<AsSongDoc>(idb, STORE_SONGS, rawSongs, {
       localFields: ["score"],
       computedFields: {
