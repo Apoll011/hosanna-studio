@@ -143,7 +143,7 @@ const OrganizationGuard = () => {
   const location = useLocation();
   const { organization, isLoading } = useAuth();
 
-  // Demo mode — the org slug is always "demo"; allow through without redirect.
+  // Demo mode — session flag + reserved slug `hosanna-demo`; skip org redirect.
   if (isDemoMode()) return <Outlet />;
 
   if (isLoading) return <PageLoader />;

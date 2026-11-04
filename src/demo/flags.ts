@@ -5,7 +5,12 @@
 
 export const DEMO_SESSION_KEY = "isDemo";
 export const DEMO_SEEDED_KEY = "demo_seeded";
-export const DEMO_ORG_SLUG = "demo";
+/**
+ * Reserved org slug for the isolated demo workspace.
+ * Must not collide with a real Better Auth organization slug — see server
+ * reserved-slug check. The public entry URL remains `/demo`.
+ */
+export const DEMO_ORG_SLUG = "hosanna-demo";
 
 /** Returns true when the current tab is running in demo mode. */
 export function isDemoMode(): boolean {
