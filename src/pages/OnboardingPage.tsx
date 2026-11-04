@@ -28,7 +28,11 @@ import { useAppNavigate } from "../hooks/useAppNavigate";
 import { useSubscription } from "../hooks/useSubscription";
 import { authClient } from "../lib/authClient";
 import { posthog } from "../lib/posthog";
-import { PLAN_PRICING } from "../lib/subscriptions";
+import {
+  fetchPlanPricing,
+  PLAN_PRICING,
+  type PlanPricing,
+} from "../lib/subscriptions";
 import { GoogleTextField } from "./Login/components/GoogleTextField";
 import { LanguageSelector } from "./Login/components/LanguageSelector";
 import { WorkspaceSwitcher } from "./Login/components/WorkspaceSwitcher";
@@ -48,6 +52,10 @@ export const OnboardingPage: React.FC = () => {
   const { organization, hasAcceptedTrial, logout, refetch } = useAuth();
   const { darkMode, toggleDarkMode } = useTheme();
   const { navigate } = useAppNavigate();
+  const [planPricing, setPlanPricing] = useState<PlanPricing>(PLAN_PRICING);
+  useEffect(() => {
+    void fetchPlanPricing().then(setPlanPricing);
+  }, []);
   const { t, language } = useI18n();
   const { hasStarted, pendingAction, refresh, startCheckout } =
     useSubscription();
@@ -393,13 +401,13 @@ export const OnboardingPage: React.FC = () => {
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-2xl font-semibold text-m3-text">
                     {annual
-                      ? PLAN_PRICING.annual.amount
-                      : PLAN_PRICING.monthly.amount}
+                      ? planPricing.annual.amount
+                      : planPricing.monthly.amount}
                   </span>
                   <span className="text-xs sm:text-sm text-m3-secondary">
                     {annual
-                      ? PLAN_PRICING.annual.period
-                      : PLAN_PRICING.monthly.period}
+                      ? planPricing.annual.period
+                      : planPricing.monthly.period}
                   </span>
                 </div>
                 {annual && (

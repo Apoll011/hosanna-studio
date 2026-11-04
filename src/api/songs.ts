@@ -132,15 +132,9 @@ export const songsApi = {
   },
 
   downloadSong: async (id: string, filename: string): Promise<void> => {
-    const res = await fetch(
-      `${getApiClient().getBaseURL()}/songs/${id}/download`,
-      {
-        headers: {
-          Authorization: `Bearer ${getApiClient().getToken()}`,
-        },
-      },
-    );
-    if (!res.ok) throw new Error("Failed to download song");
+    const res = await getApiClient().request_raw(`/songs/${id}/download`, {
+      method: "GET",
+    });
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
