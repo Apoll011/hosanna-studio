@@ -6,6 +6,7 @@ import {
   Song,
   SongsResponse,
 } from "../types";
+import { unwrapApiResult } from "./client";
 import { getApiClient } from "./http";
 
 export function parseSong(apiSong: Song, folders: Folder[] = []): ParsedSong {
@@ -36,27 +37,44 @@ export function parseSong(apiSong: Song, folders: Folder[] = []): ParsedSong {
 
 export const songsApi = {
   getSongs: async (params: GetSongsParams = {}): Promise<SongsResponse> => {
-    const queryParts: string[] = [];
-    if (params.search)
-      queryParts.push(`search=${encodeURIComponent(params.search)}`);
-    if (params.folder)
-      queryParts.push(`folder=${encodeURIComponent(params.folder)}`);
-    if (params.sortBy)
-      queryParts.push(`sortBy=${encodeURIComponent(params.sortBy)}`);
-    if (params.sortOrder)
-      queryParts.push(`sortOrder=${encodeURIComponent(params.sortOrder)}`);
-    if (params.page) queryParts.push(`page=${params.page}`);
-    if (params.limit) queryParts.push(`limit=${params.limit}`);
-    if (params.key) queryParts.push(`key=${encodeURIComponent(params.key)}`);
-    if (params.tag) queryParts.push(`tag=${encodeURIComponent(params.tag)}`);
-    if (params.searchFields) {
-      queryParts.push(
-        `searchFields=${encodeURIComponent(JSON.stringify(params.searchFields))}`,
-      );
-    }
+    const client = getApiClient();
+    // key / searchFields are accepted by the Studio UI but not yet in OpenAPI.
+    const query = {
+      search: params.search,
+      folder: params.folder,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+      page: params.page,
+      limit: params.limit,
+      tag: params.tag,
+      ...(params.key ? { key: params.key } : {}),
+      ...(params.searchFields
+        ? { searchFields: JSON.stringify(params.searchFields) }
+        : {}),
+    };
 
-    const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
-    return getApiClient().request<SongsResponse>(`/songs${queryString}`);
+    const data = await unwrapApiResult(
+      await client.openapi.GET("/songs", {
+        params: {
+          query: query as {
+            page?: number;
+            limit?: number;
+            search?: string;
+            folder?: string;
+            tag?: string;
+            sortBy?: "title" | "artist" | "createdAt" | "updatedAt";
+            sortOrder?: "asc" | "desc";
+          },
+        },
+      }),
+    );
+
+    return {
+      songs: (data?.songs ?? []) as Song[],
+      total: data?.total ?? 0,
+      page: data?.page ?? 1,
+      totalPages: data?.totalPages ?? 0,
+    };
   },
 
   getParsedSongs: async (
@@ -76,7 +94,12 @@ export const songsApi = {
   },
 
   getSongById: async (id: string): Promise<Song> => {
-    return getApiClient().request<Song>(`/songs/${id}`);
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.GET("/songs/{id}", {
+        params: { path: { id } },
+      }),
+    );
+    return data as unknown as Song;
   },
 
   getParsedSongById: async (
@@ -88,35 +111,67 @@ export const songsApi = {
   },
 
   createSong: async (data: Partial<Song>): Promise<Song> => {
-    return getApiClient().request<Song>("/songs", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const created = await unwrapApiResult(
+      await getApiClient().openapi.POST("/songs", {
+        body: data as unknown as {
+          title: string;
+          artist?: string;
+          content?: string;
+          folderId?: string | null;
+          song_number?: number | null;
+          path?: string;
+          tags?: string[];
+        },
+      }),
+    );
+    return created as unknown as Song;
   },
 
   createSongsBatch: async (
     songsList: Array<Partial<Song>>,
   ): Promise<{ created: Song[]; count: number }> => {
-    return getApiClient().request<{ created: Song[]; count: number }>(
-      "/songs/batch",
-      {
-        method: "POST",
-        body: JSON.stringify({ songs: songsList }),
-      },
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.POST("/songs/batch", {
+        body: { songs: songsList as unknown as { [key: string]: unknown }[] },
+      }),
     );
+
+    // Spec documents Song[]; server historically returned { created, count }.
+    if (Array.isArray(data)) {
+      return { created: data as unknown as Song[], count: data.length };
+    }
+    const shaped = data as unknown as { created?: Song[]; count?: number };
+    return {
+      created: (shaped.created ?? []) as Song[],
+      count: shaped.count ?? shaped.created?.length ?? 0,
+    };
   },
 
   updateSong: async (id: string, data: Partial<Song>): Promise<Song> => {
-    return getApiClient().request<Song>(`/songs/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+    const updated = await unwrapApiResult(
+      await getApiClient().openapi.PUT("/songs/{id}", {
+        params: { path: { id } },
+        body: data as unknown as {
+          updatedAt: string;
+          title?: string;
+          artist?: string;
+          content?: string;
+          folderId?: string | null;
+          song_number?: number | null;
+          path?: string;
+          tags?: string[];
+        },
+      }),
+    );
+    return updated as unknown as Song;
   },
 
   deleteSong: async (id: string): Promise<void> => {
-    return getApiClient().request<void>(`/songs/${id}`, {
-      method: "DELETE",
-    });
+    await unwrapApiResult(
+      await getApiClient().openapi.DELETE("/songs/{id}", {
+        params: { path: { id } },
+      }),
+    );
   },
 
   moveSong: async (
@@ -125,17 +180,27 @@ export const songsApi = {
     updatedAt: string,
     newPath?: string,
   ): Promise<Song> => {
-    return getApiClient().request<Song>(`/songs/${id}/move`, {
-      method: "PUT",
-      body: JSON.stringify({ folderId, newPath, updatedAt }),
-    });
+    const moved = await unwrapApiResult(
+      await getApiClient().openapi.PUT("/songs/{id}/move", {
+        params: { path: { id } },
+        body: { folderId, newPath, updatedAt },
+      }),
+    );
+    return moved as unknown as Song;
   },
 
   downloadSong: async (id: string, filename: string): Promise<void> => {
-    const res = await getApiClient().request_raw(`/songs/${id}/download`, {
-      method: "GET",
-    });
-    const blob = await res.blob();
+    const { data, error, response } = await getApiClient().openapi.GET(
+      "/songs/{id}/download",
+      {
+        params: { path: { id } },
+        parseAs: "blob",
+      },
+    );
+    if (!response.ok) {
+      await unwrapApiResult({ data, error, response });
+    }
+    const blob = (data ?? (await response.blob())) as Blob;
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -151,12 +216,14 @@ export const songsApi = {
     tags: string[];
     mode?: "append" | "replace" | "remove";
   }): Promise<{ success: boolean; count: number }> => {
-    return getApiClient().request<{ success: boolean; count: number }>(
-      "/songs/batch-tags",
-      {
-        method: "PUT",
-        body: JSON.stringify(params),
-      },
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.PUT("/songs/batch-tags", {
+        body: params,
+      }),
     );
+    return {
+      success: data?.success ?? true,
+      count: data?.count ?? 0,
+    };
   },
 };

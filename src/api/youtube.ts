@@ -1,3 +1,4 @@
+import { unwrapApiResult } from "./client";
 import { getApiClient } from "./http";
 
 export type YouTubeDurationResponse = {
@@ -12,9 +13,11 @@ export type YouTubeDurationResponse = {
 
 export const youtubeApi = {
   getDuration: async (urlOrId: string): Promise<YouTubeDurationResponse> => {
-    const params = new URLSearchParams({ url: urlOrId });
-    return getApiClient().request<YouTubeDurationResponse>(
-      `/youtube/duration?${params.toString()}`,
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.GET("/youtube/duration", {
+        params: { query: { url: urlOrId } },
+      }),
     );
+    return data as unknown as YouTubeDurationResponse;
   },
 };

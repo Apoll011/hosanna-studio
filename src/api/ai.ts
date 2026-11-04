@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { unwrapApiResult } from "./client";
 import { getApiClient } from "./http";
 
 export type AiProvider =
@@ -146,62 +147,96 @@ export type AiConfirmAction = {
 };
 
 export const aiApi = {
-  getSettings: (): Promise<AiSettingsPublic> =>
-    getApiClient().request<AiSettingsPublic>("/ai/settings"),
+  getSettings: async (): Promise<AiSettingsPublic> =>
+    (await unwrapApiResult(
+      await getApiClient().openapi.GET("/ai/settings"),
+    )) as AiSettingsPublic,
 
-  updateSettings: (input: UpdateAiSettingsInput): Promise<AiSettingsPublic> =>
-    getApiClient().request<AiSettingsPublic>("/ai/settings", {
-      method: "PUT",
-      body: JSON.stringify(input),
-    }),
+  updateSettings: async (
+    input: UpdateAiSettingsInput,
+  ): Promise<AiSettingsPublic> =>
+    (await unwrapApiResult(
+      await getApiClient().openapi.PUT("/ai/settings", {
+        body: input as { [key: string]: unknown },
+      }),
+    )) as AiSettingsPublic,
 
-  clearKey: (): Promise<AiSettingsPublic> =>
-    getApiClient().request<AiSettingsPublic>("/ai/settings/key", {
-      method: "DELETE",
-    }),
+  clearKey: async (): Promise<AiSettingsPublic> =>
+    (await unwrapApiResult(
+      await getApiClient().openapi.DELETE("/ai/settings/key"),
+    )) as AiSettingsPublic,
 
-  getBilling: (): Promise<AiBillingResponse> =>
-    getApiClient().request<AiBillingResponse>("/ai/billing"),
+  getBilling: async (): Promise<AiBillingResponse> =>
+    (await unwrapApiResult(
+      await getApiClient().openapi.GET("/ai/billing"),
+    )) as AiBillingResponse,
 
-  listMemory: (): Promise<{ items: AiMemoryItem[] }> =>
-    getApiClient().request<{ items: AiMemoryItem[] }>("/ai/memory"),
+  listMemory: async (): Promise<{ items: AiMemoryItem[] }> => {
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.GET("/ai/memory"),
+    );
+    return { items: (data?.items ?? []) as AiMemoryItem[] };
+  },
 
-  addMemory: (content: string): Promise<AiMemoryItem> =>
-    getApiClient().request<AiMemoryItem>("/ai/memory", {
-      method: "POST",
-      body: JSON.stringify({ content }),
-    }),
+  addMemory: async (content: string): Promise<AiMemoryItem> =>
+    (await unwrapApiResult(
+      await getApiClient().openapi.POST("/ai/memory", {
+        body: { content },
+      }),
+    )) as AiMemoryItem,
 
-  removeMemory: (id: string): Promise<void> =>
-    getApiClient().request<void>(`/ai/memory/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    }),
+  removeMemory: async (id: string): Promise<void> => {
+    await unwrapApiResult(
+      await getApiClient().openapi.DELETE("/ai/memory/{id}", {
+        params: { path: { id } },
+      }),
+    );
+  },
 
-  clearMemory: (): Promise<{ cleared: number }> =>
-    getApiClient().request<{ cleared: number }>("/ai/memory", {
-      method: "DELETE",
-    }),
+  clearMemory: async (): Promise<{ cleared: number }> => {
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.DELETE("/ai/memory"),
+    );
+    return { cleared: data?.cleared ?? 0 };
+  },
 
-  confirmAction: (body: AiConfirmAction): Promise<{ confirmed: boolean }> =>
-    getApiClient().request<{ confirmed: boolean }>("/ai/confirm", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
+  confirmAction: async (
+    body: AiConfirmAction,
+  ): Promise<{ confirmed: boolean }> => {
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.POST("/ai/confirm", {
+        body,
+      }),
+    );
+    return {
+      confirmed: Boolean((data as { confirmed?: boolean })?.confirmed),
+    };
+  },
 
-  streamChat: (body: {
+  streamChat: async (body: {
     messages: AiUiMessage[];
     context?: AiChatContext;
     /** UI language so replies match ("pt" | "en" | "es"). */
     locale?: string;
     signal?: AbortSignal;
-  }): Promise<Response> =>
-    getApiClient().request_raw("/ai/chat", {
-      method: "POST",
-      body: JSON.stringify({
-        messages: body.messages,
-        context: body.context,
-        locale: body.locale,
-      }),
-      signal: body.signal,
-    }),
+  }): Promise<Response> => {
+    const { data, error, response } = await getApiClient().openapi.POST(
+      "/ai/chat",
+      {
+        body: {
+          messages: body.messages as { [key: string]: unknown }[],
+          context: body.context as { [key: string]: unknown } | undefined,
+          locale: body.locale as "pt" | "en" | "es" | undefined,
+        },
+        parseAs: "stream",
+        signal: body.signal,
+      },
+    );
+
+    if (!response.ok) {
+      await unwrapApiResult({ data, error, response });
+    }
+
+    return response;
+  },
 };

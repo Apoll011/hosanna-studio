@@ -1,3 +1,6 @@
+import createClient, { type Client, type Middleware } from "openapi-fetch";
+import type { paths } from "./generated/schema";
+
 export class ApiError extends Error {
   public status: number;
   public code?: string;
@@ -17,16 +20,72 @@ export class ApiError extends Error {
   }
 }
 
+export type OpenapiClient = Client<paths>;
+
+function normalizeBaseURL(url: string): string {
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+}
+
+function apiErrorFromBody(errorData: unknown, status: number): ApiError {
+  let errorMessage = `Server error (${status})`;
+  let errorCode: string | undefined;
+  let errorDetails: unknown;
+
+  if (errorData && typeof errorData === "object") {
+    const body = errorData as Record<string, unknown>;
+    if (body.error) {
+      if (typeof body.error === "object" && body.error !== null) {
+        const err = body.error as Record<string, unknown>;
+        errorMessage =
+          typeof err.message === "string" ? err.message : errorMessage;
+        errorCode = typeof err.code === "string" ? err.code : undefined;
+        errorDetails = err.details;
+      } else if (typeof body.error === "string") {
+        errorMessage = body.error;
+      }
+    } else if (typeof body.message === "string") {
+      errorMessage = body.message;
+    }
+  }
+
+  return new ApiError(errorMessage, status, errorCode, errorDetails);
+}
+
+/**
+ * Unwrap an openapi-fetch result, throwing {@link ApiError} on failure.
+ * Preserves 204 → empty object behavior from the previous ApiClient.
+ */
+export async function unwrapApiResult<T>(result: {
+  data?: T;
+  error?: unknown;
+  response: Response;
+}): Promise<T> {
+  const { data, error, response } = result;
+
+  if (!response.ok) {
+    throw apiErrorFromBody(error ?? data, response.status);
+  }
+
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  return data as T;
+}
+
 /**
  * Cookie-session HTTP client for Hosanna API (Better Auth).
- * Credentials are always included; there is no JWT refresh flow.
+ * Typed calls go through openapi-fetch; {@link request}/{@link request_raw}
+ * remain for paths outside the OpenAPI surface (auth consent, legacy sync, etc.).
  */
 export class ApiClient {
   private baseURL: string;
   private onUnauthorizedCallback: (() => void) | null = null;
+  private _openapi: OpenapiClient;
 
   constructor(url: string) {
-    this.baseURL = url;
+    this.baseURL = normalizeBaseURL(url);
+    this._openapi = this.createOpenapiClient();
     // Clear any legacy JWT tokens from older Studio builds.
     if (typeof localStorage !== "undefined") {
       localStorage.removeItem("hosanna_access_token");
@@ -34,8 +93,36 @@ export class ApiClient {
     }
   }
 
+  private createOpenapiClient(): OpenapiClient {
+    const client = createClient<paths>({
+      baseUrl: this.baseURL,
+      credentials: "include",
+    });
+
+    const self = this;
+    const unauthorizedMiddleware: Middleware = {
+      async onResponse({ response, request }) {
+        if (
+          response.status === 401 &&
+          self.onUnauthorizedCallback &&
+          !request.url.includes("/auth/")
+        ) {
+          self.onUnauthorizedCallback();
+        }
+      },
+    };
+    client.use(unauthorizedMiddleware);
+    return client;
+  }
+
+  /** Typed openapi-fetch client (paths from generated schema). */
+  get openapi(): OpenapiClient {
+    return this._openapi;
+  }
+
   public setBaseURL(url: string) {
-    this.baseURL = url.endsWith("/") ? url.slice(0, -1) : url;
+    this.baseURL = normalizeBaseURL(url);
+    this._openapi = this.createOpenapiClient();
   }
 
   public getBaseURL(): string {
@@ -108,31 +195,13 @@ export class ApiClient {
     }
 
     if (!response.ok) {
-      let errorMessage = `Server error (${response.status})`;
-      let errorCode: string | undefined;
-      let errorDetails: unknown;
+      let errorData: unknown;
       try {
-        const errorData = await response.json();
-        if (errorData.error) {
-          if (typeof errorData.error === "object") {
-            errorMessage = errorData.error.message || errorMessage;
-            errorCode = errorData.error.code;
-            errorDetails = errorData.error.details;
-          } else {
-            errorMessage = errorData.error;
-          }
-        } else if (errorData.message) {
-          errorMessage = errorData.message;
-        }
+        errorData = await response.json();
       } catch {
-        // Fallback to generic message
+        errorData = undefined;
       }
-      throw new ApiError(
-        errorMessage,
-        response.status,
-        errorCode,
-        errorDetails,
-      );
+      throw apiErrorFromBody(errorData, response.status);
     }
 
     return response;

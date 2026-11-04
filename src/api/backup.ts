@@ -1,15 +1,14 @@
-import { Folder, Service, Song } from "../types";
+import type { components } from "./generated/schema";
+import { unwrapApiResult } from "./client";
 import { getApiClient } from "./http";
+
+type BackupDocument = components["schemas"]["BackupDocument"];
 
 export const backupApi = {
   downloadBackup: async (): Promise<void> => {
-    const backup = await getApiClient().request<{
-      version: string;
-      exportedAt: string;
-      folders: Folder[];
-      songs: Song[];
-      services: Service[];
-    }>("/backup");
+    const backup = await unwrapApiResult(
+      await getApiClient().openapi.GET("/backup"),
+    );
 
     const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: "application/json",
@@ -28,12 +27,15 @@ export const backupApi = {
   restoreBackup: async (
     backupData: unknown,
   ): Promise<{ message: string; counts: Record<string, number> }> => {
-    return getApiClient().request<{
-      message: string;
-      counts: Record<string, number>;
-    }>("/backup/restore", {
-      method: "POST",
-      body: JSON.stringify(backupData),
-    });
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.POST("/backup/restore", {
+        body: backupData as BackupDocument,
+      }),
+    );
+
+    return {
+      message: data?.message ?? "",
+      counts: (data?.counts ?? {}) as Record<string, number>,
+    };
   },
 };
