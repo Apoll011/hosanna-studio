@@ -1,45 +1,80 @@
 import { Service, ServiceElement } from "../types";
+import { unwrapApiResult } from "./client";
 import { getApiClient } from "./http";
 
 export const servicesApi = {
   getServices: async (archived = false): Promise<Service[]> => {
-    return getApiClient().request<Service[]>(`/services?archived=${archived}`);
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.GET("/services", {
+        params: { query: { archived } },
+      }),
+    );
+    return (data ?? []) as unknown as Service[];
   },
 
   getServiceById: async (id: string): Promise<Service> => {
-    return getApiClient().request<Service>(`/services/${id}`);
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.GET("/services/{id}", {
+        params: { path: { id } },
+      }),
+    );
+    return data as unknown as Service;
   },
 
   createService: async (data: Partial<Service>): Promise<Service> => {
-    return getApiClient().request<Service>("/services", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const created = await unwrapApiResult(
+      await getApiClient().openapi.POST("/services", {
+        body: data as unknown as {
+          name: string;
+          date: string;
+          notes?: string | null;
+          elements?: { [key: string]: unknown }[];
+        },
+      }),
+    );
+    return created as unknown as Service;
   },
 
   updateService: async (
     id: string,
     data: Partial<Service>,
   ): Promise<Service> => {
-    return getApiClient().request<Service>(`/services/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+    const updated = await unwrapApiResult(
+      await getApiClient().openapi.PUT("/services/{id}", {
+        params: { path: { id } },
+        body: data as unknown as {
+          updatedAt: string;
+          name?: string;
+          date?: string;
+          archived?: boolean;
+          notes?: string | null;
+        },
+      }),
+    );
+    return updated as unknown as Service;
   },
 
   deleteService: async (id: string): Promise<void> => {
-    return getApiClient().request<void>(`/services/${id}`, {
-      method: "DELETE",
-    });
+    await unwrapApiResult(
+      await getApiClient().openapi.DELETE("/services/{id}", {
+        params: { path: { id } },
+      }),
+    );
   },
 
   updateServiceElements: async (
     serviceId: string,
     data: { elements: ServiceElement[]; updatedAt: string },
   ): Promise<Service> => {
-    return getApiClient().request<Service>(`/services/${serviceId}/elements`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+    const updated = await unwrapApiResult(
+      await getApiClient().openapi.PUT("/services/{id}/elements", {
+        params: { path: { id: serviceId } },
+        body: {
+          updatedAt: data.updatedAt,
+          elements: data.elements as unknown as { [key: string]: unknown }[],
+        },
+      }),
+    );
+    return updated as unknown as Service;
   },
 };

@@ -6,7 +6,11 @@
 import { Badge, Button, Spinner } from "@/src/components/common";
 import { useI18n } from "@/src/lib/i18n";
 import { useCan } from "@/src/lib/permissions/client";
-import { PLAN_PRICING } from "@/src/lib/subscriptions";
+import {
+  fetchPlanPricing,
+  PLAN_PRICING,
+  type PlanPricing,
+} from "@/src/lib/subscriptions";
 import {
   AlertTriangle,
   Check,
@@ -59,11 +63,16 @@ export const BillingTab: React.FC<BillingTabProps> = ({
   } = useSubscription();
 
   const [annual, setAnnual] = useState(false);
+  const [planPricing, setPlanPricing] = useState<PlanPricing>(PLAN_PRICING);
 
   // Keep the data fresh every time the tab is opened.
   useEffect(() => {
     if (active && organization) void refresh();
   }, [active, organization, refresh]);
+
+  useEffect(() => {
+    if (active) void fetchPlanPricing().then(setPlanPricing);
+  }, [active]);
 
   if (!active) return null;
 
@@ -340,13 +349,13 @@ export const BillingTab: React.FC<BillingTabProps> = ({
               <div className="mt-4 flex items-baseline gap-1">
                 <span className="text-3xl font-semibold text-m3-text">
                   {annual
-                    ? PLAN_PRICING.annual.amount
-                    : PLAN_PRICING.monthly.amount}
+                    ? planPricing.annual.amount
+                    : planPricing.monthly.amount}
                 </span>
                 <span className="text-sm text-m3-secondary">
                   {annual
-                    ? PLAN_PRICING.annual.period
-                    : PLAN_PRICING.monthly.period}
+                    ? planPricing.annual.period
+                    : planPricing.monthly.period}
                 </span>
               </div>
               {annual && (

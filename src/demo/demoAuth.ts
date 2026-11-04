@@ -41,7 +41,7 @@ export function getDemoOrganization(): Organization {
 export const DEMO_ORGANIZATION: Organization = {
   id: "demo-org-id",
   name: "Igreja Demo",
-  slug: "demo",
+  slug: "hosanna-demo",
   createdAt: new Date("2024-01-01T00:00:00.000Z"),
   logo: null,
   metadata: {

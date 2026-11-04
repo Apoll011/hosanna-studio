@@ -168,8 +168,7 @@ export const MainLayout: React.FC = () => {
     return () => clearInterval(interval);
   }, [triggerSyncCheck]);
 
-  // Queries & Mutations
-  //TODO: Maybe find a better way to handle the archived services
+  // Queries & Mutations — one includeArchived query; derive active vs archived.
   const { servicesQuery, createService, deleteService } = useServices(true);
   const allServices = useMemo(
     () => servicesQuery.data || [],
@@ -177,13 +176,9 @@ export const MainLayout: React.FC = () => {
   );
 
   const [showArchived, setShowArchived] = useState(false);
-  const { servicesQuery: archivedServicesQuery } = useServices(true);
   const archivedServices = useMemo(
-    () =>
-      showArchived
-        ? (archivedServicesQuery.data ?? []).filter((s) => s.archived)
-        : [],
-    [showArchived, archivedServicesQuery.data],
+    () => (showArchived ? allServices.filter((s) => s.archived) : []),
+    [showArchived, allServices],
   );
 
   const {
@@ -1861,7 +1856,6 @@ export const MainLayout: React.FC = () => {
                   showArchived,
                   setShowArchived,
                   archivedServices,
-                  archivedServicesQuery,
                 }}
               />
             </div>

@@ -1,33 +1,56 @@
 import { Folder, FoldersResponse } from "../types";
+import { unwrapApiResult } from "./client";
 import { getApiClient } from "./http";
+
+function asFoldersResponse(data: unknown): FoldersResponse {
+  if (Array.isArray(data)) {
+    return { folders: data as Folder[], rootSongsCount: 0 };
+  }
+  const shaped = data as FoldersResponse | null;
+  return {
+    folders: shaped?.folders ?? [],
+    rootSongsCount: shaped?.rootSongsCount ?? 0,
+  };
+}
 
 export const foldersApi = {
   getFolders: async (): Promise<FoldersResponse> => {
-    return getApiClient().request<FoldersResponse>("/folders");
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.GET("/folders"),
+    );
+    return asFoldersResponse(data);
   },
 
   getFlatFolders: async (): Promise<Folder[]> => {
-    return getApiClient().request<Folder[]>("/folders/flat");
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.GET("/folders/flat"),
+    );
+    return (data ?? []) as unknown as Folder[];
   },
 
   createFolder: async (
     name: string,
     parentId?: string | null,
   ): Promise<Folder> => {
-    return getApiClient().request<Folder>("/folders", {
-      method: "POST",
-      body: JSON.stringify({ name, parentId }),
-    });
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.POST("/folders", {
+        body: { name, parentId },
+      }),
+    );
+    return data as unknown as Folder;
   },
 
   updateFolder: async (
     id: string,
     data: { name?: string; parentId?: string | null; updatedAt: string },
   ): Promise<Folder> => {
-    return getApiClient().request<Folder>(`/folders/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
+    const updated = await unwrapApiResult(
+      await getApiClient().openapi.PUT("/folders/{id}", {
+        params: { path: { id } },
+        body: data,
+      }),
+    );
+    return updated as unknown as Folder;
   },
 
   renameFolder: async (
@@ -35,10 +58,13 @@ export const foldersApi = {
     name: string,
     updatedAt: string,
   ): Promise<Folder> => {
-    return getApiClient().request<Folder>(`/folders/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ name, updatedAt }),
-    });
+    const updated = await unwrapApiResult(
+      await getApiClient().openapi.PUT("/folders/{id}", {
+        params: { path: { id } },
+        body: { name, updatedAt },
+      }),
+    );
+    return updated as unknown as Folder;
   },
 
   moveFolder: async (
@@ -46,47 +72,49 @@ export const foldersApi = {
     parentId: string | null,
     updatedAt: string,
   ): Promise<Folder> => {
-    return getApiClient().request<Folder>(`/folders/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ parentId, updatedAt }),
-    });
+    const updated = await unwrapApiResult(
+      await getApiClient().openapi.PUT("/folders/{id}", {
+        params: { path: { id } },
+        body: { parentId, updatedAt },
+      }),
+    );
+    return updated as unknown as Folder;
   },
 
   deleteFolder: async (
     id: string,
     action: "delete_songs" | "move_to_root",
   ): Promise<void> => {
-    return getApiClient().request<void>(`/folders/${id}?action=${action}`, {
-      method: "DELETE",
-    });
+    await unwrapApiResult(
+      await getApiClient().openapi.DELETE("/folders/{id}", {
+        params: { path: { id }, query: { action } },
+      }),
+    );
   },
 
   deleteFolderAndSongs: async (
     id: string,
   ): Promise<{ deletedSongs: number }> => {
-    return getApiClient().request<{ deletedSongs: number }>(
-      `/folders/${id}/with-content`,
-      {
-        method: "DELETE",
-      },
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.DELETE("/folders/{id}/with-content", {
+        params: { path: { id } },
+      }),
     );
+    const shaped = (data ?? {}) as { deletedSongs?: number };
+    return { deletedSongs: shaped.deletedSongs ?? 0 };
   },
 
   deleteFolderAndMoveSongsToRoot: async (
     id: string,
   ): Promise<{ movedSongs: number }> => {
-    return getApiClient().request<{ movedSongs: number }>(
-      `/folders/${id}/move-content-to-root`,
-      {
-        method: "DELETE",
-      },
+    const data = await unwrapApiResult(
+      await getApiClient().openapi.DELETE(
+        "/folders/{id}/move-content-to-root",
+        {
+          params: { path: { id } },
+        },
+      ),
     );
-  },
-
-  moveSongsInFolder: async (id: string, songIds: string[]): Promise<void> => {
-    return getApiClient().request<void>(`/folders/${id}/songs`, {
-      method: "PUT",
-      body: JSON.stringify({ songIds }),
-    });
+    return { movedSongs: data?.movedSongs ?? 0 };
   },
 };

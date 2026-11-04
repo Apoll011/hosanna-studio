@@ -66,11 +66,48 @@ export function currentSubscriptionStatus(
   return findActiveSubscription(rows)?.status ?? null;
 }
 
-// TODO: replace with the real prices configured for the "cloud" plan in
-// Stripe (priceId / annualDiscountPriceId in auth.ts). The Stripe plugin
-// does not expose the price amount to the client, so it's kept here for
-// display purposes only.
+/**
+ * Fallback display prices — keep in sync with server `src/config/pricing.ts`
+ * defaults. Prefer `fetchPlanPricing()` so env overrides on the API apply.
+ */
 export const PLAN_PRICING = {
   monthly: { amount: "€12", period: "/mês" },
   annual: { amount: "€120", period: "/ano" },
 } as const;
+
+export type PlanPricing = typeof PLAN_PRICING;
+
+let cachedPricing: PlanPricing | null = null;
+
+/** Load display amounts from GET /api/billing/pricing (public). */
+export async function fetchPlanPricing(
+  apiBaseUrl?: string,
+): Promise<PlanPricing> {
+  if (cachedPricing) return cachedPricing;
+  const base =
+    apiBaseUrl ??
+    (typeof import.meta !== "undefined"
+      ? (import.meta.env.VITE_API_URL as string | undefined)
+      : undefined) ??
+    "/api";
+  try {
+    const res = await fetch(`${base.replace(/\/$/, "")}/billing/pricing`, {
+      credentials: "omit",
+    });
+    if (!res.ok) return PLAN_PRICING;
+    const data = await res.json();
+    cachedPricing = {
+      monthly: {
+        amount: data.monthly?.amount ?? PLAN_PRICING.monthly.amount,
+        period: data.monthly?.period ?? PLAN_PRICING.monthly.period,
+      },
+      annual: {
+        amount: data.annual?.amount ?? PLAN_PRICING.annual.amount,
+        period: data.annual?.period ?? PLAN_PRICING.annual.period,
+      },
+    };
+    return cachedPricing;
+  } catch {
+    return PLAN_PRICING;
+  }
+}

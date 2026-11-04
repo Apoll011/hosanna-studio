@@ -1,4 +1,5 @@
 import type { AppRole } from "../lib/permissions/roles";
+import { unwrapApiResult } from "./client";
 import { getApiClient } from "./http";
 
 /**
@@ -93,11 +94,28 @@ export type SendNotificationsResult = {
 };
 
 export const notificationsApi = {
-  create(input: CreateNotificationInput): Promise<CreateNotificationResult> {
-    return getApiClient().request<CreateNotificationResult>("/notifications", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
+  async create(
+    input: CreateNotificationInput,
+  ): Promise<CreateNotificationResult> {
+    return (await unwrapApiResult(
+      await getApiClient().openapi.POST("/notifications", {
+        body: input as {
+          type: string;
+          title: string;
+          userId?: string;
+          organizationId?: string;
+          roles?: string[];
+          description?: string;
+          href?: string;
+          channel?: "inbox" | "push" | "both";
+          fcm?: {
+            title?: string;
+            body?: string;
+            data?: { [key: string]: string };
+          };
+        },
+      }),
+    )) as CreateNotificationResult;
   },
 
   /**
