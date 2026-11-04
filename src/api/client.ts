@@ -99,15 +99,14 @@ export class ApiClient {
       credentials: "include",
     });
 
-    const self = this;
     const unauthorizedMiddleware: Middleware = {
-      async onResponse({ response, request }) {
+      onResponse: async ({ response, request }) => {
         if (
           response.status === 401 &&
-          self.onUnauthorizedCallback &&
+          this.onUnauthorizedCallback &&
           !request.url.includes("/auth/")
         ) {
-          self.onUnauthorizedCallback();
+          this.onUnauthorizedCallback();
         }
       },
     };
