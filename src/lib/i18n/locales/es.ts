@@ -2346,18 +2346,22 @@ export const es: typeof pt = {
 
   analytics: {
     title: "Analíticas",
-    desc: "Uso del plan, insights de setlist y mantenimiento de la biblioteca.",
+    desc: "Resumen del espacio, insights de setlist y salud de la biblioteca.",
     tabs: {
-      usage: "Uso",
+      usage: "Resumen",
       setlist: "Setlist",
       libraryHealth: "Salud de la Biblioteca",
     },
     usage: {
-      title: "Resumen de uso",
-      desc: "Consulta cuánto del plan Hosanna Cloud está usando este espacio de trabajo.",
+      title: "El espacio de un vistazo",
+      desc: "Qué hay en esta organización — no es un medidor de cuotas.",
       planNote:
-        "Tu plan incluye canciones, cultos, eventos y colecciones ilimitados. El almacenamiento refleja la cuota local de este navegador.",
+        "Hosanna Cloud no limita canciones, cultos, eventos ni colecciones. El único límite real abajo es el almacenamiento local de este navegador.",
       unlimited: "Ilimitado",
+      noLimit: "Sin límite en el plan",
+      thisDevice: "Este dispositivo",
+      storageNote:
+        "Espacio usado por los datos sincronizados en este navegador. Borrar los datos del sitio lo libera.",
       usedOf: "{used} de {limit}",
       trialUntil: "Prueba hasta {date}",
       planStatus: {
@@ -2367,12 +2371,12 @@ export const es: typeof pt = {
       },
       resources: {
         songs: "Canciones",
-        members: "Miembros del espacio",
+        members: "Miembros",
         services: "Cultos",
-        events: "Eventos de agenda",
+        events: "Eventos",
         collections: "Colecciones",
         folders: "Carpetas",
-        storage: "Almacenamiento local",
+        storage: "Almacenamiento del navegador",
       },
       sections: {
         library: "Biblioteca",
@@ -2506,10 +2510,10 @@ export const es: typeof pt = {
     tabs: {
       workspace: "Espacio de trabajo",
       members: "Miembros",
-      notifications: "Notificaciones",
+      notifications: "Avisos",
       billing: "Facturación",
       general: "Servidor",
-      ai: "IA",
+      ai: "Logos IA",
       loginActivity: "Actividad de login",
     },
     loginActivity: {

@@ -2319,18 +2319,22 @@ export const en: typeof pt = {
 
   analytics: {
     title: "Analytics",
-    desc: "Plan usage, setlist insights, and library maintenance.",
+    desc: "Workspace overview, setlist insights, and library health.",
     tabs: {
-      usage: "Usage",
+      usage: "Overview",
       setlist: "Setlist",
       libraryHealth: "Library Health",
     },
     usage: {
-      title: "Usage overview",
-      desc: "See how much of your Hosanna Cloud plan this workspace is using.",
+      title: "Workspace at a glance",
+      desc: "What’s in this organization — not a quota meter.",
       planNote:
-        "Your plan includes unlimited songs, services, events, and collections. Storage reflects this browser’s local data quota.",
+        "Hosanna Cloud doesn’t cap songs, services, events, or collections. The only real limit below is this browser’s local storage.",
       unlimited: "Unlimited",
+      noLimit: "No plan limit",
+      thisDevice: "This device",
+      storageNote:
+        "Space used by synced data in this browser. Clearing site data frees it.",
       usedOf: "{used} of {limit}",
       trialUntil: "Trial until {date}",
       planStatus: {
@@ -2340,12 +2344,12 @@ export const en: typeof pt = {
       },
       resources: {
         songs: "Songs",
-        members: "Workspace members",
+        members: "Members",
         services: "Services",
-        events: "Agenda events",
+        events: "Events",
         collections: "Collections",
         folders: "Folders",
-        storage: "Local storage",
+        storage: "Browser storage",
       },
       sections: {
         library: "Library",
@@ -2476,10 +2480,10 @@ export const en: typeof pt = {
     tabs: {
       workspace: "Workspace",
       members: "Members",
-      notifications: "Notifications",
+      notifications: "Notices",
       billing: "Billing",
       general: "Server",
-      ai: "AI",
+      ai: "Logos AI",
       loginActivity: "Login activity",
     },
     loginActivity: {

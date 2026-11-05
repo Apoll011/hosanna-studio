@@ -2336,18 +2336,22 @@ export const pt = {
 
   analytics: {
     title: "Análises",
-    desc: "Uso do plano, insights de setlist e manutenção da biblioteca.",
+    desc: "Resumo do espaço, insights de setlist e saúde da biblioteca.",
     tabs: {
-      usage: "Uso",
+      usage: "Resumo",
       setlist: "Setlist",
       libraryHealth: "Saúde da Biblioteca",
     },
     usage: {
-      title: "Resumo de uso",
-      desc: "Veja quanto do plano Hosanna Cloud este espaço de trabalho está a usar.",
+      title: "O espaço em resumo",
+      desc: "O que há nesta organização — não é um medidor de quotas.",
       planNote:
-        "O seu plano inclui cânticos, cultos, eventos e coleções ilimitados. O armazenamento reflete a quota local deste navegador.",
+        "O Hosanna Cloud não limita cânticos, cultos, eventos ou coleções. O único limite real abaixo é o armazenamento local deste navegador.",
       unlimited: "Ilimitado",
+      noLimit: "Sem limite no plano",
+      thisDevice: "Este dispositivo",
+      storageNote:
+        "Espaço usado pelos dados sincronizados neste navegador. Limpar os dados do site liberta espaço.",
       usedOf: "{used} de {limit}",
       trialUntil: "Teste até {date}",
       planStatus: {
@@ -2357,12 +2361,12 @@ export const pt = {
       },
       resources: {
         songs: "Cânticos",
-        members: "Membros do espaço",
+        members: "Membros",
         services: "Cultos",
-        events: "Eventos da agenda",
+        events: "Eventos",
         collections: "Coleções",
         folders: "Pastas",
-        storage: "Armazenamento local",
+        storage: "Armazenamento do navegador",
       },
       sections: {
         library: "Biblioteca",
@@ -2494,10 +2498,10 @@ export const pt = {
     tabs: {
       workspace: "Espaço de trabalho",
       members: "Membros",
-      notifications: "Notificações",
+      notifications: "Avisos",
       billing: "Faturação",
       general: "Servidor",
-      ai: "IA",
+      ai: "Logos IA",
       loginActivity: "Atividade de login",
     },
     loginActivity: {

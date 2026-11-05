@@ -39,6 +39,15 @@ export interface UsageOverviewTabProps {
   active: boolean;
 }
 
+const COUNT_RESOURCES: UsageResourceId[] = [
+  "songs",
+  "members",
+  "services",
+  "events",
+  "collections",
+  "folders",
+];
+
 const RESOURCE_ICONS: Record<
   UsageResourceId,
   React.ComponentType<{ className?: string }>
@@ -108,30 +117,19 @@ async function readStorageEstimate(): Promise<{
   }
 }
 
-function UsageBar({
-  percentage,
-  unlimited,
-}: {
-  percentage: number | null;
-  unlimited: boolean;
-}) {
-  if (unlimited) {
-    return (
-      <div className="h-1.5 w-full rounded-full bg-m3-sidebar overflow-hidden">
-        <div className="h-full w-1/3 rounded-full bg-m3-primary/40" />
-      </div>
-    );
-  }
-
-  const pct = percentage ?? 0;
+function StorageBar({ percentage }: { percentage: number }) {
   const tone =
-    pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-m3-primary";
+    percentage >= 90
+      ? "bg-rose-500"
+      : percentage >= 70
+        ? "bg-amber-500"
+        : "bg-m3-primary";
 
   return (
-    <div className="h-1.5 w-full rounded-full bg-m3-sidebar overflow-hidden">
+    <div className="h-2 w-full rounded-full bg-m3-sidebar overflow-hidden">
       <div
         className={`h-full rounded-full transition-[width] duration-500 ${tone}`}
-        style={{ width: `${Math.max(pct, pct > 0 ? 2 : 0)}%` }}
+        style={{ width: `${Math.max(percentage, percentage > 0 ? 2 : 0)}%` }}
       />
     </div>
   );
@@ -266,16 +264,10 @@ export const UsageOverviewTab: React.FC<UsageOverviewTabProps> = ({
 
   const formatCount = (n: number) => new Intl.NumberFormat(locale).format(n);
 
-  const formatUsed = (id: UsageResourceId, used: number) => {
-    if (id === "storage") return formatBytes(used, locale);
-    return formatCount(used);
-  };
-
-  const formatLimit = (id: UsageResourceId, limit: number | null) => {
-    if (limit == null) return t("analytics.usage.unlimited");
-    if (id === "storage") return formatBytes(limit, locale);
-    return formatCount(limit);
-  };
+  const storage = summary.resources.find((r) => r.id === "storage");
+  const countCards = summary.resources.filter((r) =>
+    COUNT_RESOURCES.includes(r.id),
+  );
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -310,52 +302,74 @@ export const UsageOverviewTab: React.FC<UsageOverviewTabProps> = ({
           </div>
         </div>
 
-        <p className="text-sm text-m3-secondary">
-          {t("analytics.usage.planNote")}
-        </p>
+        <p className="text-sm text-m3-secondary">{t("analytics.usage.planNote")}</p>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          {summary.resources.map((item) => {
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+          {countCards.map((item) => {
             const Icon = RESOURCE_ICONS[item.id];
-            const unlimited = item.limit == null;
             return (
               <div
                 key={item.id}
-                className="p-4 rounded-[var(--radius-md)] border border-m3-border bg-m3-sidebar/60 space-y-3"
+                className="p-4 rounded-[var(--radius-md)] border border-m3-border bg-m3-card"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-[var(--radius-md)] bg-m3-card border border-m3-border flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-m3-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="block text-sm font-semibold text-m3-text truncate">
-                        {t(RESOURCE_LABEL_KEYS[item.id])}
-                      </span>
-                      <span className="block text-xs text-m3-secondary mt-0.5">
-                        {t("analytics.usage.usedOf", {
-                          used: formatUsed(item.id, item.used),
-                          limit: formatLimit(item.id, item.limit),
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                  {unlimited ? (
-                    <span className="inline-flex items-center gap-1 text-caption text-emerald-600 dark:text-emerald-400 shrink-0">
-                      <InfinityIcon className="w-3 h-3" />
-                      {t("analytics.usage.unlimited")}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-semibold tabular-nums text-m3-secondary shrink-0">
-                      {item.percentage}%
-                    </span>
-                  )}
+                <div className="flex items-center gap-2 text-m3-secondary mb-3">
+                  <Icon className="w-4 h-4 text-m3-primary" />
+                  <span className="text-xs font-medium truncate">
+                    {t(RESOURCE_LABEL_KEYS[item.id])}
+                  </span>
                 </div>
-                <UsageBar percentage={item.percentage} unlimited={unlimited} />
+                <p className="text-2xl font-semibold tabular-nums text-m3-text tracking-tight">
+                  {formatCount(item.used)}
+                </p>
+                <p className="text-caption text-m3-secondary mt-1">
+                  {t("analytics.usage.noLimit")}
+                </p>
               </div>
             );
           })}
         </div>
+
+        {storage ? (
+          <Surface padding="none" className="overflow-hidden">
+            <div className="p-5 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-[var(--radius-md)] bg-m3-sidebar border border-m3-border flex items-center justify-center shrink-0">
+                    <HardDrive className="w-4 h-4 text-m3-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-sm font-semibold text-m3-text">
+                      {t("analytics.usage.resources.storage")}
+                    </span>
+                    <span className="block text-caption text-m3-secondary mt-0.5">
+                      {storage.limit == null
+                        ? formatBytes(storage.used, locale)
+                        : t("analytics.usage.usedOf", {
+                            used: formatBytes(storage.used, locale),
+                            limit: formatBytes(storage.limit, locale),
+                          })}
+                    </span>
+                  </div>
+                </div>
+                {storage.percentage != null ? (
+                  <span className="text-sm font-semibold tabular-nums text-m3-secondary shrink-0">
+                    {storage.percentage}%
+                  </span>
+                ) : (
+                  <span className="text-caption text-m3-secondary shrink-0">
+                    {t("analytics.usage.thisDevice")}
+                  </span>
+                )}
+              </div>
+              {storage.percentage != null ? (
+                <StorageBar percentage={storage.percentage} />
+              ) : null}
+              <p className="text-caption text-m3-secondary">
+                {t("analytics.usage.storageNote")}
+              </p>
+            </div>
+          </Surface>
+        ) : null}
       </section>
 
       <div className="grid gap-5 sm:grid-cols-2">
