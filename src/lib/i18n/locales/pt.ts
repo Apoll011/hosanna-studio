@@ -666,7 +666,7 @@ export const pt = {
       namePlaceholder: "e.g. Pedro Martins",
       emailLabel: "E-mail *",
       emailPlaceholder: "e.g. pedro@exemplo.com",
-      roleLabel: "Função RBAC na Organização",
+      roleLabel: "Função",
       sending: "A Enviar...",
       sendInvite: "Enviar Convite",
       inviteSuccess: "Convite enviado com sucesso para {email}!",

@@ -670,7 +670,7 @@ export const es: typeof pt = {
       namePlaceholder: "e.g. Pedro Martín",
       emailLabel: "Correo electrónico *",
       emailPlaceholder: "e.g. pedro@ejemplo.com",
-      roleLabel: "Rol RBAC en la Organización",
+      roleLabel: "Rol",
       sending: "Enviando...",
       sendInvite: "Enviar Invitación",
       inviteSuccess: "¡Invitación enviada con éxito a {email}!",

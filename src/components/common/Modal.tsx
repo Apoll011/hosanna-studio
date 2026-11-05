@@ -28,8 +28,14 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  const wasOpenRef = useRef(false);
   const [rendered, setRendered] = useState(isOpen);
   const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,19 +50,25 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     };
     if (isOpen) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
-      // Focus the dialog panel for screen readers / keyboard
-      requestAnimationFrame(() => panelRef.current?.focus());
+      // Only steal focus when the modal opens — not on every parent re-render
+      // (inline onClose identities would otherwise blur controlled inputs).
+      if (!wasOpenRef.current) {
+        requestAnimationFrame(() => panelRef.current?.focus());
+      }
+      wasOpenRef.current = true;
+    } else {
+      wasOpenRef.current = false;
     }
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!rendered) return null;
 

@@ -659,7 +659,7 @@ export const en: typeof pt = {
       namePlaceholder: "e.g. Peter Martin",
       emailLabel: "Email *",
       emailPlaceholder: "e.g. peter@example.com",
-      roleLabel: "RBAC Role in Organization",
+      roleLabel: "Role",
       sending: "Sending...",
       sendInvite: "Send Invitation",
       inviteSuccess: "Invitation sent successfully to {email}!",

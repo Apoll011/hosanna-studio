@@ -12,8 +12,9 @@ import {
   Tabs,
 } from "@/src/components/common";
 import { useI18n } from "@/src/lib/i18n";
-import { useCanAny } from "@/src/lib/permissions/client";
+import { useCan, useCanAny } from "@/src/lib/permissions/client";
 import { Can } from "@/src/lib/permissions/components";
+import type { AppRole } from "@/src/lib/permissions/roles";
 import { getAvatarGradient, getInitials } from "@/src/utils";
 import {
   ChevronRight,
@@ -31,6 +32,15 @@ import { useSync } from "../../contexts/SyncContext";
 import { authClient } from "../../lib/authClient";
 import { getRoleBadge } from "../../utils/settingsUtils";
 import { MemberProfilePage } from "./MemberProfilePage";
+
+const INVITE_ROLES: AppRole[] = [
+  "admin",
+  "teamLeader",
+  "editor",
+  "musician",
+  "member",
+  "guest",
+];
 
 interface OrgMember {
   id: string;
@@ -64,6 +74,7 @@ export const MembersTab: React.FC<{ active: boolean }> = ({ active }) => {
     "invitation.create",
     "invitation.cancel",
   ]);
+  const { granted: canInviteOwner } = useCan("organization.update");
 
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("members");
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,9 +83,16 @@ export const MembersTab: React.FC<{ active: boolean }> = ({ active }) => {
   const [isInviting, setIsInviting] = useState(false);
 
   // Invite Form
-  const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("member");
+  const [inviteRole, setInviteRole] = useState<AppRole>("member");
+
+  const closeInviteModal = useCallback(() => {
+    setIsInviteModalOpen(false);
+  }, []);
+
+  const closeCancelModal = useCallback(() => {
+    setInviteToCancel(null);
+  }, []);
 
   // Pending invite actions
   const [resendingId, setResendingId] = useState<string | null>(null);
@@ -258,7 +276,7 @@ export const MembersTab: React.FC<{ active: boolean }> = ({ active }) => {
     try {
       const { error } = await authClient.organization.inviteMember({
         email: invite.email,
-        role: invite.role as "owner" | "admin" | "member",
+        role: invite.role as AppRole,
         organizationId: organization?.id,
         resend: true,
       });
@@ -336,7 +354,7 @@ export const MembersTab: React.FC<{ active: boolean }> = ({ active }) => {
     try {
       const { error } = await authClient.organization.inviteMember({
         email: inviteEmail.trim(),
-        role: inviteRole as "owner" | "admin" | "member",
+        role: inviteRole,
       });
 
       if (error) {
@@ -344,17 +362,17 @@ export const MembersTab: React.FC<{ active: boolean }> = ({ active }) => {
           t("settings.members.inviteError", { email: inviteEmail }),
           "error",
         );
-      } else {
-        showToast(
-          t("settings.members.inviteSuccess", { email: inviteEmail }),
-          "success",
-        );
-        refetchInvitations();
+        return;
       }
 
-      setInviteName("");
+      showToast(
+        t("settings.members.inviteSuccess", { email: inviteEmail }),
+        "success",
+      );
       setInviteEmail("");
+      setInviteRole("member");
       setIsInviteModalOpen(false);
+      refetchInvitations();
     } catch (err: unknown) {
       showToast(
         (err as Error).message ||
@@ -557,98 +575,85 @@ export const MembersTab: React.FC<{ active: boolean }> = ({ active }) => {
         </>
       )}
 
-      {isInviteModalOpen && (
-        <Modal
-          isOpen={isInviteModalOpen}
-          onClose={() => setIsInviteModalOpen(false)}
-          title={t("settings.members.inviteModalTitle")}
-        >
-          <form onSubmit={handleInvite} className="space-y-4 pt-2">
-            <Input
-              label={t("settings.members.nameLabel")}
-              placeholder={t("settings.members.namePlaceholder")}
-              value={inviteName}
-              onChange={(e) => setInviteName(e.target.value)}
-            />
-            <Input
-              type="email"
-              label={t("settings.members.emailLabel")}
-              placeholder={t("settings.members.emailPlaceholder")}
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              required
-            />
+      <Modal
+        isOpen={isInviteModalOpen}
+        onClose={closeInviteModal}
+        title={t("settings.members.inviteModalTitle")}
+      >
+        <form onSubmit={handleInvite} className="space-y-4 pt-2">
+          <Input
+            type="email"
+            label={t("settings.members.emailLabel")}
+            placeholder={t("settings.members.emailPlaceholder")}
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            autoFocus
+            required
+          />
 
-            <div>
-              <label className="text-label block mb-1.5">
-                {t("settings.members.roleLabel")}
-              </label>
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
-                className="w-full min-h-10 px-3.5 bg-m3-card border border-m3-border rounded-[var(--radius-md)] text-sm text-m3-text focus:outline-none focus:ring-2 focus:ring-m3-primary/25 focus:border-m3-primary"
-              >
-                <Can permission="organization.update">
-                  <option value="owner">{t("settings.roles.owner")}</option>
-                </Can>
-                <option value="admin">{t("settings.roles.admin")}</option>
-                <option value="teamLeader">
-                  {t("settings.roles.teamLeader")}
+          <div>
+            <label className="text-label block mb-1.5">
+              {t("settings.members.roleLabel")}
+            </label>
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as AppRole)}
+              className="w-full min-h-10 px-3.5 bg-m3-card border border-m3-border rounded-[var(--radius-md)] text-sm text-m3-text focus:outline-none focus:ring-2 focus:ring-m3-primary/25 focus:border-m3-primary"
+            >
+              {INVITE_ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {t(`settings.roles.${role}` as "settings.roles.member")}
                 </option>
-                <option value="editor">{t("settings.roles.editor")}</option>
-                <option value="musician">{t("settings.roles.musician")}</option>
-                <option value="guest">{t("settings.roles.guest")}</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => setIsInviteModalOpen(false)}
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button variant="primary" type="submit" disabled={isInviting}>
-                {isInviting
-                  ? t("settings.members.sending")
-                  : t("settings.members.sendInvite")}
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {inviteToCancel && (
-        <Modal
-          isOpen={!!inviteToCancel}
-          onClose={() => setInviteToCancel(null)}
-          title={t("settings.members.cancelModalTitle")}
-        >
-          <div className="space-y-4 pt-2">
-            <p className="text-sm text-m3-secondary">
-              {t("settings.members.cancelModalConfirm", {
-                email: inviteToCancel.email,
-              })}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setInviteToCancel(null)}>
-                {t("common.back")}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={confirmCancelInvite}
-                disabled={isCancelling}
-                icon={<XCircle className="w-4 h-4" />}
-              >
-                {isCancelling
-                  ? t("settings.members.cancelling")
-                  : t("settings.members.confirmCancel")}
-              </Button>
-            </div>
+              ))}
+              {canInviteOwner ? (
+                <option value="owner">{t("settings.roles.owner")}</option>
+              ) : null}
+            </select>
           </div>
-        </Modal>
-      )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" type="button" onClick={closeInviteModal}>
+              {t("common.cancel")}
+            </Button>
+            <Button variant="primary" type="submit" disabled={isInviting}>
+              {isInviting
+                ? t("settings.members.sending")
+                : t("settings.members.sendInvite")}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={!!inviteToCancel}
+        onClose={closeCancelModal}
+        title={t("settings.members.cancelModalTitle")}
+      >
+        <div className="space-y-4 pt-2">
+          <p className="text-sm text-m3-secondary">
+            {inviteToCancel
+              ? t("settings.members.cancelModalConfirm", {
+                  email: inviteToCancel.email,
+                })
+              : null}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={closeCancelModal}>
+              {t("common.back")}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={confirmCancelInvite}
+              disabled={isCancelling}
+              icon={<XCircle className="w-4 h-4" />}
+            >
+              {isCancelling
+                ? t("settings.members.cancelling")
+                : t("settings.members.confirmCancel")}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
