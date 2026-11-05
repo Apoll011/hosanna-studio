@@ -1954,6 +1954,13 @@ export const en: typeof pt = {
       failed:
         "Security verification failed. Please reload the page and try again.",
     },
+    error: {
+      title: "Sign-in interrupted",
+      subtitle: "We could not complete authentication",
+      generic: "Something went wrong during sign-in. Please try again.",
+      hint: "If you closed the provider window or denied access, you can safely try again.",
+      backToLogin: "Back to sign in",
+    },
     login: {
       title: "Sign In",
       subtitle: "Access your Hosanna Studio account",

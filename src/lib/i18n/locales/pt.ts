@@ -1973,6 +1973,13 @@ export const pt = {
       failed:
         "A verificação de segurança falhou. Recarregue a página e tente novamente.",
     },
+    error: {
+      title: "Autenticação interrompida",
+      subtitle: "Não foi possível concluir o início de sessão",
+      generic: "Ocorreu um erro durante o início de sessão. Tente novamente.",
+      hint: "Se fechou a janela do fornecedor ou negou o acesso, pode tentar novamente com segurança.",
+      backToLogin: "Voltar ao início de sessão",
+    },
     login: {
       title: "Iniciar Sessão",
       subtitle: "Aceda à sua conta do Hosanna Studio",

@@ -57,6 +57,11 @@ export const lazyImport = <T>(
 export const LoginPage = lazyImport(() =>
   import("../pages/Login/LoginPage").then((m) => ({ default: m.LoginPage })),
 );
+export const AuthErrorPage = lazyImport(() =>
+  import("../pages/Login/AuthErrorPage").then((m) => ({
+    default: m.AuthErrorPage,
+  })),
+);
 export const OAuthConsentPage = lazyImport(() =>
   import("../pages/OAuthConsentPage").then((m) => ({
     default: m.OAuthConsentPage,
@@ -186,6 +191,10 @@ export const routePreloaders: Array<{
     preload: () => AnalyticsPage.preload(),
   },
   { pattern: /\/login(\/|\?|#|$)/, preload: () => LoginPage.preload() },
+  {
+    pattern: /\/auth\/error(\/|\?|#|$)/,
+    preload: () => AuthErrorPage.preload(),
+  },
   {
     pattern: /\/two-factor(\/|\?|#|$)/,
     preload: () => TwoFactorPage.preload(),

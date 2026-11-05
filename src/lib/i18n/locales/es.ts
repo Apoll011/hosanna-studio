@@ -1982,6 +1982,13 @@ export const es: typeof pt = {
       failed:
         "La verificación de seguridad falló. Recarga la página e inténtalo de nuevo.",
     },
+    error: {
+      title: "Inicio de sesión interrumpido",
+      subtitle: "No se pudo completar la autenticación",
+      generic: "Ocurrió un error durante el inicio de sesión. Inténtelo de nuevo.",
+      hint: "Si cerró la ventana del proveedor o denegó el acceso, puede intentarlo de nuevo sin problema.",
+      backToLogin: "Volver al inicio de sesión",
+    },
     login: {
       title: "Iniciar Sesión",
       subtitle: "Acceda a su cuenta de Hosanna Studio",
