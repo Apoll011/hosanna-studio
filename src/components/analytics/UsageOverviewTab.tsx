@@ -302,8 +302,6 @@ export const UsageOverviewTab: React.FC<UsageOverviewTabProps> = ({
           </div>
         </div>
 
-        <p className="text-sm text-m3-secondary">{t("analytics.usage.planNote")}</p>
-
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
           {countCards.map((item) => {
             const Icon = RESOURCE_ICONS[item.id];
@@ -320,9 +318,6 @@ export const UsageOverviewTab: React.FC<UsageOverviewTabProps> = ({
                 </div>
                 <p className="text-2xl font-semibold tabular-nums text-m3-text tracking-tight">
                   {formatCount(item.used)}
-                </p>
-                <p className="text-caption text-m3-secondary mt-1">
-                  {t("analytics.usage.noLimit")}
                 </p>
               </div>
             );
@@ -355,18 +350,11 @@ export const UsageOverviewTab: React.FC<UsageOverviewTabProps> = ({
                   <span className="text-sm font-semibold tabular-nums text-m3-secondary shrink-0">
                     {storage.percentage}%
                   </span>
-                ) : (
-                  <span className="text-caption text-m3-secondary shrink-0">
-                    {t("analytics.usage.thisDevice")}
-                  </span>
-                )}
+                ) : null}
               </div>
               {storage.percentage != null ? (
                 <StorageBar percentage={storage.percentage} />
               ) : null}
-              <p className="text-caption text-m3-secondary">
-                {t("analytics.usage.storageNote")}
-              </p>
             </div>
           </Surface>
         ) : null}
