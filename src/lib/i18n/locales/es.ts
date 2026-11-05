@@ -2508,7 +2508,7 @@ export const es: typeof pt = {
     tabs: {
       workspace: "Espacio de trabajo",
       members: "Miembros",
-      notifications: "Avisos",
+      notifications: "Notificaciones",
       billing: "Facturación",
       general: "Servidor",
       ai: "Logos IA",
