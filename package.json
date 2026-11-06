@@ -1,6 +1,6 @@
 {
   "name": "@hosanna/studio",
-  "version": "2.22.4",
+  "version": "2.22.5",
   "type": "module",
   "license": "Apache-2.0",
   "scripts": {
@@ -16,15 +16,15 @@
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^3.0.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^2.1.0",
-    "@better-auth/i18n": "^1.7.2",
-    "@better-auth/infra": "^0.4.5",
-    "@better-auth/stripe": "^1.7.2",
+    "@better-auth/i18n": "^1.7.18",
+    "@better-auth/infra": "^0.4.27",
+    "@better-auth/stripe": "^1.7.18",
     "@hosanna/chordpro": "^1.7.2",
     "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.1.14",
     "@tanstack/markdown": "^0.0.13",
     "ace-builds": "^1.44.0",
-    "better-auth": "^1.7.2",
+    "better-auth": "^1.7.18",
     "better-inbox": "^0.1.2",
     "dotenv": "^17.2.3",
     "driver.js": "^1.8.0",

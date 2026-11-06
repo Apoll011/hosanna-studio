@@ -98,6 +98,7 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
       await authClient.signIn.social({
         provider: providerId as "google",
         callbackURL: fullCallbackUrl,
+        errorCallbackURL: `${window.location.origin}/auth/error`,
       });
     } catch (err: unknown) {
       const message = (err as Error)?.message || t("auth.login.errorGeneric");

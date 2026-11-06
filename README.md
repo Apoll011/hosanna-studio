@@ -1,214 +1,115 @@
 # Hosanna Studio
 
-**Hosanna Studio** is the web dashboard for [Hosanna](https://hosanna.live), providing churches and organizations with a centralized workspace for managing their worship content, services, teams, schedules, subscriptions, and more.
+**Hosanna Studio** is the web dashboard for [Hosanna](https://hosanna.live) — the ChordPro songbook and worship planning platform for churches.
 
-Studio is the administrative and organizational side of Hosanna. It communicates with the Hosanna API for application data and backend operations, keeping the frontend focused on the user experience.
+Leaders plan here. Musicians play from the [Hosanna mobile app](https://github.com/Apoll011/Hosanna). Same library, same services, offline on stage.
 
-## Features
+Live: [studio.hosanna.live](https://studio.hosanna.live)
 
-Hosanna Studio currently includes:
+---
 
-- **Drive** — Manage and organize church content and files.
-- **Library** — Browse and manage songs and other worship resources.
-- **Collections** — Group songs and resources into reusable collections. Unlike folders, a resource can belong to multiple collections.
-- **Teams** — Organize people and manage team-related functionality.
-- **Services** — Plan and organize church services, including service content and assignments.
-- **Agendas** — Schedule upcoming activities and responsibilities, with support for planning and reminders.
-- **Subscriptions** — Manage organization subscriptions and billing.
-- **Authentication** — Secure authentication and organization management through Better Auth.
-- **Search and command palette** — Quickly navigate and interact with Studio using keyboard-driven workflows.
-- **Drag and drop** — Interactive organization of content using Atlassian's pragmatic drag-and-drop libraries.
-- **PWA support** — Studio can be installed and used as a progressive web application.
-- **Analytics** — Product analytics and usage insights through PostHog.
-- **Responsive interface** — Designed for desktop, tablet, and mobile use.
+## What Studio is for
 
-Studio also integrates with the Hosanna ChordPro ecosystem for working with structured song content.
+Studio is the admin and planning surface of Hosanna. Use it to:
 
-## Tech Stack
+- Build and maintain the church **ChordPro song library** (create, edit, import, export)
+- Organize songs in **folders** and **collections** (a song can sit in multiple collections)
+- Plan **services**: date, title, song order, team notes, announcements, scripture cues
+- Manage **teams**, roles, and permissions so the right people can edit vs. only view
+- Work with **agendas** for upcoming gatherings and responsibilities
+- Search and jump around with a **command palette**
+- Handle **organization** settings, onboarding, subscriptions/billing, and trash recovery
 
-### Frontend
+It talks to the Hosanna API for all data. This repo is a static frontend (Vite); the API owns persistence and business rules.
 
-- [Preact](https://preactjs.com/) — UI framework
-- [TypeScript](https://www.typescriptlang.org/) — Type-safe development
-- [Vite](https://vite.dev/) — Development server and build tooling
-- [React Router](https://reactrouter.com/) — Routing
-- [Tailwind CSS](https://tailwindcss.com/) — Styling
-- [Lucide](https://lucide.dev/) — Icons
-- [React Hook Form](https://react-hook-form.com/) — Form management
+---
 
-### Application
+## Product features (shipped)
 
-- [Better Auth](https://www.better-auth.com/) — Authentication
-- [PostHog](https://posthog.com/) — Product analytics
-- [Hosanna ChordPro](https://github.com/Apoll011/hosanna-chordpro) — ChordPro parsing and song functionality
-- [React Ace](https://github.com/securingsincity/react-ace) / Ace — Editor functionality
-- [TanStack Markdown](https://tanstack.com/) — Markdown functionality
-- [LIQE](https://github.com/gajus/liqe) — Query/filter functionality
-- [QRCode.react](https://github.com/zpao/qrcode.react) — QR code generation
-- [Atlaskit Pragmatic Drag and Drop](https://atlassian.design/components/pragmatic-drag-and-drop/) — Drag-and-drop interactions
+| Area | Details |
+| --- | --- |
+| **Library** | ChordPro songs with structured metadata (key, capo, tempo, artist, CCLI, song number, …) |
+| **Editor** | ChordPro editing with Hosanna’s chord tooling (`@hosanna` / hosanna-chordpro) |
+| **Drive / folders** | Familiar folder browsing for large repertoires |
+| **Collections** | Cross-cutting groupings (unlike folders, membership is many-to-many) |
+| **Services** | Drag-and-drop order, notes, and sharing with the whole worship team |
+| **Print** | Print templates for **song**, **songbook**, **service**, and **agenda event** |
+| **Teams** | People, roles, and access control for the org |
+| **Agendas** | Scheduling and reminders around services and duties |
+| **AI** | Org AI settings, song import from photo/PDF, Studio AI assistant |
+| **Imports** | ChordPro + third-party chord sources (e.g. CifraClub-style providers) |
+| **Library health** | Admin insights and auto-fixes (duration, YouTube id, …) |
+| **Auth** | Better Auth — email, social sign-in, 2FA, org management |
+| **Search** | Fast find + keyboard command palette |
+| **PWA** | Installable progressive web app |
+| **Demo** | Try Studio without registering (`/demo`) |
+| **Analytics** | Usage, setlist insights, library health (PostHog + in-app) |
+| **Backups** | Organization library backup download |
 
-### Infrastructure
+Mobile companions (separate repo): per-musician transpose/capo, metronome, auto-scroll, **song** PDF, AI chart import, offline sync.
 
-Studio is a frontend application that communicates with the **Hosanna API** for backend operations and application data. Database access and server-side business logic are handled outside this repository.
+---
 
-The application is built with Vite and can be deployed as a static frontend, including through Vercel.
+## Tech stack
 
-## Architecture
+**Frontend:** Preact, TypeScript, Vite, React Router, Tailwind CSS, Lucide, React Hook Form
 
-Studio is intentionally separated from the Hosanna backend.
+**App services:** Better Auth, PostHog, [Hosanna ChordPro](https://github.com/Apoll011/hosanna-chordpro), Ace editor, TanStack Markdown, LIQE query/filter, QRCode.react, Atlassian pragmatic drag-and-drop
 
 ```text
 ┌─────────────────────┐
-│    Hosanna Studio   │
-│                     │
-│  Preact + TypeScript│
-│  Vite               │
-│  Tailwind CSS       │
-│  Better Auth        │
-│  PostHog            │
+│    Hosanna Studio   │  Preact + TypeScript + Vite
 └──────────┬──────────┘
-           │
            │ HTTP/API
            ▼
 ┌─────────────────────┐
-│     Hosanna API     │
-│                     │
-│ Authentication      │
-│ Business logic      │
-│ Database access     │
-│ Backend services    │
+│     Hosanna API     │  Auth, business logic, database
 └─────────────────────┘
 ```
 
-This separation allows Studio to remain a focused frontend application while the API owns persistent data and backend responsibilities.
-
-## Project Structure
-
-The source code is organized by application responsibility:
+## Project structure
 
 ```text
 src/
-├── api/                    # API communication
-├── assets/                 # Application assets
-├── components/             # Reusable UI components
-├── contexts/               # Application contexts
-├── db/                     # Frontend data/database-related utilities
-├── demo/                   # Demo functionality and data
-├── hooks/                  # Reusable application hooks
-├── layouts/                # Page layouts
-├── lib/                    # Shared application utilities
-├── pages/                  # Application pages
-├── routes/                 # Routing configuration
-├── types/                  # TypeScript types
-├── utils/                  # General utilities
-│
-├── App.tsx                 # Application root
-├── main.tsx                # Application entry point
-├── index.css               # Global styles
-└── command-palette.types.ts
+├── api/          # API communication
+├── components/   # Reusable UI
+├── contexts/
+├── hooks/
+├── layouts/
+├── lib/
+├── pages/        # Songs, Services, Teams, Agenda, Collections, …
+├── routes/
+├── types/
+├── App.tsx
+└── main.tsx
 ```
 
-## Requirements
-
-- Node.js
-- npm
-
-Check your installed versions with:
-
-```bash
-node --version
-npm --version
-```
-
-## Getting Started
-
-Clone the repository:
+## Getting started
 
 ```bash
 git clone https://github.com/Apoll011/hosanna-studio.git
 cd hosanna-studio
-```
-
-Install dependencies:
-
-```bash
 npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
-Vite will start the development server and provide the local URL in the terminal.
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Vite dev server |
+| `npm run build` | Production build |
+| `npm run preview` / `npm run start` | Preview production build |
+| `npm run typecheck` | TypeScript |
+| `npm run lint` | ESLint |
+| `npm run clean` | Remove build output |
 
-## Available Scripts
+Environment variables go in a local Vite `.env` (API URL, auth, analytics). Do not commit secrets.
 
-| Command             | Description                       |
-| ------------------- | --------------------------------- |
-| `npm run dev`       | Start the Vite development server |
-| `npm run build`     | Build Studio for production       |
-| `npm run start`     | Preview the production build      |
-| `npm run preview`   | Preview the production build      |
-| `npm run typecheck` | Run TypeScript type checking      |
-| `npm run lint`      | Run ESLint                        |
-| `npm run clean`     | Remove the production build       |
+## Related projects
 
-Before submitting changes, it is recommended to run:
-
-```bash
-npm run typecheck
-npm run lint
-npm run build
-```
-
-## Environment
-
-Studio communicates with the Hosanna API and uses environment configuration for services such as authentication and analytics.
-
-Environment variables should be provided through Vite's environment configuration.
-
-Do not commit secrets or production credentials to the repository.
-
-For local development, create the appropriate `.env` file based on the environment configuration expected by the current API and deployment setup.
-
-## Development
-
-Studio uses a component-oriented architecture with application functionality separated into pages, layouts, components, hooks, API utilities, and shared types.
-
-When adding functionality:
-
-1. Keep API communication inside the API layer where practical.
-2. Reuse existing components and hooks before introducing new abstractions.
-3. Keep page-specific logic close to the relevant page.
-4. Prefer TypeScript types over untyped data.
-5. Use the existing design system and Tailwind utilities.
-6. Keep the frontend independent from direct database access.
-7. Run type checking, linting, and a production build before opening a pull request.
-
-## Design Philosophy
-
-Studio is designed around a few principles:
-
-- **Simple** — Complex functionality should remain understandable.
-- **Fast** — Interactions should feel immediate and lightweight.
-- **Responsive** — The interface should work across desktop, tablet, and mobile.
-- **Consistent** — Components and interactions should follow a shared visual language.
-- **Accessible** — Important functionality should remain usable across different devices and interaction methods.
-- **Focused** — Features should solve real church workflow problems without unnecessary product bloat.
-
-## Related Projects
-
-- **Hosanna** — The main Hosanna application
-  https://hosanna.live
-
-- **Hosanna Studio** — This repository
-  https://github.com/Apoll011/hosanna-studio
-
-- **Hosanna ChordPro** — ChordPro parser and song tooling
-  https://github.com/Apoll011/hosanna-chordpro
+- **Product site:** https://hosanna.live
+- **Mobile app:** https://github.com/Apoll011/Hosanna
+- **ChordPro tooling:** https://github.com/Apoll011/hosanna-chordpro
 
 ## License
 
-Hosanna Studio is licensed under the [Apache License 2.0](LICENSE.md).
+Apache License 2.0 — see [LICENSE.md](LICENSE.md).

@@ -16,6 +16,7 @@ import { useAnyRole, useCan } from "@/src/lib/permissions/client";
 import {
   AlertTriangle,
   Bell,
+  Bot,
   Building2,
   CloudOff,
   CreditCard,
@@ -23,10 +24,9 @@ import {
   Lock,
   RotateCcw,
   Server,
-  Sparkles,
   Users,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AiSettingsTab } from "../components/settings/AiSettingsTab";
 import { BillingTab } from "../components/settings/BillingTab";
@@ -135,6 +135,11 @@ export const OrganizationPage: React.FC = () => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [, setIsTogglingWs] = useState(false);
 
+  const closeRestoreModal = useCallback(() => {
+    setPendingRestoreData(null);
+    setRestoreStats(null);
+  }, []);
+
   const handleConfirmRestore = async () => {
     if (!pendingRestoreData) return;
     setIsRestoring(true);
@@ -192,7 +197,7 @@ export const OrganizationPage: React.FC = () => {
     {
       id: "ai" as const,
       label: t("organization.tabs.ai"),
-      icon: <Sparkles className="w-4 h-4" />,
+      icon: <Bot className="w-4 h-4" />,
       requiresNetwork: true,
       show: canManageAi && !isDemoMode(),
     },
@@ -302,84 +307,72 @@ export const OrganizationPage: React.FC = () => {
         </div>
       </div>
 
-      {pendingRestoreData && (
-        <Modal
-          isOpen={Boolean(pendingRestoreData)}
-          onClose={() => {
-            setPendingRestoreData(null);
-            setRestoreStats(null);
-          }}
-          title={t("settings.restore.confirmTitle")}
-        >
-          <div className="flex flex-col gap-4">
-            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-[var(--radius-md)] flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
-              <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500 mt-0.5" />
-              <div>
-                <strong className="font-semibold">
-                  {t("settings.restore.attention")}
-                </strong>
-                <p className="mt-0.5">{t("settings.restore.attentionDesc")}</p>
-              </div>
-            </div>
-
-            {restoreStats && (
-              <Surface variant="inset" padding="sm" className="space-y-2">
-                <span className="text-label text-m3-text block">
-                  {t("settings.restore.summary")}
-                </span>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2 bg-m3-card rounded-[var(--radius-md)] border border-m3-border">
-                    <span className="block text-lg font-semibold text-m3-primary tabular-nums">
-                      {restoreStats.songs}
-                    </span>
-                    <span className="text-caption">
-                      {t("settings.restore.songs")}
-                    </span>
-                  </div>
-                  <div className="p-2 bg-m3-card rounded-[var(--radius-md)] border border-m3-border">
-                    <span className="block text-lg font-semibold text-amber-500 tabular-nums">
-                      {restoreStats.folders}
-                    </span>
-                    <span className="text-caption">
-                      {t("settings.restore.folders")}
-                    </span>
-                  </div>
-                  <div className="p-2 bg-m3-card rounded-[var(--radius-md)] border border-m3-border">
-                    <span className="block text-lg font-semibold text-emerald-500 tabular-nums">
-                      {restoreStats.services}
-                    </span>
-                    <span className="text-caption">
-                      {t("settings.restore.services")}
-                    </span>
-                  </div>
-                </div>
-              </Surface>
-            )}
-
-            <div className="flex items-center justify-end gap-3 mt-2 pt-4 border-t border-m3-border">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setPendingRestoreData(null);
-                  setRestoreStats(null);
-                }}
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                isLoading={isRestoring}
-                icon={<RotateCcw className="w-4 h-4" />}
-                onClick={handleConfirmRestore}
-              >
-                {t("settings.restore.restoreNow")}
-              </Button>
+      <Modal
+        isOpen={Boolean(pendingRestoreData)}
+        onClose={closeRestoreModal}
+        title={t("settings.restore.confirmTitle")}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-[var(--radius-md)] flex items-start gap-3 text-xs text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500 mt-0.5" />
+            <div>
+              <strong className="font-semibold">
+                {t("settings.restore.attention")}
+              </strong>
+              <p className="mt-0.5">{t("settings.restore.attentionDesc")}</p>
             </div>
           </div>
-        </Modal>
-      )}
+
+          {restoreStats && (
+            <Surface variant="inset" padding="sm" className="space-y-2">
+              <span className="text-label text-m3-text block">
+                {t("settings.restore.summary")}
+              </span>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="p-2 bg-m3-card rounded-[var(--radius-md)] border border-m3-border">
+                  <span className="block text-lg font-semibold text-m3-primary tabular-nums">
+                    {restoreStats.songs}
+                  </span>
+                  <span className="text-caption">
+                    {t("settings.restore.songs")}
+                  </span>
+                </div>
+                <div className="p-2 bg-m3-card rounded-[var(--radius-md)] border border-m3-border">
+                  <span className="block text-lg font-semibold text-amber-500 tabular-nums">
+                    {restoreStats.folders}
+                  </span>
+                  <span className="text-caption">
+                    {t("settings.restore.folders")}
+                  </span>
+                </div>
+                <div className="p-2 bg-m3-card rounded-[var(--radius-md)] border border-m3-border">
+                  <span className="block text-lg font-semibold text-emerald-500 tabular-nums">
+                    {restoreStats.services}
+                  </span>
+                  <span className="text-caption">
+                    {t("settings.restore.services")}
+                  </span>
+                </div>
+              </div>
+            </Surface>
+          )}
+
+          <div className="flex items-center justify-end gap-3 mt-2 pt-4 border-t border-m3-border">
+            <Button variant="outline" size="sm" onClick={closeRestoreModal}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              isLoading={isRestoring}
+              icon={<RotateCcw className="w-4 h-4" />}
+              onClick={handleConfirmRestore}
+            >
+              {t("settings.restore.restoreNow")}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

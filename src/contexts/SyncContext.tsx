@@ -11,7 +11,12 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { getDatabase, resetReplication, setupReplication } from "../db";
+import {
+  ensureOrgScopedData,
+  getDatabase,
+  resetReplication,
+  setupReplication,
+} from "../db";
 import type { ReplicationManager } from "../db";
 import { SyncStatus } from "../types";
 import { useAuth } from "./AuthContext";
@@ -142,9 +147,10 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, organization } = useAuth();
+  const orgSlug = organization?.slug ?? null;
 
-  // Initialise database and replication on mount / auth change.
+  // Initialise database and replication on mount / auth / org change.
   //
   // Key correctness invariants:
   //  1. We call `resetReplication()` synchronously before the async `getDatabase()`
@@ -154,6 +160,8 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
   //  3. The subscription `sub` is stored in a local variable scoped to this
   //     effect invocation; the cleanup always unsubscribes the *correct* sub even
   //     if a concurrent async init is still in flight.
+  //  4. Local data is stamped with the active org slug. A mismatch wipes the
+  //     stores before any sync starts; sync is refused while slugs differ.
   useEffect(() => {
     // Tear down any previous manager immediately (synchronously)
     resetReplication();
@@ -173,7 +181,15 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
 
-        const repl = setupReplication(db);
+        const scope = await ensureOrgScopedData(db, orgSlug);
+        if (!isMounted) return;
+
+        // No active org (or scope still mismatched) — never start sync.
+        if (!isAuthenticated || !scope.matched || !orgSlug) {
+          return;
+        }
+
+        const repl = setupReplication(db, orgSlug);
         replicationManagerRef.current = repl;
 
         sub = repl.status$.subscribe((st) => {
@@ -184,11 +200,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         });
 
-        if (isAuthenticated) {
-          repl.start();
-        }
-        // If not authenticated, don't start — the CacheHydrationProvider
-        // logout handler will clear collections; next auth change re-enters here.
+        repl.start({ forceFullPull: scope.cleared });
       } catch (err) {
         console.error(
           "[SyncContext] Failed to initialize DB / Replication:",
@@ -207,7 +219,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({
       // effect run handles full teardown.
       replicationManagerRef.current?.stop();
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, orgSlug]);
 
   const triggerSyncCheck = useCallback(async () => {
     // No-op in demo mode — no server to sync with.

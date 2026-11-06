@@ -36,6 +36,7 @@ import {
   AcceptInvitationPage,
   AgendaPage,
   AnalyticsPage,
+  AuthErrorPage,
   CollectionDetailPage,
   CollectionsPage,
   DemoPage,
@@ -181,6 +182,7 @@ export const AppRoutes: React.FC = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/error" element={<AuthErrorPage />} />
           <Route path="/oauth/consent" element={<OAuthConsentPage />} />
           <Route path="/two-factor" element={<TwoFactorPage />} />
           <Route path="/register" element={<RegisterPage />} />

@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useRef } from "react";
-import { getDatabase } from "../db";
+import { ensureOrgScopedData, getDatabase } from "../db";
 import { isDemoMode } from "../demo/index";
 import { useAuth } from "./AuthContext";
 
@@ -16,14 +16,15 @@ interface Props {
  * CacheHydrationProvider
  *
  * Responsibilities:
- *  1. On logout: clear ALL local collections so stale data from a previous
- *     user session never leaks into the next session.
+ *  1. On logout: clear ALL local collections + org-scope meta so stale data
+ *     from a previous user/org session never leaks into the next session.
  *
  * What it does NOT do (and why):
  *  - It no longer triggers an initial sync on login. SyncContext.SyncProvider
  *    already calls `repl.start()` which runs an immediate sync. Triggering a
  *    second sync here would race with the first and double-push any pending
  *    local changes.
+ *  - Org-switch wipes live in AuthContext + SyncContext (slug stamp on IDB).
  */
 export const CacheHydrationProvider: React.FC<Props> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -46,15 +47,8 @@ export const CacheHydrationProvider: React.FC<Props> = ({ children }) => {
       void (async () => {
         try {
           const db = await getDatabase();
-          // Clear ALL collections — including collections and agendaEvents
-          // which were previously missing and could leak data between users.
-          await Promise.all([
-            db.songs.remove(),
-            db.folders.remove(),
-            db.collections.remove(),
-            db.services.remove(),
-            db.agendaEvents.remove(),
-          ]);
+          // Null org slug clears collections, replication state, and meta.
+          await ensureOrgScopedData(db, null);
         } catch {
           // Ignore — DB may not be initialized (e.g. logout before DB opens)
         }

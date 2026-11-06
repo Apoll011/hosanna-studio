@@ -23,7 +23,12 @@ import { authClient } from "../lib/authClient";
 import { clearPermissionCache } from "../lib/permissions/client";
 import { posthog } from "../lib/posthog";
 import { fetchSubscriptionRows } from "../lib/subscriptions";
-import { resetDatabase } from "../db";
+import {
+  ensureOrgScopedData,
+  getDatabase,
+  resetDatabase,
+  resetReplication,
+} from "../db";
 
 export interface SessionUser {
   id: string;
@@ -521,6 +526,20 @@ const StandardAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       localStorage.setItem("active_org_slug", org.slug);
       clearPermissionCache();
+
+      // Drop the previous org's local-first cache before navigating. Sync alone
+      // cannot remove foreign docs; ensureOrgScopedData wipes on slug mismatch
+      // and refuses to leave the old watermark in place.
+      try {
+        resetReplication();
+        const db = await getDatabase();
+        await ensureOrgScopedData(db, org.slug);
+      } catch (err) {
+        console.warn(
+          "[AuthContext] Failed to clear local data on org switch:",
+          err,
+        );
+      }
 
       // The app boots per organization (local-first database, sync, queries),
       // so a hard navigation is the reliable way to land on the new workspace.
