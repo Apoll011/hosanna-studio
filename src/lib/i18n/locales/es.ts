@@ -1976,7 +1976,8 @@ export const es: typeof pt = {
     error: {
       title: "Inicio de sesión interrumpido",
       subtitle: "No se pudo completar la autenticación",
-      generic: "Ocurrió un error durante el inicio de sesión. Inténtelo de nuevo.",
+      generic:
+        "Ocurrió un error durante el inicio de sesión. Inténtelo de nuevo.",
       hint: "Si cerró la ventana del proveedor o denegó el acceso, puede intentarlo de nuevo sin problema.",
       backToLogin: "Volver al inicio de sesión",
     },
@@ -2357,7 +2358,7 @@ export const es: typeof pt = {
       trialUntil: "Prueba hasta {date}",
       planStatus: {
         active: "Activo",
-        trialing: "Prueba",
+        trialing: "Periodo de Prueba",
         none: "Sin suscripción activa",
       },
       resources: {
@@ -2565,7 +2566,8 @@ export const es: typeof pt = {
       enabled: "Activar asistente",
       enabledDesc: "Los miembros con acceso a IA pueden abrir el chat.",
       advanced: "Avanzado",
-      advancedDesc: "Límite de herramientas, temperatura y longitud de respuesta.",
+      advancedDesc:
+        "Límite de herramientas, temperatura y longitud de respuesta.",
       behaviorTitle: "Comportamiento",
       behaviorDesc: "Instrucciones y memoria en cada respuesta.",
       maxToolCalls: "Máximo de herramientas por respuesta",
@@ -2582,7 +2584,8 @@ export const es: typeof pt = {
       memoryTitle: "Memoria",
       memoryDesc: "Notas recordadas en los chats de la organización.",
       memoryEnabled: "Activar memoria",
-      memoryEnabledDesc: "Incluye las notas en el contexto y permite actualizarlas.",
+      memoryEnabledDesc:
+        "Incluye las notas en el contexto y permite actualizarlas.",
       memoryEmpty: "Aún no hay notas.",
       memoryPlaceholder: "p. ej. El equipo de alabanza prefiere Sol mayor.",
       memoryAdd: "Añadir",

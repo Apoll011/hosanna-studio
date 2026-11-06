@@ -281,7 +281,7 @@ export const UsageOverviewTab: React.FC<UsageOverviewTabProps> = ({
             <p className="mt-1 text-muted">{t("analytics.usage.desc")}</p>
           </div>
           <div className="flex flex-col items-start sm:items-end gap-1 shrink-0">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] bg-m3-primary/10 text-m3-primary text-xs font-semibold">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-m3-primary/10 text-m3-primary text-xs font-semibold">
               <InfinityIcon className="w-3.5 h-3.5" />
               {t("settings.billing.planName")}
             </span>

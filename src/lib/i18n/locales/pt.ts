@@ -2346,7 +2346,7 @@ export const pt = {
       trialUntil: "Teste até {date}",
       planStatus: {
         active: "Ativo",
-        trialing: "Teste",
+        trialing: "Em período gratuito",
         none: "Sem subscrição ativa",
       },
       resources: {
@@ -2524,8 +2524,7 @@ export const pt = {
       saved: "Definições de IA guardadas.",
       keyCleared: "Chave de API removida.",
       noAccessTitle: "Sem acesso",
-      noAccessDesc:
-        "Apenas proprietários e administradores podem gerir a IA.",
+      noAccessDesc: "Apenas proprietários e administradores podem gerir a IA.",
       statusOn: "Ativado",
       statusPaused: "Configurado · desativado",
       statusSetup: "Não configurado",
@@ -2559,7 +2558,8 @@ export const pt = {
       maxToolCalls: "Máximo de ferramentas por resposta",
       maxToolCallsHint: "Entre {min} e {max}.",
       temperature: "Temperatura",
-      temperatureHint: "Mais baixo = mais previsível; mais alto = mais variado.",
+      temperatureHint:
+        "Mais baixo = mais previsível; mais alto = mais variado.",
       temperatureDefault: "Predefinido",
       maxOutputTokens: "Tamanho máximo da resposta (tokens)",
       maxOutputTokensHint: "Deixe vazio para o predefinido do modelo.",
