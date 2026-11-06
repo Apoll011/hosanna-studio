@@ -1,0 +1,61 @@
+# Hosanna Studio — https://studio.hosanna.live
+# Public auth/demo pages only. Org workspaces (/:slug/*) are private app UI.
+
+User-agent: Googlebot
+Allow: /
+Allow: /demo
+Allow: /new
+Allow: /register
+Allow: /login
+Disallow: /*/folders
+Disallow: /*/songs
+Disallow: /*/services
+Disallow: /*/collections
+Disallow: /*/teams
+Disallow: /*/agenda
+Disallow: /*/settings
+Disallow: /*/organization
+Disallow: /*/analytics
+Disallow: /*/trash
+Disallow: /onboarding
+
+User-agent: Bingbot
+Allow: /
+Allow: /demo
+Allow: /new
+Allow: /register
+Allow: /login
+Disallow: /*/folders
+Disallow: /*/songs
+Disallow: /*/services
+Disallow: /*/collections
+Disallow: /*/teams
+Disallow: /*/agenda
+Disallow: /*/settings
+Disallow: /*/organization
+Disallow: /*/analytics
+Disallow: /*/trash
+Disallow: /onboarding
+
+User-agent: *
+Allow: /
+Allow: /demo
+Allow: /new
+Allow: /register
+Allow: /login
+Disallow: /*/folders
+Disallow: /*/songs
+Disallow: /*/services
+Disallow: /*/collections
+Disallow: /*/teams
+Disallow: /*/agenda
+Disallow: /*/settings
+Disallow: /*/organization
+Disallow: /*/analytics
+Disallow: /*/trash
+Disallow: /onboarding
+
+Sitemap: https://studio.hosanna.live/sitemap.xml
+# Also listed from the marketing site robots.txt so Search Console / crawlers
+# discover Studio when indexing hosanna.live:
+#   https://hosanna.live/robots.txt
