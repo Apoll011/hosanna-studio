@@ -308,7 +308,7 @@ export const UsageOverviewTab: React.FC<UsageOverviewTabProps> = ({
             return (
               <div
                 key={item.id}
-                className="p-4 rounded-[var(--radius-md)] border border-m3-border bg-m3-card"
+                className="p-4 rounded-md border border-m3-border bg-m3-card"
               >
                 <div className="flex items-center gap-2 text-m3-secondary mb-3">
                   <Icon className="w-4 h-4 text-m3-primary" />
@@ -329,7 +329,7 @@ export const UsageOverviewTab: React.FC<UsageOverviewTabProps> = ({
             <div className="p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-[var(--radius-md)] bg-m3-sidebar border border-m3-border flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-md bg-m3-sidebar border border-m3-border flex items-center justify-center shrink-0">
                     <HardDrive className="w-4 h-4 text-m3-primary" />
                   </div>
                   <div className="min-w-0">
