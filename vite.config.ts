@@ -14,7 +14,12 @@ export default defineConfig(() => {
         workbox: {
           maximumFileSizeToCacheInBytes: 4194304,
           cleanupOutdatedCaches: true,
-          globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+          // Default navigateFallback is index.html — without a denylist, opening
+          // /robots.txt or /sitemap.xml in the browser loads the SPA, then the
+          // router redirects to /onboarding (looks like a "redirect to home").
+          navigateFallback: "index.html",
+          navigateFallbackDenylist: [/^\/robots\.txt$/, /^\/sitemap\.xml$/],
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,xml,txt}"],
         },
         includeAssets: [
           "favicon.png",
@@ -23,6 +28,8 @@ export default defineConfig(() => {
           "apple-touch-icon-167x167.png",
           "apple-touch-icon-152x152.png",
           "hosanna_favicon.svg",
+          "robots.txt",
+          "sitemap.xml",
         ],
         devOptions: {
           enabled: false,
