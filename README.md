@@ -6,6 +6,13 @@ Leaders plan here. Musicians play from the [Hosanna mobile app](https://github.c
 
 Live: [studio.hosanna.live](https://studio.hosanna.live)
 
+### SEO / Search Console
+
+- `public/sitemap.xml` → https://studio.hosanna.live/sitemap.xml (demo, signup, login)
+- `public/robots.txt` — allows those public pages; discourages crawling private `/:slug/*` workspaces
+- Also linked from the marketing site robots: https://hosanna.live/robots.txt  
+  In Google Search Console, prefer a **Domain** property for `hosanna.live` and submit **both** sitemaps (marketing + Studio).
+
 ---
 
 ## What Studio is for
